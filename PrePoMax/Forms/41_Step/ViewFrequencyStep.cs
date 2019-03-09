@@ -21,7 +21,20 @@ namespace PrePoMax
 
         [CategoryAttribute("Data")]
         [ReadOnly(false)]
-        [OrderedDisplayName(0, 10, "Number of frequencies")]
+        [OrderedDisplayName(0, 10, "Perturbation")]
+        [DescriptionAttribute("Perturbation parameter set to On applies preloads from the previous step if it exists.")]
+        public bool Perturbation { get { return _step.Perturbation; } set { _step.Perturbation = value; } }
+
+        [CategoryAttribute("Data")]
+        [ReadOnly(false)]
+        [OrderedDisplayName(1, 10, "Storage")]
+        [DescriptionAttribute("Store eigenvalues, eigenmodes, mass and stiffness matrix in a binary form in file jobname.eig " +
+                              "for further use.")]
+        public bool Storage { get { return _step.Storage; } set { _step.Storage = value; } }
+
+        [CategoryAttribute("Data")]
+        [ReadOnly(false)]
+        [OrderedDisplayName(2, 10, "Number of frequencies")]
         [DescriptionAttribute("Number of eigenfrequencies to compute.")]
         public double NumOfFrequencies { get { return _step.NumOfFrequencies; } set { _step.NumOfFrequencies = value; } }
 
@@ -33,6 +46,9 @@ namespace PrePoMax
         {
             _step = step;
             _dctd = ProviderInstaller.Install(this);
+
+            RenameTrueFalseForBooleanToOnOff("Perturbation");
+            RenameTrueFalseForBooleanToYesNo("Storage");
 
             UpdateFieldView();
         }

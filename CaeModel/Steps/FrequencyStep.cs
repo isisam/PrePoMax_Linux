@@ -11,6 +11,7 @@ namespace CaeModel
     {
         // Variables                                                                                                                
         private double _numOfFrequencies;
+        private bool _storage;
 
 
         // Properties                                                                                                               
@@ -23,13 +24,18 @@ namespace CaeModel
                 _numOfFrequencies = value;
             }
         }
+        public bool Storage { get { return _storage; } set { _storage = value; } }
 
 
         // Constructors                                                                                                             
         public FrequencyStep(string name)
             :base(name)
         {
+            _perturbation = true;
+            _supportsLoads = false;
+
             _numOfFrequencies = 10;
+            _storage = false;
 
             AddFieldOutput(new NodalFieldOutput("NF-Output-1", NodalVariable.U | NodalVariable.RF));
             AddFieldOutput(new ElementFieldOutput("EF-Output-1", ElementVariable.E | ElementVariable.S));
