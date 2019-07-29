@@ -118,9 +118,9 @@ namespace PrePoMax.Forms
         // Methods                                                                                                                  
         public void Clear()
         {
+            _copy = false;
             _startPoint = new double[3];
             _endPoint = new double[3];
-            _copy = false;
         }
 
         protected void RenameTrueFalseForBooleanProperty(string propertyName, string trueName, string falseName)

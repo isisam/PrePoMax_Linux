@@ -17,6 +17,9 @@ namespace PrePoMax.Forms
         private Controller _controller;
         private string[] _partNames;
         private double[][] _coorNodesToDraw;
+        private ContextMenuStrip cmsPropertyGrid;
+        private System.ComponentModel.IContainer components;
+        private ToolStripMenuItem tsmiResetAll;
         private double[][] _coorLinesToDraw;
 
 
@@ -50,19 +53,50 @@ namespace PrePoMax.Forms
             _coorLinesToDraw[0] = new double[3];
             _coorLinesToDraw[1] = new double[3];
 
-            btnOkAddNew.Visible = false;
+            btnOK.Visible = false;
+            btnOkAddNew.Width = btnOK.Width;
+            btnOkAddNew.Left = btnOK.Left;
+            btnOkAddNew.Text = "Apply";
+            btnCancel.Text = "Close";
         }
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
+            this.cmsPropertyGrid = new System.Windows.Forms.ContextMenuStrip(this.components);
+            this.tsmiResetAll = new System.Windows.Forms.ToolStripMenuItem();
             this.gbProperties.SuspendLayout();
+            this.cmsPropertyGrid.SuspendLayout();
             this.SuspendLayout();
+            // 
+            // propertyGrid
+            // 
+            this.propertyGrid.ContextMenuStrip = this.cmsPropertyGrid;
+            // 
+            // cmsPropertyGrid
+            // 
+            this.cmsPropertyGrid.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.tsmiResetAll});
+            this.cmsPropertyGrid.Name = "cmsPropertyGrid";
+            this.cmsPropertyGrid.Size = new System.Drawing.Size(118, 26);
+            // 
+            // tsmiResetAll
+            // 
+            this.tsmiResetAll.Name = "tsmiResetAll";
+            this.tsmiResetAll.Size = new System.Drawing.Size(117, 22);
+            this.tsmiResetAll.Text = "Reset all";
+            this.tsmiResetAll.Click += new System.EventHandler(this.tsmiResetAll_Click);
             // 
             // FrmTranslate
             // 
             this.ClientSize = new System.Drawing.Size(334, 411);
             this.Name = "FrmTranslate";
             this.Text = "Translate Parameters";
+            this.Controls.SetChildIndex(this.gbProperties, 0);
+            this.Controls.SetChildIndex(this.btnCancel, 0);
+            this.Controls.SetChildIndex(this.btnOK, 0);
+            this.Controls.SetChildIndex(this.btnOkAddNew, 0);
             this.gbProperties.ResumeLayout(false);
+            this.cmsPropertyGrid.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
@@ -81,6 +115,8 @@ namespace PrePoMax.Forms
 
             double[] translateVector = TranslateVector;
             _controller.TranlsateModelPartsCommand(_partNames, translateVector, _translateParameters.Copy);
+
+            HighlightNodes();
         }
 
 
@@ -138,6 +174,8 @@ namespace PrePoMax.Forms
             Color color = Color.Red;
             vtkControl.vtkRendererLayer layer = vtkControl.vtkRendererLayer.Selection;
 
+            _controller.ClearAllSelection();
+
             _coorNodesToDraw[0][0] = _translateParameters.X2;
             _coorNodesToDraw[0][1] = _translateParameters.Y2;
             _coorNodesToDraw[0][2] = _translateParameters.Z2;
@@ -149,6 +187,13 @@ namespace PrePoMax.Forms
 
             _controller.DrawNodes("Translate", _coorNodesToDraw, color, layer, 7);
             _controller.HighlightConnectedLines(_coorLinesToDraw, 7);
+        }
+
+        private void tsmiResetAll_Click(object sender, EventArgs e)
+        {
+            _translateParameters = new TranslateParameters();
+            propertyGrid.SelectedObject = _translateParameters;
+            _controller.ClearAllSelection();
         }
     }
 }
