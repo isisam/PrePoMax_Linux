@@ -13,11 +13,13 @@ namespace CaeModel
         // Variables                                                                                                                
         private string _surfaceName;
 
+
         // Properties                                                                                                               
         public string SurfaceName { get { return _surfaceName; } set { _surfaceName = value; } }
         public double F1 { get; set; }
         public double F2 { get; set; }
         public double F3 { get; set; }
+
 
         // Constructors                                                                                                             
         public STLoad(string name, string surfaceName, double f1, double f2, double f3)
@@ -28,6 +30,7 @@ namespace CaeModel
             F2 = f2;
             F3 = f3;
         }
+
 
         // Methods                                                                                                                  
         

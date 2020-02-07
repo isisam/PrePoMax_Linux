@@ -15,18 +15,10 @@ namespace FileInOut.Output.Calculix
         private StaticStep _step;
 
 
-        // Properties                                                                                                               
-        public override object BaseItem { get { return _step; } }
-
-
-        // Events                                                                                                                   
-
-
         // Constructor                                                                                                              
         public CalStaticStep(StaticStep step)
         {
             _step = step;
-            _active = step.Active;
         }
 
 
@@ -36,7 +28,6 @@ namespace FileInOut.Output.Calculix
             string direct = _step.Direct ? ", Direct" : "";
             return string.Format("*Static{0}{1}", direct, Environment.NewLine);
         }
-
         public override string GetDataString()
         {
             if (_step.Nlgeom)
