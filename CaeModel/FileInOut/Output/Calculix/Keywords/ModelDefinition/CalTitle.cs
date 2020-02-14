@@ -22,7 +22,6 @@ namespace FileInOut.Output.Calculix
 
         // Constructor                                                                                                              
         public CalTitle(string title, string data)
-
         {
             _title = title;
             _data = data;
