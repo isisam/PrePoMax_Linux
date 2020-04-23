@@ -18,43 +18,9 @@ namespace CaeModel
 
         // Properties                                                                                                               
         public List<MaterialProperty> Properties { get { return _properties; } }
-        //public double YoungsModulus 
-        //{ 
-        //    get 
-        //    {
-        //        foreach (var property in _properties)
-        //        {
-        //            var elastic = property as Elastic;
-        //            if (elastic != null)
-        //            {
-        //                return elastic.YoungsModulus;
-        //            }
-        //        }
-        //        return 0;
-        //    }
-        //}
-        //public double PoissonsRatio
-        //{
-        //    get
-        //    {
-        //        foreach (var property in _properties)
-        //        {
-        //            var elastic = property as Elastic;
-        //            if (elastic != null)
-        //            {
-        //                return elastic.PoissonsRatio;
-        //            }
-        //        }
-        //        return 0;
-        //    }
-        //}
 
 
         // Constructors                                                                                                             
-        public Material()
-        {
-            _properties = new List<MaterialProperty>();
-        }
         public Material(string name)
             : base(name)
         {

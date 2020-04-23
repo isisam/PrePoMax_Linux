@@ -26,6 +26,8 @@ namespace FileInOut.Output.Calculix
         public override string GetKeywordString()
         {
             string direct = _step.Direct ? ", Direct" : "";
+            //SOLVER=ITERATIVE CHOLESKY
+            //SOLVER=ITERATIVE SCALING
             return string.Format("*Static{0}{1}", direct, Environment.NewLine);
         }
         public override string GetDataString()

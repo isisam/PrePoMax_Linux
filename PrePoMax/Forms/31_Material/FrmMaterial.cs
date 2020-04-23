@@ -31,12 +31,12 @@ namespace PrePoMax.Forms
         public FrmMaterial(Controller controller)
         {
             InitializeComponent();
-
+            //
             _controller = controller;
             _material = null;
-
+            //
             propertyGrid.SetParent(this);   // for the Tab key to work
-
+            //
             int i = 0;
             _pages = new TabPage[tcProperties.TabPages.Count];
             foreach (TabPage tabPage in tcProperties.TabPages)
@@ -46,7 +46,7 @@ namespace PrePoMax.Forms
             }
             tcProperties.TabPages.Clear();
             tcProperties.TabPages.Add(_pages[0]);
-
+            //
             lvAddedProperties.Sorting = SortOrder.Ascending;
         }
 
@@ -103,12 +103,12 @@ namespace PrePoMax.Forms
                     tcProperties.TabPages.Clear();
                     tcProperties.TabPages.Add(_pages[0]);
                     tcProperties.TabPages.Add(_pages[1]);
-
+                    //
                     BindingSource binding = new BindingSource();
                     binding.DataSource = (lvAddedProperties.SelectedItems[0].Tag as ViewPlastic).DataPoints;
                     dgvData.DataSource = binding; //bind datagridview to binding source - enables adding of new lines
                     binding.ListChanged += Binding_ListChanged;
-
+                    //
                     propertyGrid.SelectedObject = lvAddedProperties.SelectedItems[0].Tag;
                 }
             }
@@ -230,13 +230,20 @@ namespace PrePoMax.Forms
             if ((_materialToEditName == null && _materialNames.Contains(tbName.Text)) ||            // create
                     (tbName.Text != _materialToEditName && _materialNames.Contains(tbName.Text)))       // edit
                 throw new CaeGlobals.CaeException("The selected material name already exists.");
-
+            //
             _material = new CaeModel.Material(tbName.Text);
+            IViewMaterialProperty property;
             foreach (ListViewItem item in lvAddedProperties.Items)
             {
-                _material.AddProperty(((IViewMaterialProperty)(item.Tag)).Base);
+                property = (IViewMaterialProperty)item.Tag;
+                if (property is ViewDensity vd && vd.Value <= 0)
+                    throw new CaeGlobals.CaeException("The density must be larger than 0.");
+                if (property is ViewElastic ve && ve.YoungsModulus <= 0)
+                    throw new CaeGlobals.CaeException("The Young's modulus must be larger than 0.");
+                //
+                _material.AddProperty(property.Base);
             }
-
+            //
             if (_materialToEditName == null)
             {
                 // Create
