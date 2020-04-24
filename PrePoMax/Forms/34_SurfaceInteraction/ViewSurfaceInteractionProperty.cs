@@ -8,6 +8,7 @@ using DynamicTypeDescriptor;
 
 namespace PrePoMax
 {
+    [Serializable]
     public abstract class ViewSurfaceInteractionProperty
     {
         // Variables                                                                                                                
