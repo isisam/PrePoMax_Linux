@@ -22,11 +22,19 @@ namespace PrePoMax
         //
         [CategoryAttribute("Data")]
         [OrderedDisplayName(1, 10, "Position tolerance")]
-        [DescriptionAttribute("Enter the value of largest distance from the master surface for which the slave nodes will be included in the tie constraint."
-                            + " Default value equals 2.5 % of the typical element size.")]
-        [TypeConverter(typeof(StringPosTolConverter))]
+        [DescriptionAttribute("Enter the value of largest distance from the master surface for which the slave nodes will be " + 
+                              "included in the tie constraint. Default value equals 2.5 % of the typical element size.")]
+        [TypeConverter(typeof(StringDefaultDoubleConverter))]
         [Id(2, 1)]
-        public double PositionTolerance { get { return _tie.PositionTolerance; } set { _tie.PositionTolerance = value; } }
+        public double PositionTolerance 
+        {
+            get
+            {
+                StringDefaultDoubleConverter.InitialValue = 0.01;
+                return _tie.PositionTolerance; 
+            }
+            set { _tie.PositionTolerance = value; }
+        }
         //
         [CategoryAttribute("Data")]
         [OrderedDisplayName(2, 10, "Adjust")]
@@ -36,7 +44,7 @@ namespace PrePoMax
         // MASTER ------------------------------------------------------------------------------------------------------------------
         [CategoryAttribute("Master Region")]
         [OrderedDisplayName(0, 10, "Master region type")]
-        [DescriptionAttribute("Select the master region type which will be used for the tie definition.")]
+        [DescriptionAttribute("Select the master region type for the creation of the tie definition.")]
         [Id(1, 2)]
         public override string MasterRegionType { get { return base.MasterRegionType; } set { base.MasterRegionType = value; } }
         //
@@ -48,13 +56,13 @@ namespace PrePoMax
         public string MasterSelectionHidden { get { return _selectionHidden; } set { _selectionHidden = value; } }
         [CategoryAttribute("Master Region")]
         [OrderedDisplayName(2, 10, "Master surface")]
-        [DescriptionAttribute("Select the master surface which will be used for the tie definition.")]
+        [DescriptionAttribute("Select the master surface for the creation of the tie definition.")]
         [Id(3, 2)]
         public string MasterSurfaceName { get { return _tie.MasterRegionName; } set { _tie.MasterRegionName = value; } }
         // SLAVE -------------------------------------------------------------------------------------------------------------------
         [CategoryAttribute("Slave Region")]
         [OrderedDisplayName(3, 10, "Slave region type")]
-        [DescriptionAttribute("Select the slave region type which will be used for the tie definition.")]
+        [DescriptionAttribute("Select the slave region type for the creation of the tie definition.")]
         [Id(1, 3)]
         public override string SlaveRegionType { get { return base.SlaveRegionType; } set { base.SlaveRegionType = value; } }
         //
@@ -66,7 +74,7 @@ namespace PrePoMax
         //
         [CategoryAttribute("Slave Region")]
         [OrderedDisplayName(5, 10, "Slave surface")]
-        [DescriptionAttribute("Select the slave surface which will be used for the tie definition.")]
+        [DescriptionAttribute("Select the slave surface for the creation of the tie definition.")]
         [Id(3, 3)]
         public string SlaveSurfaceName { get { return _tie.SlaveRegionName; } set { _tie.SlaveRegionName = value; } }
 
@@ -98,13 +106,7 @@ namespace PrePoMax
         }
         protected void ApplyAdjustYesNo()
         {
-            CustomPropertyDescriptor cpd = base.DynamicCustomTypeDescriptor.GetProperty("Adjust");
-            //
-            foreach (StandardValueAttribute sva in cpd.StatandardValues)
-            {
-                if ((bool)sva.Value == true) sva.DisplayName = "Yes";
-                else sva.DisplayName = "No";
-            }
+            DynamicCustomTypeDescriptor.RenameBooleanPropertyToYesNo(nameof(Adjust));
         }
         public void PopululateDropDownLists(string[] surfaceNames)
         {
@@ -115,6 +117,7 @@ namespace PrePoMax
             Dictionary<RegionTypeEnum, string[]> slaveTypeListItemsPairs = new Dictionary<RegionTypeEnum, string[]>();
             slaveTypeListItemsPairs.Add(RegionTypeEnum.Selection, new string[] { "Hidden" });
             slaveTypeListItemsPairs.Add(RegionTypeEnum.SurfaceName, surfaceNames);
+            //
             base.PopululateDropDownLists(masterRegionTypeListItemsPairs, slaveTypeListItemsPairs);
         }
         public override void UpdateRegionVisibility()
@@ -125,13 +128,13 @@ namespace PrePoMax
             // Master
             if (base.MasterRegionType == RegionTypeEnum.Selection.ToFriendlyString())
             {
-                cpd = base.DynamicCustomTypeDescriptor.GetProperty(() => MasterSelectionHidden);
+                cpd = base.DynamicCustomTypeDescriptor.GetProperty(nameof(MasterSelectionHidden));
                 cpd.SetIsBrowsable(false);
             }
             // Slave
             if (base.SlaveRegionType == RegionTypeEnum.Selection.ToFriendlyString())
             {
-                cpd = base.DynamicCustomTypeDescriptor.GetProperty(() => SlaveSelectionHidden);
+                cpd = base.DynamicCustomTypeDescriptor.GetProperty(nameof(SlaveSelectionHidden));
                 cpd.SetIsBrowsable(false);
             }
         }
