@@ -12,7 +12,7 @@ namespace CaeModel
     [Flags]
     public enum NodalFieldVariable
     {
-        // must start at 1 for the UI to work
+        // Must start at 1 for the UI to work
         RF = 1,
         U = 2
     }

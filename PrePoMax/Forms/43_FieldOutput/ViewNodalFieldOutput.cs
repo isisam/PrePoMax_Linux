@@ -24,17 +24,17 @@ namespace PrePoMax
     }
 
     [Serializable]
-    //[ClassResource(BaseName = "PrePoMax.Properties.Resources", KeyPrefix = "ViewNodalFieldOutput_")]
     public class ViewNodalFieldOutput : ViewFieldOutput
     {
         // Variables                                                                                                                
         private CaeModel.NodalFieldOutput _fieldOutput;
-        private DynamicCustomTypeDescriptor _dctd = null;
+        private DynamicCustomTypeDescriptor _dctd;
+
 
         // Properties                                                                                                               
         public override string Name { get { return _fieldOutput.Name; } set { _fieldOutput.Name = value; } }
         public override int Frequency { get { return _fieldOutput.Frequency; } set { _fieldOutput.Frequency = value; } }
-
+        //
         [OrderedDisplayName(2, 10, "Variables to output")]
         [CategoryAttribute("Data")]
         [DescriptionAttribute("Nodal field variables")]
@@ -49,7 +49,7 @@ namespace PrePoMax
                 _fieldOutput.Variables = (CaeModel.NodalFieldVariable)value;
             } 
         }
-
+        //
         public override CaeModel.FieldOutput Base { get { return _fieldOutput; } set { _fieldOutput = (CaeModel.NodalFieldOutput)value; } }
 
 
