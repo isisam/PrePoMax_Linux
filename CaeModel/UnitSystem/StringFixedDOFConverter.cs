@@ -9,15 +9,15 @@ using System.Globalization;
 using UnitsNet.Units;
 using UnitsNet;
 
-namespace PrePoMax
+namespace CaeModel
 {
     public class StringFixedDOFConverter : TypeConverter
     {
         // Variables                                                                                                                
-        private static LengthUnit _lengthUnit = LengthUnit.Meter;
+        protected static LengthUnit _lengthUnit = LengthUnit.Meter;
         //
-        private ArrayList values;
-        private string _fixed = "Fixed";
+        protected ArrayList values;
+        protected string _fixed = "Fixed";
 
 
         // Properties                                                                                                               
@@ -89,11 +89,10 @@ namespace PrePoMax
                 {
                     if (value is double valueDouble)
                     {
-                        if (double.IsPositiveInfinity((double)value)) return _fixed;
+                        if (double.IsPositiveInfinity(valueDouble)) return _fixed;
                         else
                         {
-                            Length Length = Length.From(valueDouble, _lengthUnit);
-                            return Length.Value.ToString() + " " + Length.GetAbbreviation(_lengthUnit);
+                            return value.ToString() + " " + Length.GetAbbreviation(_lengthUnit);
                         }
                     }
                 }
