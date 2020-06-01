@@ -11,14 +11,13 @@ using UnitsNet.Units;
 
 namespace CaeModel
 {
-    public class StringAngleDegConverter : StringAngleConverter
+    public class StringAngleDegConverter : TypeConverter
     {
         // Variables                                                                                                                
-        protected new static AngleUnit _angleUnit = AngleUnit.Radian;                       // a new variable is needed
+        protected static AngleUnit _angleUnit = AngleUnit.Degree;
 
 
         // Properties                                                                                                               
-        public new static string SetUnit { set { _angleUnit = Angle.ParseUnit(value); } }   // a new method is needed
 
 
         // Constructors                                                                                                             
@@ -28,6 +27,46 @@ namespace CaeModel
 
 
         // Methods                                                                                                                  
-        
+        public override bool CanConvertFrom(ITypeDescriptorContext context, System.Type sourceType)
+        {
+            if (sourceType == typeof(string)) return true;
+            else return base.CanConvertFrom(context, sourceType);
+        }
+        public override object ConvertFrom(ITypeDescriptorContext context, CultureInfo culture, object value)
+        {
+            // Convert from string
+            if (value is string valueString)
+            {
+                double valueDouble;
+                //
+                if (!double.TryParse(valueString, out valueDouble))
+                {
+                    Angle Angle = Angle.Parse(valueString).ToUnit(_angleUnit);
+                    valueDouble = Angle.Value;
+                }
+                //
+                return valueDouble;
+            }
+            else return base.ConvertFrom(context, culture, value);
+        }
+        public override object ConvertTo(ITypeDescriptorContext context, CultureInfo culture, object value, Type destinationType)
+        {
+            // Convert to string
+            try
+            {
+                if (destinationType == typeof(string))
+                {
+                    if (value is double valueDouble)
+                    {
+                        return value.ToString() + " " + Angle.GetAbbreviation(_angleUnit);
+                    }
+                }
+                return base.ConvertTo(context, culture, value, destinationType);
+            }
+            catch
+            {
+                return base.ConvertTo(context, culture, value, destinationType);
+            }
+        }
     }
 }
