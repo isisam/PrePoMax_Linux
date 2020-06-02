@@ -16,6 +16,8 @@ namespace CaeModel
         // Variables                                                                                                                
         protected static ForceUnit _forceUnit = ForceUnit.Newton;
         protected static VolumeUnit _volumeUnit = VolumeUnit.CubicMeter;
+        protected static string error = "Unable to parse quantity. Expected the form \"{value} {unit abbreviation}" +
+                                        "\", such as \"5.5 m\". The spacing is optional.";
 
 
         // Properties                                                                                                               
@@ -69,9 +71,7 @@ namespace CaeModel
         }
         //
         private static double ConvertForcePerVolume(string valueWithUnitString)
-        {
-            string error = "Unable to parse quantity. Expected the form \"{value} {unit abbreviation}" +
-                           "\", such as \"5.5 m\". The spacing is optional.";
+        {            
             valueWithUnitString = valueWithUnitString.Trim().Replace(" ", "");
             //
             string[] tmp = valueWithUnitString.Split('/');
