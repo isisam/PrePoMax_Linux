@@ -48,6 +48,7 @@ namespace CaeMesh
         {
             _geometryIds = meshRefinement.GeometryIds != null ? meshRefinement.GeometryIds.ToArray() : null;
             _creationData = meshRefinement.CreationData != null ? meshRefinement.CreationData.DeepClone() : null;
+            _meshSize = meshRefinement.MeshSize;
         }
 
 
