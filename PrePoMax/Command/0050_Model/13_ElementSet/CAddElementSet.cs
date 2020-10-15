@@ -29,7 +29,7 @@ namespace PrePoMax.Commands
         // Methods                                                                                                                  
         public override bool Execute(Controller receiver)
         {
-            receiver.AddelementSet(_elementSet.DeepClone());
+            receiver.AddElementSet(_elementSet.DeepClone());
             return true;
         }
 
