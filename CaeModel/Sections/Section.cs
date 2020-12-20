@@ -20,8 +20,8 @@ namespace CaeModel
 
         // Properties                                                                                                               
         public string MaterialName { get { return _materialName; } set { _materialName = value; } }
-        public string RegionName { get { return _regionName; } set { _regionName = value; } }
         public RegionTypeEnum RegionType { get { return _regionType; } set { _regionType = value; } }
+        public string RegionName { get { return _regionName; } set { _regionName = value; } }
         public int[] CreationIds { get { return _creationIds; } set { _creationIds = value; } }
         public Selection CreationData { get { return _creationData; } set { _creationData = value; } }
 
