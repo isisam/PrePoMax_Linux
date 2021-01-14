@@ -15,7 +15,7 @@ namespace CaeGlobals
     {
         // Variables                                                                                                                
         protected static PressureUnit _pressureUnit = PressureUnit.Pascal;
-
+        
 
         // Properties                                                                                                               
         public static string SetUnit
