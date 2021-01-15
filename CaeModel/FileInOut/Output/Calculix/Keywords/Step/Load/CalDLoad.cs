@@ -46,8 +46,10 @@ namespace FileInOut.Output.Calculix
             foreach (var entry in surface.ElementFaces)
             {
                 faceName = entry.Key;
-                if (surface.IsShellBasedSurface && faceName == FeFaceName.S2) magnitude = -_load.Magnitude;
-                else magnitude = _load.Magnitude;
+                if (surface.SurfaceFaceTypes == FeSurfaceFaceTypes.ShellFaces && faceName == FeFaceName.S2)
+                    magnitude = -_load.Magnitude;
+                else
+                    magnitude = _load.Magnitude;
                 //
                 sb.AppendFormat("{0}, P{1}, {2}", entry.Value, faceName.ToString()[1], magnitude).AppendLine();
             }
