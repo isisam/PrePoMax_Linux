@@ -34,7 +34,7 @@ namespace PrePoMax.Commands
         }
         public override string GetCommandString()
         {
-            return base.GetCommandString() + _stepName + ": " + _boundaryConditionName.ToString();
+            return base.GetCommandString() + _stepName + ": " + _boundaryConditionName;
         }
     }
 }
