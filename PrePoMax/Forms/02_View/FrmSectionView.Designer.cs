@@ -32,7 +32,7 @@
             this.groupBox3 = new System.Windows.Forms.GroupBox();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.hsbPosition = new System.Windows.Forms.HScrollBar();
-            this.lTranslate = new System.Windows.Forms.Label();
+            this.panel1 = new System.Windows.Forms.Panel();
             this.propertyGrid = new UserControls.TabbedPropertyGrid();
             this.cmsNormal = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.resetToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -61,7 +61,7 @@
             this.groupBox3.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(238)));
             this.groupBox3.Location = new System.Drawing.Point(12, 12);
             this.groupBox3.Name = "groupBox3";
-            this.groupBox3.Size = new System.Drawing.Size(310, 355);
+            this.groupBox3.Size = new System.Drawing.Size(310, 340);
             this.groupBox3.TabIndex = 13;
             this.groupBox3.TabStop = false;
             this.groupBox3.Text = "Data";
@@ -70,32 +70,31 @@
             // 
             this.groupBox1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.groupBox1.Controls.Add(this.hsbPosition);
-            this.groupBox1.Controls.Add(this.lTranslate);
+            this.groupBox1.Controls.Add(this.panel1);
             this.groupBox1.Location = new System.Drawing.Point(6, 284);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(298, 65);
+            this.groupBox1.Size = new System.Drawing.Size(298, 50);
             this.groupBox1.TabIndex = 17;
             this.groupBox1.TabStop = false;
-            this.groupBox1.Text = "Settings";
+            this.groupBox1.Text = "Position";
             // 
             // hsbPosition
             // 
             this.hsbPosition.LargeChange = 1;
-            this.hsbPosition.Location = new System.Drawing.Point(6, 38);
+            this.hsbPosition.Location = new System.Drawing.Point(6, 23);
             this.hsbPosition.Maximum = 1000;
             this.hsbPosition.Name = "hsbPosition";
             this.hsbPosition.Size = new System.Drawing.Size(286, 18);
             this.hsbPosition.TabIndex = 0;
             this.hsbPosition.Scroll += new System.Windows.Forms.ScrollEventHandler(this.hsbPosition_Scroll);
             // 
-            // lTranslate
+            // panel1
             // 
-            this.lTranslate.AutoSize = true;
-            this.lTranslate.Location = new System.Drawing.Point(6, 19);
-            this.lTranslate.Name = "lTranslate";
-            this.lTranslate.Size = new System.Drawing.Size(53, 15);
-            this.lTranslate.TabIndex = 6;
-            this.lTranslate.Text = "Translate";
+            this.panel1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.panel1.Location = new System.Drawing.Point(5, 22);
+            this.panel1.Name = "panel1";
+            this.panel1.Size = new System.Drawing.Size(288, 20);
+            this.panel1.TabIndex = 7;
             // 
             // propertyGrid
             // 
@@ -175,7 +174,7 @@
             // 
             this.btnCancel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.btnCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.btnCancel.Location = new System.Drawing.Point(247, 373);
+            this.btnCancel.Location = new System.Drawing.Point(247, 358);
             this.btnCancel.Name = "btnCancel";
             this.btnCancel.Size = new System.Drawing.Size(75, 23);
             this.btnCancel.TabIndex = 14;
@@ -192,7 +191,7 @@
             // 
             this.btnOK.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.btnOK.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.btnOK.Location = new System.Drawing.Point(85, 373);
+            this.btnOK.Location = new System.Drawing.Point(85, 358);
             this.btnOK.Name = "btnOK";
             this.btnOK.Size = new System.Drawing.Size(75, 23);
             this.btnOK.TabIndex = 15;
@@ -204,7 +203,7 @@
             // 
             this.btnDisable.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.btnDisable.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.btnDisable.Location = new System.Drawing.Point(166, 373);
+            this.btnDisable.Location = new System.Drawing.Point(166, 358);
             this.btnDisable.Name = "btnDisable";
             this.btnDisable.Size = new System.Drawing.Size(75, 23);
             this.btnDisable.TabIndex = 16;
@@ -217,7 +216,7 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this.btnCancel;
-            this.ClientSize = new System.Drawing.Size(334, 408);
+            this.ClientSize = new System.Drawing.Size(334, 393);
             this.Controls.Add(this.btnDisable);
             this.Controls.Add(this.btnOK);
             this.Controls.Add(this.btnCancel);
@@ -226,7 +225,7 @@
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.MaximizeBox = false;
             this.MinimizeBox = false;
-            this.MinimumSize = new System.Drawing.Size(350, 447);
+            this.MinimumSize = new System.Drawing.Size(350, 432);
             this.Name = "FrmSectionView";
             this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
@@ -235,7 +234,6 @@
             this.VisibleChanged += new System.EventHandler(this.FrmSectionView_VisibleChanged);
             this.groupBox3.ResumeLayout(false);
             this.groupBox1.ResumeLayout(false);
-            this.groupBox1.PerformLayout();
             this.cmsNormal.ResumeLayout(false);
             this.ResumeLayout(false);
 
@@ -249,7 +247,6 @@
         private System.Windows.Forms.Timer timerUpdate;
         private System.Windows.Forms.Button btnOK;
         protected UserControls.TabbedPropertyGrid propertyGrid;
-        private System.Windows.Forms.Label lTranslate;
         private System.Windows.Forms.ContextMenuStrip cmsNormal;
         private System.Windows.Forms.ToolStripMenuItem xNormalToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem yNormalToolStripMenuItem;
@@ -260,5 +257,6 @@
         private System.Windows.Forms.ToolStripSeparator toolStripMenuItem2;
         private System.Windows.Forms.GroupBox groupBox1;
         private System.Windows.Forms.Button btnDisable;
+        private System.Windows.Forms.Panel panel1;
     }
 }
