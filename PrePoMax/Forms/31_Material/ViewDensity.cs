@@ -45,7 +45,23 @@ namespace PrePoMax
         //
         [Browsable(false)]
         public List<DensityDataPoint> DataPoints { get { return _points; } set { _points = value; } }
-
+        //
+        [CategoryAttribute("Data"),
+        DisplayName("Density"),
+        DescriptionAttribute("The value of the density.")]
+        [TypeConverter(typeof(CaeGlobals.StringDensityConverter))]
+        public double Density
+        {
+            get
+            {
+                if (_points != null && _points.Count > 0) return _points[0].Density;
+                else return 0;
+            }
+            set
+            {
+                if (_points != null && _points.Count > 0) _points[0].Density = value;
+            }
+        }
 
         // Constructors                                                                                                             
         public ViewDensity(Density density)

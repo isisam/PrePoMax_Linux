@@ -9,68 +9,41 @@ using System.Runtime.Serialization;
 namespace CaeModel
 {
     [Serializable]
-    public class Elastic : MaterialProperty, ISerializable
+    public class Elastic : MaterialProperty
     {
         // Variables                                                                                                                
         [NonSerialized]
         private static string _positive = "The value must be larger than 0.";
         //
-        private double _youngsModulus;
-        private double _poissonsRatio;
+        private double[][] _youngsPoissonsTemp;
+
 
         // Properties                                                                                                               
-        public double YoungsModulus 
-        { 
-            get { return _youngsModulus; }
-            set { if (value > 0) _youngsModulus = value; else throw new CaeException(_positive); } 
-        }
-        public double PoissonsRatio
+        public double[][] YoungsPoissonsTemp
         {
-            get { return _poissonsRatio; }
-            set { _poissonsRatio = value; }
-        }
-
-
-        // Constructors                                                                                                             
-        public Elastic(double youngsModulus, double poissonsRatio)
-        {
-            // The constructor must wotk with E = 0
-            _youngsModulus = youngsModulus;
-            // Use the method to perform any checks necessary
-            PoissonsRatio = poissonsRatio;
-        }
-        public Elastic(SerializationInfo info, StreamingContext context)
-        {
-            foreach (SerializationEntry entry in info)
+            get { return _youngsPoissonsTemp; }
+            set
             {
-                switch (entry.Name)
+                _youngsPoissonsTemp = value;
+                if (_youngsPoissonsTemp != null)
                 {
-                    case "_youngsModulus":
-                    // Compatibility for version v.0.6.0
-                    case "YoungsModulus":
-                    case "<YoungsModulus>k__BackingField":
-                        double.TryParse(entry.Value.ToString(), out _youngsModulus); break;
-                        //_youngsModulus = (double)entry.Value; break;
-                    case "_poissonsRatio":
-                    // Compatibility for version v.0.6.0
-                    case "PoissonsRatio":
-                    case "<PoissonsRatio>k__BackingField":
-                        double.TryParse(entry.Value.ToString(), out _poissonsRatio); break;
-                    default:
-                        throw new NotSupportedException();
+                    for (int i = 0; i < _youngsPoissonsTemp.Length; i++)
+                    {
+                        if (_youngsPoissonsTemp[i][0] <= 0) throw new CaeException(_positive);
+                    }
                 }
             }
         }
 
 
-        // Methods                                                                                                                  
-
-        // ISerialization
-        public void GetObjectData(SerializationInfo info, StreamingContext context)
+        // Constructors                                                                                                             
+        public Elastic(double[][] youngsPoissonsTemp)
         {
-            // using typeof() works also for null fields
-            info.AddValue("_youngsModulus", _youngsModulus, typeof(double));
-            info.AddValue("_poissonsRatio", _poissonsRatio, typeof(double));
+            // The constructor must wotk with E = 0
+            _youngsPoissonsTemp = youngsPoissonsTemp;
         }
+
+
+        // Methods                                                                                                                  
     }
 }

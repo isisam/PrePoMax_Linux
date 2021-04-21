@@ -13,12 +13,14 @@ namespace FileInOut.Output.Calculix
     {
         // Variables                                                                                                                
         private Elastic _elastic;
+        private bool _temperatureDependent;
 
 
         // Constructor                                                                                                              
-        public CalElastic(Elastic elastic)
+        public CalElastic(Elastic elastic, bool temperatureDependent)
         {
             _elastic = elastic;
+            _temperatureDependent = temperatureDependent;
         }
 
 
@@ -29,7 +31,20 @@ namespace FileInOut.Output.Calculix
         }
         public override string GetDataString()
         {
-            return string.Format("{0}, {1}{2}", _elastic.YoungsModulus, _elastic.PoissonsRatio, Environment.NewLine);
+            StringBuilder sb = new StringBuilder();
+            double[][] data = _elastic.YoungsPoissonsTemp;
+            //
+            for (int i = 0; i < data.Length; i++)
+            {
+                if (_temperatureDependent)
+                    sb.AppendFormat("{0}, {1}, {2}{3}", data[i][0], data[i][1], data[i][2], Environment.NewLine);
+                else
+                {
+                    sb.AppendFormat("{0}, {1}{2}", data[i][0], data[i][1], Environment.NewLine);
+                    break;
+                }
+            }
+            return sb.ToString();
         }
     }
 }
