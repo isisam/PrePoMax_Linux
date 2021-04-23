@@ -15,7 +15,6 @@ namespace CaeGlobals
     {
         // Variables                                                                                                                
         protected static EnergyUnit _energyUnit = EnergyUnit.Joule;
-        protected static string _inlb = "in·lb";
 
 
         // Properties                                                                                                               
@@ -24,9 +23,17 @@ namespace CaeGlobals
             set
             {
                 if (value == "") _energyUnit = (EnergyUnit)MyUnit.NoUnit;
-                else if (value == _inlb) _energyUnit = MyUnit.InchPound;
+                else if (value == MyUnit.InchPoundAbbreviation) _energyUnit = MyUnit.InchPound;
                 else { _energyUnit = Energy.ParseUnit(value); }
             }
+        }
+        public static string GetUnitAbbreviation(EnergyUnit energyUnit)
+        {
+            string unit;
+            if ((int)energyUnit == MyUnit.NoUnit) unit = "";
+            else if (energyUnit == MyUnit.InchPound) return MyUnit.InchPoundAbbreviation;
+            else unit = Energy.GetAbbreviation(energyUnit);
+            return unit;
         }
 
 
@@ -51,13 +58,15 @@ namespace CaeGlobals
                 //
                 if (!double.TryParse(valueString, out valueDouble))
                 {
+                    // 1 inch = 1/12 foot
+                    double conversion = 1.0 / 12.0;
                     double scale = 1;
                     valueString = valueString.Trim().Replace(" ", "");
                     // Check if it is given in unsupported units
-                    if (valueString.Contains(_inlb))
+                    if (valueString.Contains(MyUnit.InchPoundAbbreviation))
                     {
-                        valueString = valueString.Replace(_inlb, "ft·lb");
-                        scale = 1.0 / 12.0;
+                        valueString = valueString.Replace(MyUnit.InchPoundAbbreviation, "ft·lb");
+                        scale = conversion;
                     }
                     // Check if it must be converted to unsupported units
                     if ((int)_energyUnit == MyUnit.NoUnit)
@@ -66,9 +75,10 @@ namespace CaeGlobals
                         valueDouble = energy.Value;
                     }
                     else if (_energyUnit == MyUnit.InchPound)
-                    {
+                    {                        
                         Energy energy = Energy.Parse(valueString).ToUnit(EnergyUnit.FootPound);
-                        valueDouble = scale * energy.Value * 12.0;
+                        if (scale == conversion) valueDouble = energy.Value;
+                        else valueDouble = scale * energy.Value / conversion;
                     }
                     else
                     {
@@ -91,8 +101,8 @@ namespace CaeGlobals
                     if (value is double valueDouble)
                     {
                         string valueString = valueDouble.ToString();
-                        if (_energyUnit == MyUnit.InchPound) return valueString + " " + _inlb;
-                        else if ((int)_energyUnit != MyUnit.NoUnit) valueString += " " + Energy.GetAbbreviation(_energyUnit);
+                        string unit = GetUnitAbbreviation(_energyUnit);
+                        if (unit.Length > 0) valueString += " " + unit;
                         return valueString;
                     }
                 }

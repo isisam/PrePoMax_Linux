@@ -17,11 +17,11 @@ namespace CaeModel
 
 
         // Properties                                                                                                               
-        [DisplayName("Yield Stress\n[?]")]
+        [DisplayName("Yield stress\n[?]")]
         [TypeConverter(typeof(CaeGlobals.StringPressureFromConverter))]
         public double Stress { get { return _stress; } set { _stress = value; } }
         //
-        [DisplayName("Plastic Strain\n[?]")]
+        [DisplayName("Plastic strain\n[?]")]
         public double Strain { get { return _strain; } set { _strain = value; } }
 
 

@@ -47,9 +47,12 @@ namespace CaeGlobals
                 else _volumeUnit = Volume.ParseUnit(value);
             } 
         }
-        public static string GetUnitAbbreviation()
+        public static string GetUnitAbbreviation(EnergyUnit energyUnit, VolumeUnit volumeUnit)
         {
-            return Energy.GetAbbreviation(_energyUnit) + "/" + Volume.GetAbbreviation(_volumeUnit);
+            string unit;
+            if ((int)energyUnit == MyUnit.NoUnit || (int)volumeUnit == MyUnit.NoUnit) unit = "";
+            else unit = Energy.GetAbbreviation(energyUnit) + "/" + Volume.GetAbbreviation(volumeUnit);
+            return unit;
         }
 
 
@@ -88,8 +91,8 @@ namespace CaeGlobals
                     if (value is double valueDouble)
                     {
                         string valueString = valueDouble.ToString();
-                        if ((int)_energyUnit != MyUnit.NoUnit && (int)_volumeUnit != MyUnit.NoUnit)
-                            valueString += " " + GetUnitAbbreviation();
+                        string unit = GetUnitAbbreviation(_energyUnit, _volumeUnit);
+                        if (unit.Length > 0) valueString += " " + unit;
                         return valueString;
                     }
                 }
