@@ -24,6 +24,7 @@ namespace CaeModel
         public InitialTemperature(string name, string regionName, RegionTypeEnum regionType)
             : base(name, regionName, regionType)
         {
+            _temperature = 0;
         }
 
 

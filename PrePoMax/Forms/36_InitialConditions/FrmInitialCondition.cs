@@ -175,6 +175,7 @@ namespace PrePoMax.Forms
             {
                 lvTypes.Enabled = true;
                 _viewInitialCondition = null;
+                if (lvTypes.Items.Count == 1) _preselectIndex = 0;
                 //
                 HighlightInitialCondition(); // must be here if called from the menu
             }
@@ -225,7 +226,7 @@ namespace PrePoMax.Forms
         }
         private string GetInitialConditionName(string name)
         {
-            if (name == null || name == "") name = "Load";
+            if (name == null || name == "") name = "Initial condition";
             name = name.Replace(' ', '_');
             if (name[name.Length - 1] != '-') name += '-';
             name = NamedClass.GetNewValueName(_initialConditionNames, name);
