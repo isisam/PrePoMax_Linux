@@ -12,21 +12,15 @@ namespace CaeModel
     public class FixedBC : BoundaryCondition
     {
         // Variables                                                                                                                
-        private RegionTypeEnum _regionType;
-        private string _regionName;
 
 
         // Properties                                                                                                               
-        public override string RegionName { get { return _regionName; } set { _regionName = value; } }
-        public override RegionTypeEnum RegionType { get { return _regionType; } set { _regionType = value; } }
 
 
         // Constructors                                                                                                             
         public FixedBC(string name, string regionName, RegionTypeEnum regionType)
-            : base(name) 
+            : base(name, regionName, regionType) 
         {
-            _regionName = regionName;
-            _regionType = regionType;
         }
 
 

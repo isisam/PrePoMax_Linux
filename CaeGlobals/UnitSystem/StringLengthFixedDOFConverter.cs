@@ -77,7 +77,7 @@ namespace CaeGlobals
             if (value is string valueString)
             {
                 double valueDouble;
-                if (String.Equals(valueString, _fixed)) valueDouble = double.PositiveInfinity;
+                if (string.Equals(valueString, _fixed)) valueDouble = double.PositiveInfinity;
                 else if (!double.TryParse(valueString, out valueDouble))
                 {
                     Length length = Length.Parse(valueString);

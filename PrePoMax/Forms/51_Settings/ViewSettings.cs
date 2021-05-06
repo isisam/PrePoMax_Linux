@@ -9,8 +9,8 @@ using CaeGlobals;
 
 namespace PrePoMax.Settings
 {
-    [Serializable]
-    public abstract class ViewSettings
+    //[Serializable]
+    public interface IViewSettings
     {
         // Variables                                                                                                                
 
@@ -23,6 +23,6 @@ namespace PrePoMax.Settings
        
 
         // Methods                                                                                                                  
-        public abstract ISettings GetBase();
+        ISettings GetBase();
     }
 }
