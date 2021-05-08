@@ -34,7 +34,6 @@ namespace CaeModel
             :base(name)
         {
             _perturbation = true;
-            _supportsLoads = false;
             //
             _numOfFrequencies = 10;
             _storage = false;
@@ -42,7 +41,6 @@ namespace CaeModel
             AddFieldOutput(new NodalFieldOutput("NF-Output-1", NodalFieldVariable.U | NodalFieldVariable.RF));
             AddFieldOutput(new ElementFieldOutput("EF-Output-1", ElementFieldVariable.E | ElementFieldVariable.S));
         }
-
         //ISerializable
         public FrequencyStep(SerializationInfo info, StreamingContext context)
             : base(info, context)
@@ -63,7 +61,26 @@ namespace CaeModel
 
 
         // Methods                                                                                                                  
-
+        public override bool IsBoundaryConditionSupported(BoundaryCondition boundaryCondition)
+        {
+            if (boundaryCondition is FixedBC || boundaryCondition is DisplacementRotation)
+                return true;
+            else if (boundaryCondition is SubmodelBC || boundaryCondition is TemperatureBC)
+                return false;
+            else throw new NotSupportedException();
+        }
+        public override bool IsLoadSupported(Load load)
+        {
+            if (load is CLoad || load is MomentLoad || load is DLoad || load is STLoad || load is ShellEdgeLoad ||
+                load is GravityLoad || load is CentrifLoad || load is PreTensionLoad)
+                return false;
+            else throw new NotSupportedException();
+        }
+        public override bool IsDefinedFieldSupported(DefinedField definedField)
+        {
+            if (definedField is DefinedTemperature) return false;
+            else throw new NotSupportedException();
+        }
         // ISerialization
         public new void GetObjectData(SerializationInfo info, StreamingContext context)
         {
