@@ -30,7 +30,7 @@ namespace PrePoMax
         [CategoryAttribute("Magnitude")]
         [OrderedDisplayName(0, 10, "Pressure")]
         [DescriptionAttribute("Value of the pressure load.")]
-        [TypeConverter(typeof(CaeGlobals.StringPressureConverter))]
+        [TypeConverter(typeof(StringPressureConverter))]
         [Id(1, 3)]
         public double Magnitude { get { return _dLoad.Magnitude; } set { _dLoad.Magnitude = value; } }
         //
@@ -46,8 +46,8 @@ namespace PrePoMax
             regionTypePropertyNamePairs.Add(RegionTypeEnum.Selection, nameof(SelectionHidden));
             regionTypePropertyNamePairs.Add(RegionTypeEnum.SurfaceName, nameof(SurfaceName));
             //
-            base.SetBase(_dLoad, regionTypePropertyNamePairs);
-            base.DynamicCustomTypeDescriptor = ProviderInstaller.Install(this);
+            SetBase(_dLoad, regionTypePropertyNamePairs);
+            DynamicCustomTypeDescriptor = ProviderInstaller.Install(this);
         }
 
 
@@ -61,7 +61,7 @@ namespace PrePoMax
             Dictionary<RegionTypeEnum, string[]> regionTypeListItemsPairs = new Dictionary<RegionTypeEnum, string[]>();
             regionTypeListItemsPairs.Add(RegionTypeEnum.Selection, new string[] { "Hidden" });
             regionTypeListItemsPairs.Add(RegionTypeEnum.SurfaceName, surfaceNames);
-            base.PopululateDropDownLists(regionTypeListItemsPairs);
+            PopululateDropDownLists(regionTypeListItemsPairs);
         }
     }
 }

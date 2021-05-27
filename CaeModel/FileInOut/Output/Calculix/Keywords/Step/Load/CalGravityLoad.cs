@@ -47,7 +47,7 @@ namespace FileInOut.Output.Calculix
             }
             else f1 = f2 = f3 = 0;
 
-            sb.AppendFormat("{0}, GRAV, {1}, {2}, {3}, {4}", _load.RegionName, len, f1, f2, f3);
+            sb.AppendFormat("{0}, Grav, {1}, {2}, {3}, {4}", _load.RegionName, len, f1, f2, f3);
             sb.AppendLine();
             return sb.ToString();
         }

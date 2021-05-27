@@ -17,7 +17,7 @@ namespace CaeGlobals
         protected static PowerUnit _powerUnit = PowerUnit.Watt;
         protected static LengthUnit _lengthUnit = LengthUnit.Meter;
         protected static TemperatureDeltaUnit _temperatureDeltaUnit = TemperatureDeltaUnit.DegreeCelsius;
-        protected static ThermalConductivityUnit _thermalConductivityUnit = MyUnit.InchPoundPerSecondInchFahrenheit;
+        protected static ThermalConductivityUnit _thermalConductivityUnit = MyUnit.PoundForcePerSecondPerFahrenheit;
         protected static string error = "Unable to parse quantity. Expected the form \"{value} {unit abbreviation}" +
                                         "\", such as \"5.5 m\". The spacing is optional.";
 
@@ -35,11 +35,11 @@ namespace CaeGlobals
                 }
                 else
                 {
-                    if (value == MyUnit.InchPoundPerSecondAbbreviation) _powerUnit = MyUnit.InchPoundPerSecond;
+                    if (value == MyUnit.PoundForceInchPerSecondAbbreviation) _powerUnit = MyUnit.PoundForceInchPerSecond;
                     else _powerUnit = Power.ParseUnit(value);
                 }
                 //
-                _thermalConductivityUnit = ThermalConductivityUnit.Undefined;
+                _thermalConductivityUnit = (ThermalConductivityUnit)MyUnit.NoUnit;
             }
         }
         public static string SetLengthUnit
@@ -54,7 +54,7 @@ namespace CaeGlobals
                 }
                 else _lengthUnit = Length.ParseUnit(value);
                 //
-                _thermalConductivityUnit = ThermalConductivityUnit.Undefined;
+                _thermalConductivityUnit = (ThermalConductivityUnit)MyUnit.NoUnit;
             }
         }
         public static string SetTemperatureDeltaUnit
@@ -69,15 +69,21 @@ namespace CaeGlobals
                 }
                 else _temperatureDeltaUnit = TemperatureDelta.ParseUnit(value);
                 //
-                _thermalConductivityUnit = ThermalConductivityUnit.Undefined;
+                _thermalConductivityUnit = (ThermalConductivityUnit)MyUnit.NoUnit;
             }
         }
         public static string SetUnit
         {
             set
             {
-                if (value == MyUnit.InchPoundPerSecondInchFahrenheitAbbreviation)
-                    _thermalConductivityUnit = MyUnit.InchPoundPerSecondInchFahrenheit;
+                if (value == MyUnit.PoundForcePerSecondPerFahrenheitAbbreviation)
+                {
+                    _powerUnit = (PowerUnit)MyUnit.NoUnit;
+                    _lengthUnit = (LengthUnit)MyUnit.NoUnit;
+                    _temperatureDeltaUnit = (TemperatureDeltaUnit)MyUnit.NoUnit;
+                    //
+                    _thermalConductivityUnit = MyUnit.PoundForcePerSecondPerFahrenheit;
+                }
                 else throw new NotSupportedException();
             }
         }
@@ -86,8 +92,8 @@ namespace CaeGlobals
                                                  ThermalConductivityUnit thermalConductivityUnit)
         {
             string unit;
-            if (thermalConductivityUnit == MyUnit.InchPoundPerSecondInchFahrenheit)
-                unit = MyUnit.InchPoundPerSecondInchFahrenheitAbbreviation;
+            if (thermalConductivityUnit == MyUnit.PoundForcePerSecondPerFahrenheit)
+                unit = MyUnit.PoundForcePerSecondPerFahrenheitAbbreviation;
             else if ((int)powerUnit == MyUnit.NoUnit || (int)lengthUnit == MyUnit.NoUnit ||
                      (int)temperatureDeltaUnit == MyUnit.NoUnit)
                 unit = "";
@@ -115,9 +121,15 @@ namespace CaeGlobals
             if (value is string valueString)
             {
                 double valueDouble;
+                double conversionToSI;
+                double conversionFromSI;
                 if (!double.TryParse(valueString, out valueDouble))
                 {
-                    valueDouble = ConvertForcePerVolume(valueString);
+                    GetConversionToSI(valueString, out valueDouble, out conversionToSI);
+                    GetConversionFromSI(out conversionFromSI);
+                    //
+                    if (Math.Abs(conversionToSI - 1 / conversionFromSI) > 1E-6)
+                        valueDouble *= conversionToSI * conversionFromSI;
                 }
                 return valueDouble;
             }
@@ -145,42 +157,79 @@ namespace CaeGlobals
             }
         }
         //
-        private static double ConvertForcePerVolume(string valueWithUnitString)
-        {            
+        private static void GetConversionToSI(string valueWithUnitString, out double value, out double conversionToSI)
+        {
             valueWithUnitString = valueWithUnitString.Trim().Replace(" ", "");
-            // My unit
-            if (valueWithUnitString.Contains(MyUnit.InchPoundPerSecondInchFahrenheitAbbreviation))
+            // From my unit
+            if (valueWithUnitString.Contains(MyUnit.PoundForcePerSecondPerFahrenheitAbbreviation))
             {
-                double valueDouble;
-                valueWithUnitString = valueWithUnitString.Replace(MyUnit.InchPoundPerSecondInchFahrenheitAbbreviation, "");
-                if (_thermalConductivityUnit == MyUnit.InchPoundPerSecondInchFahrenheit &&
-                    double.TryParse(valueWithUnitString, out valueDouble))
+                valueWithUnitString = valueWithUnitString.Replace(MyUnit.PoundForcePerSecondPerFahrenheitAbbreviation, "");
+                if (double.TryParse(valueWithUnitString, out value))
                 {
-                    return valueDouble;
+                    // 1 pound force = 4.44822162 newtons
+                    // 1 s = 1 s
+                    // 1 °F = 0.555555556 °C
+                    conversionToSI = 8.006798852;
                 }
                 else throw new ArgumentException(error);
             }
-            // Other units
-            string[] tmp = valueWithUnitString.Split('/');
-            if (tmp.Length != 2) throw new FormatException(error);
-            Power power = Power.Parse(tmp[0]);
-            // NoUnit
-            if ((int)_powerUnit == MyUnit.NoUnit || (int)_lengthUnit == MyUnit.NoUnit || (int)_temperatureDeltaUnit == MyUnit.NoUnit)
-                return (double)power.Value;
-            else power = power.ToUnit(_powerUnit);
-            //
-            tmp = tmp[1].Replace("(", "").Replace(")", "").Split(new string[] { "*", "·" }, StringSplitOptions.RemoveEmptyEntries);
-            if (tmp.Length != 2) throw new FormatException(error);
-            //
-            LengthUnit lengthUnit = Length.ParseUnit(tmp[0]);
-            Length length = Length.From(1, lengthUnit).ToUnit(_lengthUnit);
-            //
-            if (!tmp[1].Contains("∆")) tmp[1] = "∆" + tmp[1];
-            TemperatureDeltaUnit temperatureDeltaUnit = TemperatureDelta.ParseUnit(tmp[1]);
-            TemperatureDelta temperatureDelta = TemperatureDelta.From(1, temperatureDeltaUnit).ToUnit(_temperatureDeltaUnit);
-            //
-            double value = (double)power.Value / (length.Value * temperatureDelta.Value);
-            return value;
+            // From no unit
+            else if (double.TryParse(valueWithUnitString, out value))
+            {
+                conversionToSI = 1;
+            }
+            // From supported unit
+            else
+            {
+                string[] tmp = valueWithUnitString.Split('/');
+                if (tmp.Length != 2) throw new FormatException(error);
+                //
+                Power power = Power.Parse(tmp[0]);
+                value = (double)power.Value;
+                PowerUnit powerUnit = power.Unit;
+                power = Power.From(1, powerUnit).ToUnit(PowerUnit.Watt);
+                //
+                tmp = tmp[1].Replace("(", "").Replace(")", "").Split(new string[] { "*", "·" }, StringSplitOptions.RemoveEmptyEntries);
+                if (tmp.Length != 2) throw new FormatException(error);
+                //
+                LengthUnit lengthUnit = Length.ParseUnit(tmp[0]);
+                Length length = Length.From(1, lengthUnit).ToUnit(LengthUnit.Meter);
+                //
+                if (!tmp[1].Contains("∆")) tmp[1] = "∆" + tmp[1];
+                TemperatureDeltaUnit temperatureDeltaUnit = TemperatureDelta.ParseUnit(tmp[1]);
+                TemperatureDelta temperatureDelta =
+                    TemperatureDelta.From(1, temperatureDeltaUnit).ToUnit(TemperatureDeltaUnit.DegreeCelsius);
+                //
+                conversionToSI = (double)power.Value / (length.Value * temperatureDelta.Value);
+            }
+        }
+        private static void GetConversionFromSI(out double conversionFromSI)
+        {
+            // To my unit
+            if (_thermalConductivityUnit == MyUnit.PoundForcePerSecondPerFahrenheit)
+            {
+                // 1 pound force = 4.44822162 newtons
+                // 1 s = 1 s
+                // 1 °F = 0.555555556 °C
+                conversionFromSI = 1 / 8.006798852;
+            }
+            // To no unit
+            else if ((int)_powerUnit == MyUnit.NoUnit || (int)_lengthUnit == MyUnit.NoUnit ||
+                     (int)_temperatureDeltaUnit == MyUnit.NoUnit)
+            {
+                conversionFromSI = 1;
+            }
+            // To supported unit
+            else
+            {
+                Power power = Power.From(1, PowerUnit.Watt).ToUnit(_powerUnit);
+                Length length = Length.From(1, LengthUnit.Meter).ToUnit(_lengthUnit);
+                TemperatureDelta temperatureDelta =
+                    TemperatureDelta.From(1, TemperatureDeltaUnit.DegreeCelsius).ToUnit(_temperatureDeltaUnit);
+                //
+                conversionFromSI = (double)power.Value / (length.Value * temperatureDelta.Value);
+            }
+
         }
     }
 
