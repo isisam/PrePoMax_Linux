@@ -37,11 +37,11 @@ namespace FileInOut.Output.Calculix
         }
         public override string GetDataString()
         {
-            //*Dload
-            //_obremenitev_el_surf_S3, P3, 1
-            //_obremenitev_el_surf_S4, P4, 1
-            //_obremenitev_el_surf_S1, P1, 1
-            //_obremenitev_el_surf_S2, P2, 1
+            // *Dload
+            // _obremenitev_el_surf_S3, P3, 1
+            // _obremenitev_el_surf_S4, P4, 1
+            // _obremenitev_el_surf_S1, P1, 1
+            // _obremenitev_el_surf_S2, P2, 1
             StringBuilder sb = new StringBuilder();
             FeSurface surface = _surfaces[_load.SurfaceName];
             FeFaceName faceName;
