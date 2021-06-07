@@ -17,7 +17,7 @@ namespace CaeGlobals
         protected static PowerUnit _powerUnit = PowerUnit.Watt;
         protected static LengthUnit _lengthUnit = LengthUnit.Meter;
         protected static TemperatureDeltaUnit _temperatureDeltaUnit = TemperatureDeltaUnit.DegreeCelsius;
-        protected static ThermalConductivityUnit _thermalConductivityUnit = MyUnit.PoundForcePerSecondPerFahrenheit;
+        protected static ThermalConductivityUnit _thermalConductivityUnit = MyUnit.PoundForcePerSecondFahrenheit;
         protected static string error = "Unable to parse quantity. Expected the form \"{value} {unit abbreviation}" +
                                         "\", such as \"5.5 m\". The spacing is optional.";
 
@@ -76,13 +76,13 @@ namespace CaeGlobals
         {
             set
             {
-                if (value == MyUnit.PoundForcePerSecondPerFahrenheitAbbreviation)
+                if (value == MyUnit.PoundForcePerSecondFahrenheitAbbreviation)
                 {
                     _powerUnit = (PowerUnit)MyUnit.NoUnit;
                     _lengthUnit = (LengthUnit)MyUnit.NoUnit;
                     _temperatureDeltaUnit = (TemperatureDeltaUnit)MyUnit.NoUnit;
                     //
-                    _thermalConductivityUnit = MyUnit.PoundForcePerSecondPerFahrenheit;
+                    _thermalConductivityUnit = MyUnit.PoundForcePerSecondFahrenheit;
                 }
                 else throw new NotSupportedException();
             }
@@ -92,8 +92,8 @@ namespace CaeGlobals
                                                  ThermalConductivityUnit thermalConductivityUnit)
         {
             string unit;
-            if (thermalConductivityUnit == MyUnit.PoundForcePerSecondPerFahrenheit)
-                unit = MyUnit.PoundForcePerSecondPerFahrenheitAbbreviation;
+            if (thermalConductivityUnit == MyUnit.PoundForcePerSecondFahrenheit)
+                unit = MyUnit.PoundForcePerSecondFahrenheitAbbreviation;
             else if ((int)powerUnit == MyUnit.NoUnit || (int)lengthUnit == MyUnit.NoUnit ||
                      (int)temperatureDeltaUnit == MyUnit.NoUnit)
                 unit = "";
@@ -161,9 +161,9 @@ namespace CaeGlobals
         {
             valueWithUnitString = valueWithUnitString.Trim().Replace(" ", "");
             // From my unit
-            if (valueWithUnitString.Contains(MyUnit.PoundForcePerSecondPerFahrenheitAbbreviation))
+            if (valueWithUnitString.Contains(MyUnit.PoundForcePerSecondFahrenheitAbbreviation))
             {
-                valueWithUnitString = valueWithUnitString.Replace(MyUnit.PoundForcePerSecondPerFahrenheitAbbreviation, "");
+                valueWithUnitString = valueWithUnitString.Replace(MyUnit.PoundForcePerSecondFahrenheitAbbreviation, "");
                 if (double.TryParse(valueWithUnitString, out value))
                 {
                     // 1 pound force = 4.44822162 newtons
@@ -206,7 +206,7 @@ namespace CaeGlobals
         private static void GetConversionFromSI(out double conversionFromSI)
         {
             // To my unit
-            if (_thermalConductivityUnit == MyUnit.PoundForcePerSecondPerFahrenheit)
+            if (_thermalConductivityUnit == MyUnit.PoundForcePerSecondFahrenheit)
             {
                 // 1 pound force = 4.44822162 newtons
                 // 1 s = 1 s
