@@ -23,13 +23,21 @@ namespace CaeModel
 
         // Constructors                                                                                                             
         public HeatTransferStep(string name)
-            :base(name, false)
+            :this(name, true)
+        {
+           
+        }
+        public HeatTransferStep(string name, bool addFieldOutputs)
+            : base(name, false)
         {
             _steadyState = true;
             _deltmx = double.PositiveInfinity;
             //
-            AddFieldOutput(new NodalFieldOutput("NF-Output-1", NodalFieldVariable.NT | NodalFieldVariable.RFL));
-            AddFieldOutput(new ElementFieldOutput("EF-Output-1", ElementFieldVariable.HFL));
+            if (addFieldOutputs)
+            {
+                AddFieldOutput(new NodalFieldOutput("NF-Output-1", NodalFieldVariable.NT | NodalFieldVariable.RFL));
+                AddFieldOutput(new ElementFieldOutput("EF-Output-1", ElementFieldVariable.HFL));
+            }
         }
         //ISerializable
         public HeatTransferStep(SerializationInfo info, StreamingContext context)
