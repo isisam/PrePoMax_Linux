@@ -13,7 +13,7 @@ namespace PrePoMax
     public class ViewShellSection : ViewSection
     {
         // Variables                                                                                                                
-        private CaeModel.ShellSection _shellSection;
+        protected CaeModel.ShellSection _shellSection;
         
 
         // Properties                                                                                                               
@@ -25,7 +25,8 @@ namespace PrePoMax
         //
         [CategoryAttribute("Data")]
         [OrderedDisplayName(3, 10, "Offset")]
-        [DescriptionAttribute("Set the offset of the shell mid-surface in regard to the selected geometry. The unit is the shell thickness.")]
+        [DescriptionAttribute("Set the offset of the shell mid-surface in regard to the selected geometry. " +
+                              "The unit is the shell thickness.")]
         [TypeConverter(typeof(StringDefaultDoubleConverter))]
         public double Offset { get { return _shellSection.Offset; } set { _shellSection.Offset = value; } }
 
