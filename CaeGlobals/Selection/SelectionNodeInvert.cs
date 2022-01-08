@@ -33,7 +33,7 @@ namespace CaeGlobals
         public new void GetObjectData(SerializationInfo info, StreamingContext context)
         {
             base.GetObjectData(info, context);
-            // using typeof() works also for null fields
+            // Using typeof() works also for null fields
             //info.AddValue("_pickedPoint", _pickedPoint, typeof(double[]));
         }
     }
