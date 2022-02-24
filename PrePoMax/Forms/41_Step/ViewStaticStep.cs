@@ -104,9 +104,9 @@ namespace PrePoMax
             _dctd.RenameBooleanPropertyToOnOff(nameof(Nlgeom));
             _dctd.RenameBooleanPropertyToOnOff(nameof(Direct));
             //
-            UpdateFieldView();
+            UpdateVisibility();
         }
-        public override void UpdateFieldView()
+        public override void UpdateVisibility()
         {
             _dctd.GetProperty(nameof(Direct)).SetIsBrowsable(false);
             //
