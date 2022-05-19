@@ -89,7 +89,7 @@ namespace PrePoMax
         //
         public string GetColorChartNumberFormat()
         {
-            string numberformat = "";
+            string numberformat;
             if (_numberFormat == WidgetNumberFormat.General)
             {
                 numberformat = "G" + _numberOfSignificantDigits.ToString();
