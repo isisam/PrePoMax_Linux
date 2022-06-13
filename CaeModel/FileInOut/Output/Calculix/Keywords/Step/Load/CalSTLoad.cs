@@ -15,18 +15,16 @@ namespace FileInOut.Output.Calculix
         // Variables                                                                                                                
         private STLoad _load;
         private CLoad[] _cLoads;
-        private Dictionary<string, int[]> _referencePointsNodeIds;
 
 
         // Properties                                                                                                               
 
 
         // Constructor                                                                                                              
-        public CalSTLoad(FeModel model, STLoad load, Dictionary<string, int[]> referencePointsNodeIds)
+        public CalSTLoad(FeModel model, STLoad load)
         {
             _cLoads = model.GetNodalLoadsFromSurfaceTraction(load);
             _load = load;
-            _referencePointsNodeIds = referencePointsNodeIds;
         }
 
 
@@ -47,29 +45,17 @@ namespace FileInOut.Output.Calculix
             StringBuilder sb = new StringBuilder();
             if (_cLoads != null)
             {
+                List<int> directions = new List<int>();
                 foreach (var cLoad in _cLoads)
                 {
-                    int[] rpNodeIds = null;
-                    if (cLoad.RegionType == RegionTypeEnum.ReferencePointName)
-                        rpNodeIds = _referencePointsNodeIds[cLoad.RegionName];
-                    //
-                    List<int> directions = new List<int>();
+                    directions.Clear();
                     if (cLoad.F1 != 0) directions.Add(1);
                     if (cLoad.F2 != 0) directions.Add(2);
                     if (cLoad.F3 != 0) directions.Add(3);
                     //
                     foreach (var dir in directions)
                     {
-                        if (cLoad.RegionType == RegionTypeEnum.NodeId)
-                            sb.AppendFormat("{0}, {1}, {2}", cLoad.NodeId, dir,
-                                            cLoad.GetDirection(dir - 1).ToCalculiX16String());
-                        else if (cLoad.RegionType == RegionTypeEnum.NodeSetName) // node set
-                            sb.AppendFormat("{0}, {1}, {2}", cLoad.RegionName, dir,
-                                            cLoad.GetDirection(dir - 1).ToCalculiX16String());
-                        else if (cLoad.RegionType == RegionTypeEnum.ReferencePointName) // reference point
-                            sb.AppendFormat("{0}, {1}, {2}", rpNodeIds[0], dir,
-                                            cLoad.GetDirection(dir - 1).ToCalculiX16String());
-
+                        sb.AppendFormat("{0}, {1}, {2}", cLoad.NodeId, dir, cLoad.GetComponent(dir - 1).ToCalculiX16String());
                         sb.AppendLine();
                     }
                 }
