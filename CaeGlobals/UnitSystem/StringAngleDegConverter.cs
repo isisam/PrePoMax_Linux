@@ -14,7 +14,7 @@ namespace CaeGlobals
     public class StringAngleDegConverter : TypeConverter
     {
         // Variables                                                                                                                
-        protected static AngleUnit _angleUnit = AngleUnit.Degree;
+        readonly static AngleUnit _angleUnit = AngleUnit.Degree;
 
 
         // Properties                                                                                                               
