@@ -44,7 +44,7 @@ namespace CaeModel
 
         // Constructors                                                                                                             
         public ModalDamping()
-            : base("Damping")
+            : base("ModalDamping")
         {
             _dampingType = ModalDampingTypeEnum.Off;
             _alpha = 0.0;
