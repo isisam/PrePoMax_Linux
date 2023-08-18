@@ -8,8 +8,6 @@ using System.ComponentModel;
 using System.Globalization;
 using UnitsNet.Units;
 using UnitsNet;
-using System.Text.RegularExpressions;
-using System.Runtime.Remoting.Contexts;
 
 namespace CaeGlobals
 {
@@ -45,15 +43,12 @@ namespace CaeGlobals
             // Convert from equation to string
             return EquationToString.ConvertFromEquationToString(context, culture, value, base.ConvertFrom);
         }
-
         public override object ConvertTo(ITypeDescriptorContext context, CultureInfo culture, object value, Type destinationType)
         {
             // Convert from string to equation
             return EquationToString.ConvertFromStringToEquation(context, culture, value, destinationType,
                                                                 base.ConvertFrom, base.ConvertTo);
         }
-
-        
     }
 
 
