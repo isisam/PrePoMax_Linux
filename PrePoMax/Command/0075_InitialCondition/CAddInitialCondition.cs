@@ -32,7 +32,6 @@ namespace PrePoMax.Commands
             receiver.AddInitialCondition(_initialCondition.DeepClone());
             return true;
         }
-
         public override string GetCommandString()
         {
             return base.GetCommandString() + _initialCondition.ToString();
