@@ -31,7 +31,6 @@ namespace PrePoMax.Commands
         {
             return receiver.CreateMesh(_partName);
         }
-
         public override string GetCommandString()
         {
             return base.GetCommandString() + _partName;
