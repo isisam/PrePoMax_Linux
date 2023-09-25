@@ -11,7 +11,7 @@ using CaeGlobals;
 namespace CaeMesh
 {
     [Serializable]
-    public class MeshingParameters : NamedClass
+    public class MeshingParameters : MeshSetupItem , ISerializable
     {
         // fineness ... Mesh density: 0...1 (0 => coarse; 1 => fine)
         // grading  ... Mesh grading: 0...1 (0 => uniform mesh; 1 => aggressive local grading)
@@ -21,32 +21,29 @@ namespace CaeMesh
         public static readonly double DefaultFactorMin = 0.001;
         public static readonly double DefaultFactorHausdorff = 0.001;
         //
-        private bool _advancedView;
+        private bool _advancedView;                 //ISerializable
         //
-        private bool _relativeSize;
-        private double _factorMax;
-        private double _factorMin;
-        private double _factorHausdorff;
+        private bool _relativeSize;                 //ISerializable
+        private double _factorMax;                  //ISerializable
+        private double _factorMin;                  //ISerializable
+        private double _factorHausdorff;            //ISerializable
         //
-        private double _maxH;
-        private double _minH;
-        private double _fineness;
-        private double _grading;
-        private double _elementsperedge;
-        private double _elementspercurve;
-        private bool _secondOrder;
-        private bool _quadDominated;
-        private bool _midsideNodesOnGeometry;
-        private int _optimizeSteps2D;
-        private int _optimizeSteps3D;
-        private bool _splitCompoundMesh;
+        private double _maxH;                       //ISerializable
+        private double _minH;                       //ISerializable
+        private double _fineness;                   //ISerializable
+        private double _grading;                    //ISerializable
+        private double _elementsPerEdge;            //ISerializable
+        private double _elementsPerCurve;           //ISerializable
+        private bool _secondOrder;                  //ISerializable
+        private bool _quadDominated;                //ISerializable
+        private bool _midsideNodesOnGeometry;       //ISerializable
+        private int _optimizeSteps2D;               //ISerializable
+        private int _optimizeSteps3D;               //ISerializable
+        private bool _splitCompoundMesh;            //ISerializable
         // mmgPlatform
-        private bool _useMmg;
-        private double _hausdorff;              // 0.01 for objects of size 1; allowed distance from geometry
-        private bool _keepModelEdges;
-        //
-        protected int[] _creationIds;
-        protected Selection _creationData;
+        private bool _useMmg;                       //ISerializable
+        private double _hausdorff;                  //ISerializable  0.01 for objects of size 1; allowed distance from geometry
+        private bool _keepModelEdges;               //ISerializable
 
 
         // Properties                                                                                                               
@@ -123,22 +120,22 @@ namespace CaeMesh
                 _grading = value;
             }
         }
-        public double Elementsperedge
+        public double ElementsPerEdge
         {
-            get { return _elementsperedge; }
+            get { return _elementsPerEdge; }
             set
             {
                 if (value <= 0) throw new Exception("The value must be larger than 0.");
-                _elementsperedge = value;
+                _elementsPerEdge = value;
             }
         }
-        public double Elementspercurve
+        public double ElementsPerCurve
         {
-            get { return _elementspercurve; }
+            get { return _elementsPerCurve; }
             set
             {
                 if (value <= 0) throw new Exception("The value must be larger than 0.");
-                _elementspercurve = value;
+                _elementsPerCurve = value;
             }
         }
         //
@@ -178,9 +175,6 @@ namespace CaeMesh
             }
         }
         public bool KeepModelEdges { get { return _keepModelEdges; } set { _keepModelEdges = value; } }
-        //
-        public int[] CreationIds { get { return _creationIds; } set { _creationIds = value; } }
-        public Selection CreationData { get { return _creationData; } set { _creationData = value; } }
 
 
         // Constructors                                                                                                             
@@ -190,31 +184,67 @@ namespace CaeMesh
             Reset();
         }
         public MeshingParameters(MeshingParameters meshingParameters)
+            : base("tmpName")
         {
-            _advancedView = meshingParameters.AdvancedView;
-            _relativeSize = meshingParameters.RelativeSize;
-            _factorMax = meshingParameters.FactorMax;
-            _factorMin = meshingParameters.FactorMin;
-            _factorHausdorff = meshingParameters.FactorHausdorff;
-            //
-            _maxH = meshingParameters.MaxH;
-            _minH = meshingParameters.MinH;
-            _fineness = meshingParameters.Fineness;
-            _grading = meshingParameters.Grading;
-            _elementsperedge = meshingParameters.Elementsperedge;
-            _elementspercurve = meshingParameters.Elementspercurve;
-            _optimizeSteps2D = meshingParameters.OptimizeSteps2D;
-            _optimizeSteps3D = meshingParameters.OptimizeSteps3D;
-            _secondOrder = meshingParameters.SecondOrder;
-            _quadDominated = meshingParameters.QuadDominated;
-            _midsideNodesOnGeometry = meshingParameters.MidsideNodesOnGeometry;
-            _splitCompoundMesh = meshingParameters.SplitCompoundMesh;
-            //
-            _useMmg = meshingParameters.UseMmg;
-            _hausdorff = meshingParameters.Hausdorff;
-            _keepModelEdges = meshingParameters.KeepModelEdges;
+            CopyFrom(meshingParameters);
         }
-        
+        public MeshingParameters(SerializationInfo info, StreamingContext context)
+            : base(info, context)
+        {
+            foreach (SerializationEntry entry in info)
+            {
+                switch (entry.Name)
+                {
+                    case "_advancedView":
+                        _advancedView = (bool)entry.Value; break;
+                    //
+                    case "_relativeSize":
+                        _relativeSize = (bool)entry.Value; break;
+                    case "_factorMax":
+                        _factorMax = (double)entry.Value; break;
+                    case "_factorMin":
+                        _factorMin = (double)entry.Value; break;
+                    case "_factorHausdorff":
+                        _factorHausdorff = (double)entry.Value; break;
+                    //
+                    case "_maxH":
+                        _maxH = (double)entry.Value; break;
+                    case "_minH":
+                        _minH = (double)entry.Value; break;
+                    case "_fineness":
+                        _fineness = (double)entry.Value; break;
+                    case "_grading":
+                        _grading = (double)entry.Value; break;
+                    case "_elementsPerEdge":
+                    case "_elementsperedge":        // Compatibility for version v1.4.1
+                        _elementsPerEdge = (double)entry.Value; break;
+                    case "_elementsPerCurve":
+                    case "_elementspercurve":       // Compatibility for version v1.4.1
+                        _elementsPerCurve = (double)entry.Value; break;
+                    case "_secondOrder":
+                        _secondOrder = (bool)entry.Value; break;
+                    case "_quadDominated":
+                        _quadDominated = (bool)entry.Value; break;
+                    case "_midsideNodesOnGeometry":
+                        _midsideNodesOnGeometry = (bool)entry.Value; break;
+                    case "_optimizeSteps2D":
+                        _optimizeSteps2D = (int)entry.Value; break;
+                    case "_optimizeSteps3D":
+                        _optimizeSteps3D = (int)entry.Value; break;
+                    case "_splitCompoundMesh":
+                        _splitCompoundMesh = (bool)entry.Value; break;
+                    //
+                    case "_useMmg":
+                        _useMmg = (bool)entry.Value; break;
+                    case "_hausdorff":
+                        _hausdorff = (double)entry.Value; break;
+                    case "_keepModelEdges":
+                        _keepModelEdges = (bool)entry.Value; break;
+                    default:
+                        break;
+                }
+            }
+        }
 
         // Methods                                                                                                                  
         public void Reset()
@@ -230,8 +260,8 @@ namespace CaeMesh
             _minH = 0;
             _fineness = 0.5;        // has no effect
             _grading = 0.3;
-            _elementsperedge = 2;
-            _elementspercurve = 2;
+            _elementsPerEdge = 2;
+            _elementsPerCurve = 2;
             _optimizeSteps2D = 3;
             _optimizeSteps3D = 3;
             _secondOrder = true;
@@ -264,9 +294,9 @@ namespace CaeMesh
             sb.AppendLine("double   grading                     ... Mesh grading: 0...1 (0 => uniform mesh; 1 => aggressive local grading).");
             sb.AppendLine(_grading.ToString());
             sb.AppendLine("double   elementsperedge	            ... Number of elements to generate per edge of the geometry.");
-            sb.AppendLine(_elementsperedge.ToString());
+            sb.AppendLine(_elementsPerEdge.ToString());
             sb.AppendLine("double   elementspercurve	        ... Elements to generate per curvature radius.");
-            sb.AppendLine(_elementspercurve.ToString());
+            sb.AppendLine(_elementsPerCurve.ToString());
             sb.AppendLine("int      closeedgeenable		        ... Enable / Disable mesh refinement at close edges.");
             sb.AppendLine("0");
             sb.AppendLine("double 	closeedgefact		        ... Factor to use for refinement at close edges (larger => finer).");
@@ -303,6 +333,34 @@ namespace CaeMesh
             //Encoding encoding = Encoding.Unicode;
             System.IO.File.WriteAllText(fileName, sb.ToString());
         }
+        public void CopyFrom(MeshingParameters meshingParameters)
+        {
+            base.CopyFrom(meshingParameters);
+            //
+            _advancedView = meshingParameters.AdvancedView;
+            //
+            _relativeSize = meshingParameters.RelativeSize;
+            _factorMax = meshingParameters.FactorMax;
+            _factorMin = meshingParameters.FactorMin;
+            _factorHausdorff = meshingParameters.FactorHausdorff;
+            //
+            _maxH = meshingParameters.MaxH;
+            _minH = meshingParameters.MinH;
+            _fineness = meshingParameters.Fineness;
+            _grading = meshingParameters.Grading;
+            _elementsPerEdge = meshingParameters.ElementsPerEdge;
+            _elementsPerCurve = meshingParameters.ElementsPerCurve;
+            _optimizeSteps2D = meshingParameters.OptimizeSteps2D;
+            _optimizeSteps3D = meshingParameters.OptimizeSteps3D;
+            _secondOrder = meshingParameters.SecondOrder;
+            _quadDominated = meshingParameters.QuadDominated;
+            _midsideNodesOnGeometry = meshingParameters.MidsideNodesOnGeometry;
+            _splitCompoundMesh = meshingParameters.SplitCompoundMesh;
+            //
+            _useMmg = meshingParameters.UseMmg;
+            _hausdorff = meshingParameters.Hausdorff;
+            _keepModelEdges = meshingParameters.KeepModelEdges;
+        }
         public MeshingParameters DeepCopy()
         {
             return new MeshingParameters(this);
@@ -323,8 +381,8 @@ namespace CaeMesh
             if (meshingParameters1._minH != meshingParameters2._minH) return false;
             if (meshingParameters1._fineness != meshingParameters2._fineness) return false;
             if (meshingParameters1._grading != meshingParameters2._grading) return false;
-            if (meshingParameters1._elementsperedge != meshingParameters2._elementsperedge) return false;
-            if (meshingParameters1._elementspercurve != meshingParameters2._elementspercurve) return false;
+            if (meshingParameters1._elementsPerEdge != meshingParameters2._elementsPerEdge) return false;
+            if (meshingParameters1._elementsPerCurve != meshingParameters2._elementsPerCurve) return false;
             if (meshingParameters1._optimizeSteps2D != meshingParameters2._optimizeSteps2D) return false;
             if (meshingParameters1._optimizeSteps3D != meshingParameters2._optimizeSteps3D) return false;
             if (meshingParameters1._secondOrder != meshingParameters2._secondOrder) return false;
@@ -336,6 +394,35 @@ namespace CaeMesh
             if (meshingParameters1._hausdorff != meshingParameters2._hausdorff) return false;
             if (meshingParameters1._keepModelEdges != meshingParameters2._keepModelEdges) return false;
             return true;
+        }
+        // ISerialization
+        public new void GetObjectData(SerializationInfo info, StreamingContext context)
+        {
+            base.GetObjectData(info, context);
+            // Using typeof() works also for null fields
+            info.AddValue("_advancedView", _advancedView, typeof(bool));
+            //
+            info.AddValue("_relativeSize", _relativeSize, typeof(bool));
+            info.AddValue("_factorMax", _factorMax, typeof(double));
+            info.AddValue("_factorMin", _factorMin, typeof(double));
+            info.AddValue("_factorHausdorff", _factorHausdorff, typeof(double));
+            //
+            info.AddValue("_maxH", _maxH, typeof(double));
+            info.AddValue("_minH", _minH, typeof(double));
+            info.AddValue("_fineness", _fineness, typeof(double));
+            info.AddValue("_grading", _grading, typeof(double));
+            info.AddValue("_elementsPerEdge", _elementsPerEdge, typeof(double));
+            info.AddValue("_elementsPerCurve", _elementsPerCurve, typeof(double));
+            info.AddValue("_secondOrder", _secondOrder, typeof(bool));
+            info.AddValue("_quadDominated", _quadDominated, typeof(bool));
+            info.AddValue("_midsideNodesOnGeometry", _midsideNodesOnGeometry, typeof(bool));
+            info.AddValue("_optimizeSteps2D", _optimizeSteps2D, typeof(int));
+            info.AddValue("_optimizeSteps3D", _optimizeSteps3D, typeof(int));
+            info.AddValue("_splitCompoundMesh", _splitCompoundMesh, typeof(bool));
+            //
+            info.AddValue("_useMmg", _useMmg, typeof(bool));
+            info.AddValue("_hausdorff", _hausdorff, typeof(double));
+            info.AddValue("_keepModelEdges", _keepModelEdges, typeof(bool));
         }
     }
 }

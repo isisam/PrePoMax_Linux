@@ -39,9 +39,10 @@ namespace PrePoMax.Commands
             // Compatibility for version v1.3.5
             return true;
         }
-        public void ExecuteWithDialogs(Controller receiver)
+        public bool ExecuteWithDialog(Controller receiver)
         {
             // Compatibility for version v1.3.5
+            return Execute(receiver);
         }
         public override string GetCommandString()
         {

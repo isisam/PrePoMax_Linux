@@ -11,11 +11,10 @@ using DynamicTypeDescriptor;
 namespace PrePoMax.Forms
 {
     [Serializable]
-    public class ViewFeMeshRefinement
+    public class ViewFeMeshRefinement : ViewMeshSetupItem
     {
         // Variables                                                                                                                
         private FeMeshRefinement _meshRefinement;
-        private DynamicCustomTypeDescriptor _dctd = null;
 
 
         // Properties                                                                                                               
@@ -41,7 +40,7 @@ namespace PrePoMax.Forms
 
 
         // Methods                                                                                                                  
-        public FeMeshRefinement GetBase()
+        public override MeshSetupItem GetBase()
         {
             return _meshRefinement;
         }

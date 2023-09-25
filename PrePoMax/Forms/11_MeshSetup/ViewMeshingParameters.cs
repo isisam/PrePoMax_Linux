@@ -10,13 +10,11 @@ using DynamicTypeDescriptor;
 
 namespace PrePoMax.Forms
 {
-    [Serializable]
-    public class ViewMeshingParameters
+    public class ViewMeshingParameters : ViewMeshSetupItem
     {
         // Variables                                                                                                                
         protected bool _settingsView;
         protected MeshingParameters _parameters;
-        protected readonly DynamicCustomTypeDescriptor _dctd;
 
 
         // Properties                                                                                                               
@@ -93,14 +91,14 @@ namespace PrePoMax.Forms
         [Description("Number of elements to generate per edge of the geometry.")]
         [TypeConverter(typeof(StringDoubleConverter))]
         [Id(7, 2)]
-        public double Elementsperedge { get { return _parameters.Elementsperedge; } set { _parameters.Elementsperedge = value; } }
+        public double Elementsperedge { get { return _parameters.ElementsPerEdge; } set { _parameters.ElementsPerEdge = value; } }
         //
         [Category("Mesh size")]
         [OrderedDisplayName(7, 10, "Elements per curvature")]
         [Description("Number of elements to generate per curvature radius.")]
         [TypeConverter(typeof(StringDoubleConverter))]
         [Id(8, 2)]
-        public double Elementspercurve { get { return _parameters.Elementspercurve; } set { _parameters.Elementspercurve = value; } }
+        public double Elementspercurve { get { return _parameters.ElementsPerCurve; } set { _parameters.ElementsPerCurve = value; } }
         // Hausdorff factor
         [Category("Mesh size")]
         [OrderedDisplayName(8, 10, "Hausdorff factor")]
@@ -172,8 +170,13 @@ namespace PrePoMax.Forms
 
         // Constructors                                                                                                             
         public ViewMeshingParameters(MeshingParameters parameters)
+            : this(parameters, parameters.AdvancedView)
+        {
+        }
+        public ViewMeshingParameters(MeshingParameters parameters, bool advancedView)
         {
             _parameters = parameters;
+            _parameters.AdvancedView = advancedView;
             _dctd = ProviderInstaller.Install(this);
             // Category sorting
             _dctd.CategorySortOrder = CustomSortOrder.AscendingById;
@@ -192,7 +195,7 @@ namespace PrePoMax.Forms
 
 
         // Methods                                                                                                                  
-        public MeshingParameters GetBase()
+        public override MeshSetupItem GetBase()
         {
             return _parameters;
         }

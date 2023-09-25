@@ -12,29 +12,35 @@ using CaeGlobals;
 namespace PrePoMax.Commands
 {
     [Serializable]
-    class CDuplicateMeshRefinements : Command
+    class CAddMeshingParameters : Command, ICommandWithDialog
     {
         // Variables                                                                                                                
-        private string[] _meshRefinementNames;
+        private MeshingParameters _meshingParameters;
 
 
         // Constructor                                                                                                              
-        public CDuplicateMeshRefinements(string[] meshRefinementNames)
-            : base("Duplicate mesh refinements")
+        public CAddMeshingParameters(MeshingParameters meshingParameters)
+            : base("Add meshing parameters")
         {
-            _meshRefinementNames = meshRefinementNames;
+            _meshingParameters = meshingParameters.DeepClone();
         }
 
 
         // Methods                                                                                                                  
         public override bool Execute(Controller receiver)
         {
-            receiver.DuplicateMeshRefinements(_meshRefinementNames);
+            receiver.AddMeshSetupItem(_meshingParameters.DeepClone());
             return true;
+        }
+        // ICommandWithDialog
+        public bool ExecuteWithDialog(Controller receiver)
+        {
+            _meshingParameters = (MeshingParameters)receiver.EditMeshSetupItemByForm(_meshingParameters.DeepClone());
+            return Execute(receiver);
         }
         public override string GetCommandString()
         {
-            return base.GetCommandString() + GetArrayAsString(_meshRefinementNames);
+            return base.GetCommandString() + _meshingParameters.ToString();
         }
     }
 }

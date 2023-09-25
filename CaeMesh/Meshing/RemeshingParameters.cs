@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
 using CaeGlobals;
@@ -8,11 +9,11 @@ using CaeGlobals;
 namespace CaeMesh
 {
     [Serializable]
-    public class RemeshingParameters : MeshingParameters, IMultiRegion
+    public class RemeshingParameters : MeshingParameters, IMultiRegion, ISerializable
     {
         // Variables                                                                                                                
-        private RegionTypeEnum _regionType;
-        string _regionName;
+        private RegionTypeEnum _regionType;         //ISerializable
+        private string _regionName;                 //ISerializable
 
 
         // Properties                                                                                                               
@@ -22,7 +23,7 @@ namespace CaeMesh
 
         // Constructors                                                                                                             
         public RemeshingParameters(string regionName, RegionTypeEnum regionType)
-            : base ("RemeshingParameters")
+            : base("RemeshingParameters")
         {
             UseMmg = true;
             //
@@ -41,8 +42,33 @@ namespace CaeMesh
             _creationData = null;
             _creationIds = null;
         }
+        public RemeshingParameters(SerializationInfo info, StreamingContext context)
+            : base(info, context)
+        {
+            foreach (SerializationEntry entry in info)
+            {
+                switch (entry.Name)
+                {
+                    case "_regionType":
+                        _regionType = (RegionTypeEnum)entry.Value; break;
+                    case "_regionName":
+                        _regionName = (string)entry.Value; break;
+                    default:
+                        break;
+                }
+            }
+        }
 
 
         // Methods                                                                                                                  
+
+        // ISerialization
+        public new void GetObjectData(SerializationInfo info, StreamingContext context)
+        {
+            base.GetObjectData(info, context);
+            // Using typeof() works also for null fields
+            info.AddValue("_regionType", _regionType, typeof(RegionTypeEnum));
+            info.AddValue("_regionName", _regionName, typeof(string));
+        }
     }
 }
