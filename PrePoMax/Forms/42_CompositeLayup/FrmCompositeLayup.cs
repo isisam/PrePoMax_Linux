@@ -43,6 +43,8 @@ namespace PrePoMax.Forms
             gbProperties.Dock = DockStyle.Fill;
             gbProperties.Text = "Layup properties";
             propertyGrid.Dock = DockStyle.Fill;
+            propertyGrid.AccessibleName = "Composite layup properties";
+            propertyGrid.AccessibleDescription = "Name, region, rectangular coordinate system, stacking axis, symmetry and boundary tolerance.";
             var middle = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1 };
             middle.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 73));
             middle.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 27));
@@ -54,6 +56,8 @@ namespace PrePoMax.Forms
             plyBody.RowStyles.Add(new RowStyle(SizeType.Absolute, 62));
             plyGroup.Controls.Add(plyBody);
             _grid = new DataGridView { Dock = DockStyle.Fill, AllowUserToAddRows = false, AllowUserToDeleteRows = false,
+                Name = "plyGrid", AccessibleName = "Composite plies, bottom to top",
+                AccessibleDescription = "Edit ply name, material, thickness with length units, angle with angle units, and optional positive integer mesh-band count.",
                 AllowUserToOrderColumns = false, MultiSelect = false, SelectionMode = DataGridViewSelectionMode.FullRowSelect,
                 AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill, RowHeadersWidth = 32, BackgroundColor = SystemColors.Window };
             _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "PlyName", HeaderText = "Name", FillWeight = 115 });
@@ -67,8 +71,18 @@ namespace PrePoMax.Forms
             foreach (DataGridViewColumn column in _grid.Columns)
             {
                 column.SortMode = DataGridViewColumnSortMode.NotSortable;
+                string headerText = column.HeaderText;
+                column.HeaderCell = new PlyHeaderCell(column.Name == "Thickness" ? "Positive thickness; accepts model length units, for example 0.05 cm."
+                    : column.Name == "Angle" ? "Ply angle; accepts degrees or radians."
+                    : column.Name == "Elements" ? "Optional positive integer number of existing mesh bands; does not generate elements."
+                    : column.Name == "Material" ? "Choose an existing model material." : "Unique ply name.");
+                column.HeaderCell.Value = headerText;
                 column.HeaderCell.Style.Alignment = DataGridViewContentAlignment.BottomCenter;
             }
+            _grid.EditingControlShowing += (s, e) => {
+                e.Control.AccessibleName = _grid.CurrentCell.OwningColumn.HeaderText + " for ply " + (_grid.CurrentCell.RowIndex + 1);
+                e.Control.AccessibleDescription = _grid.CurrentCell.OwningColumn.HeaderCell.AccessibilityObject.Description;
+            };
             plyBody.Controls.Add(_grid, 0, 0);
             var tools = new FlowLayoutPanel { Dock = DockStyle.Fill, WrapContents = true };
             plyBody.Controls.Add(tools, 0, 1);
@@ -304,6 +318,21 @@ namespace PrePoMax.Forms
         {
             bool mode = _controller.Settings.Pre.GeometrySelectMode == GeometrySelectModeEnum.SelectId;
             return IsSelectionGeometryBased() && _data.Layup.CreationData != null ? _data.Layup.CreationData.IsGeometryIdBased(mode) : mode;
+        }
+
+        private sealed class PlyHeaderCell : DataGridViewColumnHeaderCell
+        {
+            private readonly string _description;
+            public PlyHeaderCell(string description) { _description = description; }
+            public override object Clone() { return new PlyHeaderCell(_description); }
+            protected override AccessibleObject CreateAccessibilityInstance() { return new HeaderAccessibleObject(this); }
+            private sealed class HeaderAccessibleObject : DataGridViewColumnHeaderCellAccessibleObject
+            {
+                private readonly PlyHeaderCell _header;
+                public HeaderAccessibleObject(PlyHeaderCell header) : base(header) { _header = header; }
+                public override string Name { get { return _header.OwningColumn?.HeaderText; } set { base.Name = value; } }
+                public override string Description { get { return _header._description; } }
+            }
         }
 
         private class StackPlot : Control
