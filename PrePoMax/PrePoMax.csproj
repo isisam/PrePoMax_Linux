@@ -80,6 +80,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Commands\0062_Section\CCompositeLayup.cs" />
+    <Compile Include="Python\Journal\PythonCompositeLayupEmitter.cs" />
     <Compile Include="Common\ExecutableJobRunner.cs" />
     <Compile Include="Meshing\Netgen\GeometryTransform.cs" />
     <Compile Include="Meshing\Netgen\NetgenMesherRunner.cs" />

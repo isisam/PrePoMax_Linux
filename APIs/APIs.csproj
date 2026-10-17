@@ -44,6 +44,7 @@
     <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Python\Model\CompositeLayups\CompositeLayupsAPI.cs" />
     <Compile Include="Python\BaseAPI.cs" />
     <Compile Include="Python\Commands\IPythonCommandGateway.cs" />
     <Compile Include="Python\Commands\IPythonModelGateway.cs" />

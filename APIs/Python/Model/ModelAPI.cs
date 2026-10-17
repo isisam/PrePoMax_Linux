@@ -30,6 +30,7 @@ namespace APIs.Python.Model
         private readonly InitialConditionsAPI _initialConditions;
         private readonly MaterialsAPI _materials;
         private readonly SectionsAPI _sections;
+        private readonly CompositeLayupsAPI _compositeLayups;
         private readonly NodeSetsAPI _nodeSets;
         private readonly ElementSetsAPI _elementSets;
         private readonly SurfacesAPI _surfaces;
@@ -70,6 +71,8 @@ namespace APIs.Python.Model
         public MaterialsAPI materials { get { return _materials; } }
         [PythonAPI("The sections of the model.", Returns = "Sections")]
         public SectionsAPI sections { get { return _sections; } }
+        [PythonAPI("Solid composite layups assigned to an existing layered mesh.", Returns = "CompositeLayups")]
+        public CompositeLayupsAPI composite_layups { get { return _compositeLayups; } }
         [PythonAPI("The node sets of the model.", Returns = "NodeSets")]
         public NodeSetsAPI node_sets { get { return _nodeSets; } }
         [PythonAPI("The element sets of the model.", Returns = "ElementSets")]
@@ -120,6 +123,7 @@ namespace APIs.Python.Model
             _initialConditions = new InitialConditionsAPI(fieldServices.InitialConditions);
             _materials = new MaterialsAPI(materialService);
             _sections = new SectionsAPI(sectionService);
+            _compositeLayups = new CompositeLayupsAPI(modelResolver, sectionService);
             _nodeSets = new NodeSetsAPI(regionServices.NodeSets);
             _elementSets = new ElementSetsAPI(regionServices.ElementSets, meshEditService);
             _surfaces = new SurfacesAPI(regionServices.Surfaces);

@@ -30,6 +30,23 @@ namespace APIs.Python
 
 
         // Methods
+        [PythonAPI("Creates a detached composite ply in model units; direction 1 is the fibre.",
+                   Arguments = "name: str, material_name: str, thickness: float, angle_deg: float, elements_through_thickness: int = None",
+                   Returns = "CompositePly")]
+        public Model.CompositePlyAPI composite_ply(object name, object material_name, object thickness,
+                                                   object angle_deg, object elements_through_thickness = null)
+        {
+            string text = PythonValueConverter.ToText(name, "name", false);
+            PythonNameComparer.ValidateFormat(text, "name", null);
+            double t = PythonValueConverter.ToDouble(thickness, "thickness");
+            int? n = elements_through_thickness == null ? (int?)null :
+                     PythonValueConverter.ToInt(elements_through_thickness, "elements_through_thickness");
+            if (t <= 0) throw new PythonAPIException("thickness must be positive.");
+            if (n.HasValue && n.Value <= 0) throw new PythonAPIException("elements_through_thickness must be positive.");
+            return new Model.CompositePlyAPI(new CompositePly(text,
+                PythonValueConverter.ToText(material_name, "material_name", false), t,
+                PythonValueConverter.ToDouble(angle_deg, "angle_deg"), n));
+        }
         [PythonAPI("Creates an ID-based selection. Possible view values are 'geometry', 'femodel', and " +
                    "'results'. Possible target values are 'nodes', 'elements', 'surfaces', 'edges', 'parts', " +
                    "'geometry', and 'geometry_surfaces'. Possible source values are 'nodes', 'elements', " +

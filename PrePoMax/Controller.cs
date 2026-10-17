@@ -15803,6 +15803,56 @@ namespace PrePoMax
 
         #region Section menu   #####################################################################################################
         // COMMANDS ********************************************************************************
+        public void AddCompositeLayupCommand(CompositeLayup layup)
+        {
+            _commands.AddAndExecute(new CAddCompositeLayup(layup));
+        }
+        public void ReplaceCompositeLayupCommand(string oldName, CompositeLayup layup)
+        {
+            _commands.AddAndExecute(new CReplaceCompositeLayup(oldName, layup));
+        }
+        public void RemoveCompositeLayupCommand(string name)
+        {
+            _commands.AddAndExecute(new CRemoveCompositeLayup(name));
+        }
+        private void ConvertSelectionBasedCompositeLayup(CompositeLayup layup)
+        {
+            if (layup.RegionType != RegionTypeEnum.Selection) return;
+            string name = FeMesh.GetNextFreeSelectionName(_model.Mesh.ElementSets, layup.Name);
+            bool fromParts = layup.CreationData != null && layup.CreationData.SelectItem == vtkSelectItem.Part;
+            var set = new FeElementSet(name, layup.CreationIds, fromParts);
+            set.CreationData = layup.CreationData.DeepCopy(true, false);
+            set.Internal = true;
+            set.ParentMultiRegion = layup;
+            AddElementSet(set);
+            layup.RegionName = name;
+            layup.RegionType = RegionTypeEnum.ElementSetName;
+        }
+        private void DeleteCompositeLayupSelectionSet(CompositeLayup layup)
+        {
+            if (layup.CreationData != null && layup.RegionType == RegionTypeEnum.ElementSetName)
+                RemoveElementSets(new[] { layup.RegionName });
+        }
+        public void AddCompositeLayup(CompositeLayup layup)
+        {
+            ConvertSelectionBasedCompositeLayup(layup);
+            _model.CompositeLayups.Add(layup.Name, layup);
+            CheckAndUpdateModelValidity();
+        }
+        public void ReplaceCompositeLayup(string oldName, CompositeLayup layup)
+        {
+            DeleteCompositeLayupSelectionSet(_model.CompositeLayups[oldName]);
+            ConvertSelectionBasedCompositeLayup(layup);
+            _model.CompositeLayups.Replace(oldName, layup.Name, layup);
+            CheckAndUpdateModelValidity();
+        }
+        public void RemoveCompositeLayup(string name)
+        {
+            var layup = _model.CompositeLayups[name];
+            _model.CompositeLayups.Remove(name);
+            DeleteCompositeLayupSelectionSet(layup);
+            CheckAndUpdateModelValidity(true);
+        }
         public void AddSectionCommand(Section section)
         {
             CAddSection comm = new CAddSection(section);

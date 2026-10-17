@@ -89,6 +89,9 @@ namespace APIs.Python
         void DuplicateMaterials(string[] materialNames);
         void RemoveMaterials(string[] materialNames);
         //
+        void AddCompositeLayup(CompositeLayup layup);
+        void ReplaceCompositeLayup(string oldName, CompositeLayup layup);
+        void RemoveCompositeLayup(string name);
         void AddSection(Section section);
         void ReplaceSection(string oldSectionName, Section section);
         void DuplicateSections(string[] sectionNames);

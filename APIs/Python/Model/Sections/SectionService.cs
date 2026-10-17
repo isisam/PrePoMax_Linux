@@ -104,6 +104,10 @@ namespace APIs.Python.Model
                                                     : new string[] { target };
             RegionApplier.Apply(section, region, "region", targets, _selectionService, _modelResolver);
         }
+        internal void ApplyCompositeRegion(CompositeLayup layup, object region)
+        {
+            RegionApplier.Apply(layup, region, "region", new[] { "elements", "parts" }, _selectionService, _modelResolver);
+        }
         public void Add(Section section)
         {
             EnsureCompatibleRegion(section);
