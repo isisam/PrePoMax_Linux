@@ -8,6 +8,7 @@
 #include <vtkCell.h>
 #include <vtkCellData.h>
 #include <vtkCellPicker.h>
+#include <vtkStaticCellLocator.h>
 #include <vtkDataSetMapper.h>
 #include <vtkDoubleArray.h>
 #include <vtkExtractCells.h>
@@ -57,6 +58,7 @@ struct actor_state {
     vtkNew<vtkUnstructuredGrid> grid;
     vtkNew<vtkDataSetMapper> mapper;
     vtkNew<vtkActor> actor;
+    vtkNew<vtkStaticCellLocator> locator;
     std::vector<int64_t> nodes, elements;
     std::unordered_map<int64_t, vtkIdType> node_map, element_map;
     std::vector<double> original;
@@ -90,6 +92,7 @@ public:
     static ClickStyle* New() { return new ClickStyle; }
     vtkTypeMacro(ClickStyle, vtkInteractorStyleTrackballCamera)
     vm_view* view=nullptr;
+    void OnChar() override {} // Host owns w/s/p/f/e/q and all keyboard shortcuts.
     int start[2]={0,0};
     void OnLeftButtonDown() override {
         auto p=GetInteractor()->GetEventPosition(); start[0]=p[0]; start[1]=p[1];
@@ -201,6 +204,7 @@ int32_t load_grid(actor_state* v,int32_t np,const int64_t* ids,const double* xyz
         v->node_map=std::move(nm); v->element_map=std::move(em);
         v->original.assign(xyz,xyz+3*np);
         v->mapper->SetInputData(v->grid);v->actor->SetMapper(v->mapper);
+        v->locator->SetDataSet(v->grid);v->locator->BuildLocator();
         v->mapper->ScalarVisibilityOff();return 0;
     } CATCH
 }
@@ -351,8 +355,9 @@ int32_t vm_pick(vm_view* v,int32_t x,int32_t y,vm_pick_result* r) {
     TRY { VIEW;require(r,"null pick output");*r={-1,-1,-1,0,0,0,0,0,-1};
         require(v->rendered,"render before picking");auto size=v->window->GetSize();
         if(x<0||y<0||x>=size[0]||y>=size[1]) return 0;
-        vtkNew<vtkCellPicker> p;p->SetTolerance(0.0005);p->PickFromListOn();p->AddPickList(v->actor);
-        for(auto& pair:v->actors) if(pair.second->actor->GetVisibility())p->AddPickList(pair.second->actor);
+        vtkNew<vtkCellPicker> p;p->SetTolerance(0.0005);p->PickFromListOn();
+        if(v->actor->GetVisibility()){p->AddPickList(v->actor);p->AddLocator(v->locator);}
+        for(auto& pair:v->actors) if(pair.second->actor->GetVisibility()){p->AddPickList(pair.second->actor);p->AddLocator(pair.second->locator);}
         if(!p->Pick(x,y,0,v->renderer)||p->GetCellId()<0) return 0;
         actor_state* mesh=v;r->actor_id=0;
         for(auto& pair:v->actors)if(pair.second->actor==p->GetActor()){mesh=pair.second.get();r->actor_id=pair.first;break;}
@@ -386,5 +391,14 @@ int32_t vm_write_png(vm_view* v,const char* path) {
         require(writer->GetErrorCode()==0,"PNG write failed");return 0;} CATCH
 }
 int32_t vm_process_events(vm_view* v) {TRY {VIEW;if(v->interactor)v->interactor->ProcessEvents();return 0;} CATCH}
+int32_t vm_x11_connection(vm_view* v) {
+    TRY {VIEW;
+#ifdef VTKMAX_HAS_X11
+        auto x=vtkXOpenGLRenderWindow::SafeDownCast(v->window);require(x&&x->GetDisplayId(),"X11 connection unavailable");return ConnectionNumber(x->GetDisplayId());
+#else
+        require(false,"X11 backend disabled");return -1;
+#endif
+    } CATCH
+}
 int32_t vm_last_pick(vm_view* v,vm_pick_result* r) {TRY {VIEW;require(r,"null pick output");*r=v->last;return 0;} CATCH}
 }

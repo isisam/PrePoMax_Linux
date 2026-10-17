@@ -12,10 +12,10 @@ public sealed class VtkMaxView : NativeControlHost, IViewportHost
     public Viewport? View { get; private set; }
     public event Action? Ready;
     public event Action<PickResult>? Picked;
-    private readonly DispatcherTimer timer = new() { Interval = TimeSpan.FromMilliseconds(20) };
-    private ulong sequence;
+    private X11EventWatch? watch;
+    public long PumpCount { get; private set; }
     private int width, height;
-    public VtkMaxView() { timer.Tick += (_, _) => Pump(); }
+    public VtkMaxView() { SizeChanged += (_, _) => UpdateSize(); Focusable = true; }
     protected override IPlatformHandle CreateNativeControlCore(IPlatformHandle parent)
     {
         if (parent.HandleDescriptor != "XID" && parent.HandleDescriptor != "X11")
@@ -25,7 +25,8 @@ public sealed class VtkMaxView : NativeControlHost, IViewportHost
         {
             var child = View.AttachX11(parent.Handle);
             Console.WriteLine($"EMBED parent={parent.Handle} child={child} descriptor={parent.HandleDescriptor}");
-            Dispatcher.UIThread.Post(() => { UpdateSize(); Ready?.Invoke(); timer.Start(); });
+            View.OnSelection(r => Picked?.Invoke(r));
+            Dispatcher.UIThread.Post(() => { UpdateSize(); Ready?.Invoke(); Pump(); watch = new X11EventWatch(View!.X11Connection, Pump); });
             return new PlatformHandle(child, "XID");
         }
         catch { View.Dispose(); View = null; throw; }
@@ -40,13 +41,11 @@ public sealed class VtkMaxView : NativeControlHost, IViewportHost
     private void Pump()
     {
         if (View is null) return;
-        UpdateSize(); View.ProcessEvents();
-        var picked = View.LastPick;
-        if (picked.Sequence != sequence) { sequence = picked.Sequence; Picked?.Invoke(picked); }
+        PumpCount++; View.ProcessEvents();
     }
     protected override void DestroyNativeControlCore(IPlatformHandle control)
     {
-        timer.Stop(); View?.Dispose(); View = null; width = height = 0;
+        watch?.Dispose(); watch = null; View?.Dispose(); View = null; width = height = 0;
         // vtkmax owns/destroys its X11 child; do not let the base destroy it twice.
     }
 }

@@ -92,6 +92,7 @@ VM_API int32_t vm_write_png(vm_view* v, const char* path);
 /* Nonblocking X11 input pump; embedded host calls on UI thread. Trackball
  * left drag rotates, middle pans, wheel zooms, left click selects. */
 VM_API int32_t vm_process_events(vm_view* v);
+VM_API int32_t vm_x11_connection(vm_view* v); /* borrowed fd; never close it */
 VM_API int32_t vm_last_pick(vm_view* v, vm_pick_result* result);
 #ifdef __cplusplus
 }

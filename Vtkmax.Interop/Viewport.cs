@@ -95,6 +95,7 @@ public sealed class Viewport : IDisposable
     }
     public void WritePng(string path) => Check(Native.vm_write_png(Handle, path));
     public void ProcessEvents() => Check(Native.vm_process_events(Handle));
+    public int X11Connection { get { int fd = Native.vm_x11_connection(Handle); Check(fd); return fd; } }
     public PickResult LastPick { get { Check(Native.vm_last_pick(Handle, out var r)); return r; } }
     public void Dispose()
     {
@@ -142,5 +143,6 @@ internal static class Native
     [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)] internal static extern int vm_project(IntPtr view, double[] xyz, [Out] double[] display);
     [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)] internal static extern int vm_write_png(IntPtr view, [MarshalAs(UnmanagedType.LPUTF8Str)] string path);
     [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)] internal static extern int vm_process_events(IntPtr view);
+    [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)] internal static extern int vm_x11_connection(IntPtr view);
     [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)] internal static extern int vm_last_pick(IntPtr view, out PickResult result);
 }
