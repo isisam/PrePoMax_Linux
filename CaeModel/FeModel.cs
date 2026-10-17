@@ -1392,6 +1392,8 @@ namespace CaeModel
             // Everything the map is built from; the model objects and the label arrays are compared by reference.
             // Renumbering changes the labels in place but always replaces the element dictionary, so that is included too
             List<object> state = new List<object>();
+            // Removing the last layup must invalidate its previously expanded assignments too.
+            state.Add(_compositeLayups.Count);
             state.Add(_mesh);
             state.Add(_mesh.Elements);
             state.Add(_mesh.Elements.Count);
