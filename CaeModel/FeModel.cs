@@ -42,6 +42,7 @@ namespace CaeModel
         protected OrderedDictionary<string, UserViewParameters> _userViews;                     //ISerializable
         private EquationParameterCollection _parameters;                                        //ISerializable
         private OrderedDictionary<string, Material> _materials;                                 //ISerializable
+        private OrderedDictionary<string, CompositeLayup> _compositeLayups;
         private OrderedDictionary<string, Section> _sections;                                   //ISerializable
         private OrderedDictionary<string, Constraint> _constraints;                             //ISerializable
         private OrderedDictionary<string, SurfaceInteraction> _surfaceInteractions;             //ISerializable
@@ -70,6 +71,7 @@ namespace CaeModel
         public OrderedDictionary<string, UserViewParameters> UserViews { get { return _userViews; } }
         public EquationParameterCollection Parameters { get { return _parameters; } }
         public OrderedDictionary<string, Material> Materials { get { return _materials; } }
+        public OrderedDictionary<string, CompositeLayup> CompositeLayups { get { return _compositeLayups; } }
         public OrderedDictionary<string, Section> Sections { get { return _sections; } }
         public OrderedDictionary<string, Constraint> Constraints { get { return _constraints; } }
         public OrderedDictionary<string, SurfaceInteraction> SurfaceInteractions { get { return _surfaceInteractions; } }
@@ -116,6 +118,7 @@ namespace CaeModel
             _parameters = new EquationParameterCollection();
             _materials = new OrderedDictionary<string, Material>("Materials", sc);
             _sections = new OrderedDictionary<string, Section>("Sections", sc);
+            _compositeLayups = new OrderedDictionary<string, CompositeLayup>("Composite Layups", sc);
             _constraints = new OrderedDictionary<string, Constraint>("Constraints", sc);
             _surfaceInteractions = new OrderedDictionary<string, SurfaceInteraction>("Surface Tractions", sc);
             _contactPairs = new OrderedDictionary<string, ContactPair>("Contact Pairs", sc);
@@ -146,6 +149,7 @@ namespace CaeModel
             _parameters = copy._parameters;
             _materials = copy._materials;
             _sections = copy._sections;
+            _compositeLayups = copy._compositeLayups;
             _constraints = copy._constraints;
             _surfaceInteractions = copy._surfaceInteractions;
             _contactPairs = copy._contactPairs;
@@ -160,6 +164,7 @@ namespace CaeModel
         }
         public FeModel(SerializationInfo info, StreamingContext context)
         {
+            _compositeLayups = new OrderedDictionary<string, CompositeLayup>("Composite Layups", StringComparer.OrdinalIgnoreCase);
             StringComparer sc = StringComparer.OrdinalIgnoreCase;
             // Compatibility for version v.0.6.0
             _surfaceInteractions = new OrderedDictionary<string, SurfaceInteraction>("Surface Tractions", sc);
@@ -214,6 +219,8 @@ namespace CaeModel
                         else if (entry.Value == null) _materials = null;
                         else throw new NotSupportedException();
                         break;
+                    case "_compositeLayups":
+                        _compositeLayups = (OrderedDictionary<string, CompositeLayup>)entry.Value; break;
                     case "_sections":
                         if (entry.Value is Dictionary<string, Section> sd)
                         {
@@ -375,6 +382,17 @@ namespace CaeModel
                 //
                 SetItemValidity(null, section, valid, items);
                 if (!valid && section.Active) invalidItems.Add("Section: " + section.Name);
+            }
+            // Layups share export validation; there is no layup tree node until M2b.
+            try
+            {
+                CompositeLayupExpansion.Expand(this);
+                foreach (var layup in _compositeLayups.Values) layup.Valid = true;
+            }
+            catch (CaeException ex)
+            {
+                invalidItems.Add(ex.Message);
+                foreach (var layup in _compositeLayups.Values) if (layup.Active) layup.Valid = false;
             }
             // Constraints
             Constraint constraint;
@@ -1287,7 +1305,7 @@ namespace CaeModel
         {
             // The map is rebuilt only after the mesh, the sections, the parts or the element sets change
             object[] sectionAssignmentsState = GetSectionAssignmentsState();
-            if (AreSectionAssignmentStatesEqual(sectionAssignmentsState, _sectionAssignmentsState)) return;
+            if (_compositeLayups.Count == 0 && AreSectionAssignmentStatesEqual(sectionAssignmentsState, _sectionAssignmentsState)) return;
             //
             ComputeSectionAssignments();
             _sectionAssignmentsState = sectionAssignmentsState;
@@ -1339,6 +1357,18 @@ namespace CaeModel
                 assignedSections.Add(entry.Value);
                 sectionId++;
             }
+            // Reuse the same classification as export, without persisting generated sets/sections.
+            // Invalid layups are reported by CheckValidity/export and leave their elements unassigned.
+            try
+            {
+                foreach (var ply in CompositeLayupExpansion.Expand(this))
+                {
+                    foreach (int id in ply.ElementIds) elementIdSectionId[id] = sectionId;
+                    assignedSections.Add(ply.Section);
+                    sectionId++;
+                }
+            }
+            catch (CaeException) { }
             // Not active
             HashSet<int> inactiveElementIds = new HashSet<int>();
             foreach (var entry in _mesh.Parts)
@@ -8749,6 +8779,9 @@ namespace CaeModel
             info.AddValue("_parameters", _parameters, typeof(EquationParameterCollection));
             info.AddValue("_materials", _materials, typeof(OrderedDictionary<string, Material>));
             info.AddValue("_sections", _sections, typeof(OrderedDictionary<string, Section>));
+            // Older builds reject unknown fields/types. Keep layup-free files in the old format.
+            if (_compositeLayups.Count > 0)
+                info.AddValue("_compositeLayups", _compositeLayups, typeof(OrderedDictionary<string, CompositeLayup>));
             info.AddValue("_constraints", _constraints, typeof(OrderedDictionary<string, Constraint>));
             info.AddValue("_surfaceInteractions", _surfaceInteractions, typeof(OrderedDictionary<string, SurfaceInteraction>));
             info.AddValue("_contactPairs", _contactPairs, typeof(OrderedDictionary<string, ContactPair>));

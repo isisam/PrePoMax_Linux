@@ -23,21 +23,26 @@ namespace FileInOut.Output.Calculix
     {
         // Variables                                                                                                                
         private SolidSection _section;
+        private string _orientationName;
 
 
         // Properties                                                                                                               
 
 
         // Constructor                                                                                                              
-        public CalSolidSection(SolidSection section)
+        public CalSolidSection(SolidSection section, string orientationName = null)
         {
             _section = section;
+            _orientationName = orientationName;
         }
 
 
         // Methods                                                                                                                  
         public override string GetKeywordString()
         {
+            if (_orientationName != null)
+                return string.Format("*SOLID SECTION, ELSET={0}, MATERIAL={1}, ORIENTATION={2}{3}",
+                                     _section.RegionName, _section.MaterialName, _orientationName, Environment.NewLine);
             StringBuilder sb = new StringBuilder();
             sb.AppendFormat("*Solid section, Elset={0}, Material={1}{2}", _section.RegionName,
                             _section.MaterialName, Environment.NewLine);

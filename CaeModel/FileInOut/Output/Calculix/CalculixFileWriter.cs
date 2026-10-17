@@ -172,6 +172,9 @@ namespace FileInOut.Output
             //
             try
             {
+                List<ExpandedCompositePly> compositePlies = CompositeLayupExpansion.Expand(model);
+                foreach (var ply in compositePlies)
+                    model.Mesh.ElementSets.Add(ply.Section.RegionName, new FeElementSet(ply.Section.RegionName, ply.ElementIds));
                 // Only keywords from the model, not user keywords
                 // Always add a title keyword to get all possible keyword types to the keyword editor
                 int maxNodeId = model.Mesh.MaxNodeId;
@@ -270,10 +273,12 @@ namespace FileInOut.Output
                 title = new CalTitle("Materials", "");
                 keywords.Add(title);
                 AppendMaterials(model, title, additionalMaterials, null);
+                foreach (var ply in compositePlies) title.AddKeyword(new CalOrientation(ply));
                 // Sections
                 title = new CalTitle("Sections", "");
                 keywords.Add(title);
                 AppendSections(model, additionalSectionData, title);
+                foreach (var ply in compositePlies) title.AddKeyword(new CalSolidSection(ply.Section, ply.OrientationName));
                 // Pre-tension sections
                 title = new CalTitle("Pre-tension sections", "");
                 keywords.Add(title);
