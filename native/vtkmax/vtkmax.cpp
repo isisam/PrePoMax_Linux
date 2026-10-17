@@ -1,4 +1,6 @@
-// SPDX-License-Identifier: BSD-3-Clause
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (c) 2026 PrePoMax-RCM contributors (RCM Lab, NCKU)
+// Copyright (c) Matej Borovinšek (ported vtkControl conventions/code)
 #include "vtkmax.h"
 #include <vtkActor.h>
 #include <vtkCamera.h>
@@ -189,10 +191,14 @@ int32_t vm_highlight(vm_view* v,int32_t association,const int64_t* ids,int32_t c
 int32_t vm_fit(vm_view* v) { TRY {VIEW;v->renderer->ResetCamera();v->renderer->ResetCameraClippingRange();return 0;} CATCH }
 int32_t vm_standard_view(vm_view* v,int32_t view) {
     TRY { VIEW; require(view>=0&&view<=6,"invalid standard view");
-        const double dirs[][3]={{1,-1,1},{0,-1,0},{0,1,0},{0,0,1},{0,0,-1},{1,0,0},{-1,0,0}};
+        const double dirs[][3]={{1,1,1},{0,0,1},{0,0,-1},{0,1,0},{0,-1,0},{1,0,0},{-1,0,0}};
         auto c=v->renderer->GetActiveCamera(); c->SetFocalPoint(0,0,0);c->SetPosition(dirs[view]);
-        if(view==3||view==4) c->SetViewUp(0,1,0);else c->SetViewUp(0,0,1);
+        if(view==3) c->SetViewUp(0,0,-1);else if(view==4) c->SetViewUp(0,0,1);else c->SetViewUp(0,1,0);
         c->ParallelProjectionOn();v->renderer->ResetCamera();v->renderer->ResetCameraClippingRange();return 0; } CATCH
+}
+int32_t vm_camera(vm_view* v,double* position,double* focal,double* up) {
+    TRY {VIEW;require(position&&focal&&up,"null camera output");auto c=v->renderer->GetActiveCamera();
+        std::copy_n(c->GetPosition(),3,position);std::copy_n(c->GetFocalPoint(),3,focal);std::copy_n(c->GetViewUp(),3,up);return 0;} CATCH
 }
 int32_t vm_rotate(vm_view* v,double az,double el) {
     TRY {VIEW;require(std::isfinite(az)&&std::isfinite(el),"invalid rotation");auto c=v->renderer->GetActiveCamera();

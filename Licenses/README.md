@@ -52,6 +52,27 @@ above. OpenCASCADE 8.0.1 was built locally with its optional image, video, visua
 parallel-runtime dependencies disabled, so the former FreeImage, FFmpeg, FreeType, jemalloc,
 OpenVR and TBB dlls no longer ship. See [netgen/NOTICE.md](netgen/NOTICE.md).
 
+## Linux viewer
+
+The Linux build generates `app/Licenses/README.md`, `THIRD-PARTY-NOTICES.txt`
+and `license-inventory.json` from the actual publish dependency manifest. It
+fails if a shipped DLL/SO has no original license text. Package notices include:
+
+| Component | License text delivered by build |
+|---|---|
+| vtkmax | GPL-3.0-or-later, named RCM Lab/NCKU and Matej Borovinšek |
+| VTK 9.4.2 and its bundled third parties | Copyright.txt and original ThirdParty notices |
+| Avalonia 11.3.22 | Original Avalonia MIT licence.md |
+| SkiaSharp / HarfBuzzSharp | NuGet LICENSE and third-party notices |
+| Tmds.DBus / MicroCom | Original project MIT license |
+| UnitsNet / NCalc / OptimizedPriorityQueue | Original project license |
+| QuantumConcepts | Original CodeLibrary license when shipped |
+| ThreeMF | PrePoMax GPL plus original 3MF Consortium binding BSD notice |
+| .NET runtime | Exact runtime pack LICENSE and THIRD-PARTY-NOTICES |
+
+The complete corresponding source accompanies binaries as a source archive,
+including the private VTK sources and build scripts; see CORRESPONDING-SOURCE.txt.
+
 ## Corresponding source
 
 GPL-3 section 6 and LGPL-3 require a route to the source for the binaries that are conveyed. For each

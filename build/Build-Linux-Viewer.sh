@@ -1,25 +1,28 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-3.0-or-later
 set -euo pipefail
 repo=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
-out=${1:-"$HOME/ppm-l2a"}
-native_build=${VTKMAX_BUILD_DIR:-"$out/native"}
-export DOTNET_PROCESSOR_COUNT=${DOTNET_PROCESSOR_COUNT:-4}
-export OMP_NUM_THREADS=${OMP_NUM_THREADS:-4}
-export LP_NUM_THREADS=${LP_NUM_THREADS:-4}
-export VTK_SMP_MAX_THREADS=${VTK_SMP_MAX_THREADS:-4}
-cmake -S "$repo/native/vtkmax" -B "$native_build" -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo
-cmake --build "$native_build" -j 4
-dotnet build "$repo/tests/L2a/ViewerChecks.csproj" -c Release -p:CoreTargetFrameworks=net8.0 -m:1
-dotnet publish "$repo/PrePoMax.Avalonia" -c Release -p:CoreTargetFrameworks=net8.0 -m:1 \
+out=${1:-"$HOME/ppm-l2b"}
+vtk=${VTKMAX_PRIVATE_ROOT:-"$HOME/ppm-l2b-vtk"}
+[[ "$out" != /mnt/* ]] || { echo 'Build output must be on Linux ext4, not /mnt'; exit 2; }
+mkdir -p "$out/src" "$out/app"
+# All Linux restore/build work is on ext4, leaving Windows obj/bin untouched.
+rsync -a --exclude=.git --exclude=obj --exclude=bin --exclude=x64 --exclude=.vs "$repo/" "$out/src/"
+if [[ -f "$repo/.git" ]] && grep -q 'gitdir: [A-Za-z]:' "$repo/.git"; then
+  git.exe -C "$(wslpath -w "$repo")" rev-parse HEAD > "$out/SOURCE_REVISION.txt"
+  git.exe -C "$(wslpath -w "$repo")" status --short >> "$out/SOURCE_REVISION.txt"
+else
+  git -C "$repo" rev-parse HEAD > "$out/SOURCE_REVISION.txt"
+  git -C "$repo" status --short >> "$out/SOURCE_REVISION.txt"
+fi
+cmake -S "$out/src/native/vtkmax" -B "$out/native" -G Ninja \
+  -DCMAKE_BUILD_TYPE=Release -DVTK_DIR="$vtk/install/lib/cmake/vtk-9.4"
+nice -n 19 cmake --build "$out/native" -j8
+nice -n 19 dotnet publish "$out/src/PrePoMax.Avalonia" -c Release -p:CoreTargetFrameworks=net8.0 -m:1 \
   -r linux-x64 --self-contained true -o "$out/app"
-cp -L "$native_build/libvtkmax.so" "$out/app/libvtkmax.so"
-cp "$repo/native/vtkmax/LICENSE" "$out/app/vtkmax-LICENSE"
-cat > "$out/app/run.sh" <<'EOF'
-#!/usr/bin/env bash
-set -euo pipefail
-export DOTNET_PROCESSOR_COUNT=4 OMP_NUM_THREADS=4 LP_NUM_THREADS=4 VTK_SMP_MAX_THREADS=4
-app=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-exec "$app/PrePoMax.Avalonia" "$@"
-EOF
+cp -a "$out/native/"libvtkmax.so* "$out/app/"
+cp "$out/SOURCE_REVISION.txt" "$out/app/"
+cp "$repo/build/viewer-run.sh" "$out/app/run.sh"
 chmod +x "$out/app/run.sh"
-echo "Run: $out/app/run.sh /path/model.inp"
+python3 "$repo/build/Generate-Linux-Notices.py" "$out/app" "$out/src" "$vtk/VTK-9.4.2"
+echo "Run: $out/app/run.sh /path/model.pmx"

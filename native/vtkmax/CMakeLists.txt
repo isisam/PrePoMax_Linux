@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (c) 2026 PrePoMax-RCM contributors (RCM Lab, NCKU)
+# Copyright (c) Matej Borovinšek (ported vtkControl conventions/code)
 cmake_minimum_required(VERSION 3.16)
 project(vtkmax VERSION 0.1.0 LANGUAGES C CXX)
 find_package(VTK 9 REQUIRED COMPONENTS CommonCore CommonDataModel FiltersExtraction

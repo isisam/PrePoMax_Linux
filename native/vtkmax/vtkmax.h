@@ -1,4 +1,6 @@
-/* SPDX-License-Identifier: BSD-3-Clause */
+/* SPDX-License-Identifier: GPL-3.0-or-later
+ * Copyright (c) 2026 PrePoMax-RCM contributors (RCM Lab, NCKU)
+ * Copyright (c) Matej Borovinšek (ported vtkControl conventions/code) */
 #ifndef VTKMAX_H
 #define VTKMAX_H
 #include <stdint.h>
@@ -44,8 +46,11 @@ VM_API int32_t vm_scalars(vm_view* v, int32_t association, const double* values,
 /* association 0=elements, 1=nodes. Unknown IDs are rejected atomically. */
 VM_API int32_t vm_highlight(vm_view* v, int32_t association, const int64_t* ids, int32_t count);
 VM_API int32_t vm_fit(vm_view* v);
-/* 0 iso, 1 front(-Y), 2 back(+Y), 3 top(+Z), 4 bottom(-Z), 5 right(+X), 6 left(-X) */
+/* Windows convention: 0 iso(+X,+Y,+Z), 1 front(+Z/up+Y), 2 back(-Z/up+Y),
+ * 3 top(+Y/up-Z), 4 bottom(-Y/up+Z), 5 right(+X/up+Y), 6 left(-X/up+Y). */
 VM_API int32_t vm_standard_view(vm_view* v, int32_t view);
+/* position, focal point, view-up; each output has 3 doubles. */
+VM_API int32_t vm_camera(vm_view* v, double* position, double* focal, double* up);
 VM_API int32_t vm_rotate(vm_view* v, double azimuth, double elevation);
 VM_API int32_t vm_zoom(vm_view* v, double factor);
 VM_API int32_t vm_render(vm_view* v);
