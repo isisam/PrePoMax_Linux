@@ -38,6 +38,8 @@ namespace PrePoMax
     public class GeneralSettings : ISettings
     {
         // Variables                                                                                                                
+        [System.Runtime.Serialization.OptionalField]
+        private string _language;
         private bool _openLastFile;
         private string _lastFileName;
         private bool _saveResultsInPmx;
@@ -62,6 +64,11 @@ namespace PrePoMax
 
 
         // Properties                                                                                                               
+        public string Language
+        {
+            get { return _language ?? PrePoMax.L10n.Translator.DefaultLanguage; }
+            set { _language = value == "zh-TW" ? "zh-TW" : "en"; }
+        }
         public bool OpenLastFile { get { return _openLastFile; } set { _openLastFile = value; } }
         public string LastFileName { get { return _lastFileName; } set { _lastFileName = value; } }
         public bool SaveResultsInPmx { get { return _saveResultsInPmx; } set { _saveResultsInPmx = value; } }
@@ -107,6 +114,7 @@ namespace PrePoMax
         }
         public void Reset()
         {
+            _language = null;
             _openLastFile = false;
             _lastFileName = null;
             _saveResultsInPmx = true;

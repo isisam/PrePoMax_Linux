@@ -38,12 +38,12 @@ namespace UserControls
             // 
             else
             {
-                _caption = caption;
+                _caption = CaeGlobals.UiLocalization.Text(caption);
                 _timeoutTimer = new System.Threading.Timer(OnTimerElapsed,
                     null, timeout, System.Threading.Timeout.Infinite);
                 using (_timeoutTimer)
                 {
-                    MessageBox.Show(text, caption, buttons, icon);
+                    MessageBox.Show(CaeGlobals.UiLocalization.Message(text), _caption, buttons, icon);
                 }
             }
         }

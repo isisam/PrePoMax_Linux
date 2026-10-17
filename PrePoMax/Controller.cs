@@ -19123,6 +19123,7 @@ namespace PrePoMax
             // Called on property Settings Set when the user changes the setting values
 
             // General settings
+            PrePoMax.L10n.Translator.SetLanguage(_settings.General.Language);
             CaeMesh.Globals.EdgeAngle = _settings.General.EdgeAngle;
             DynamicTypeDescriptor.DynamicCustomTypeDescriptor.ShowAllProperties = _settings.General.ShowAllProperties;
             // Graphics settings

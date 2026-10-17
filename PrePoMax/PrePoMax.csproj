@@ -1451,8 +1451,16 @@
       <Install>false</Install>
     </BootstrapperPackage>
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\PrePoMax.L10n\PrePoMax.L10n.csproj">
+      <Project>{81DD8521-A974-41E0-B410-63ACBFA78D87}</Project><Name>PrePoMax.L10n</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="Build\PythonApiHelp.targets" />
+  <ItemGroup>
+    <Content Include="..\lang\zh-TW.json"><Link>lang\zh-TW.json</Link><CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory></Content>
+  </ItemGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

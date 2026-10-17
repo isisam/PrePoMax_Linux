@@ -133,7 +133,8 @@ namespace CaeGlobals
             System.Threading.Interlocked.Increment(ref _numberOfOpenMessageBoxes);
             try
             {
-                return MessageBox.Show(owner, text, caption, buttons, icon);
+                return MessageBox.Show(owner, CaeGlobals.UiLocalization.Message(text),
+                    CaeGlobals.UiLocalization.Text(caption), buttons, icon);
             }
             finally
             {

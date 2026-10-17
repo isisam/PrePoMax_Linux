@@ -86,7 +86,7 @@ namespace PrePoMax.Forms
             plotGroup.Controls.Add(scroll);
             middle.Controls.Add(plotGroup, 1, 0);
             var validation = new GroupBox { Text = "Validation (updated after every edit)", Dock = DockStyle.Fill };
-            _summary = new TextBox { Multiline = true, ReadOnly = true, ScrollBars = ScrollBars.Vertical, Dock = DockStyle.Fill };
+            _summary = new TextBox { Name = "LayupValidation", Tag = "L10n", Multiline = true, ReadOnly = true, ScrollBars = ScrollBars.Vertical, Dock = DockStyle.Fill };
             validation.Controls.Add(_summary);
             body.Controls.Add(validation, 0, 2);
             btnCancel.Location = new Point(893, 744);
@@ -333,7 +333,8 @@ namespace PrePoMax.Forms
                             e.Graphics.DrawLine(pen, 0, bottom, Width, bottom);
                     }
                 }
-                TextRenderer.DrawText(e.Graphics, Layup.Symmetric ? "Symmetric — dashed midplane" : "Bottom → top", Font,
+                TextRenderer.DrawText(e.Graphics, PrePoMax.L10n.Translator.Translate(
+                    Layup.Symmetric ? "Symmetric — dashed midplane" : "Bottom → top"), Font,
                     new Rectangle(0, Height - 23, Width, 22), Color.DarkSlateGray, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
             }
         }

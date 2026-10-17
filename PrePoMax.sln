@@ -49,12 +49,18 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GmshCaller", "GmshCaller\Gm
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ThreeMF", "3MF\ThreeMF.csproj", "{31B90DB3-03CA-4CD5-92A9-8AEA71A21C5A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PrePoMax.L10n", "PrePoMax.L10n\PrePoMax.L10n.csproj", "{81DD8521-A974-41E0-B410-63ACBFA78D87}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
 		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{81DD8521-A974-41E0-B410-63ACBFA78D87}.Debug|x64.ActiveCfg = Debug|x64
+		{81DD8521-A974-41E0-B410-63ACBFA78D87}.Debug|x64.Build.0 = Debug|x64
+		{81DD8521-A974-41E0-B410-63ACBFA78D87}.Release|x64.ActiveCfg = Release|x64
+		{81DD8521-A974-41E0-B410-63ACBFA78D87}.Release|x64.Build.0 = Release|x64
 		{31A0E6C5-8E8C-43B8-8B31-A26351B85903}.Debug|x64.ActiveCfg = Debug|x64
 		{31A0E6C5-8E8C-43B8-8B31-A26351B85903}.Debug|x64.Build.0 = Debug|x64
 		{31A0E6C5-8E8C-43B8-8B31-A26351B85903}.Release|x64.ActiveCfg = Release|x64
