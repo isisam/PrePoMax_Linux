@@ -80,6 +80,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Forms\42_CompositeLayup\ViewCompositeLayup.cs" />
+    <Compile Include="Forms\42_CompositeLayup\CompositeLayupEditorData.cs" />
+    <Compile Include="Forms\42_CompositeLayup\FrmCompositeLayup.cs" />
     <Compile Include="Commands\0062_Section\CCompositeLayup.cs" />
     <Compile Include="Python\Journal\PythonCompositeLayupEmitter.cs" />
     <Compile Include="Common\ExecutableJobRunner.cs" />

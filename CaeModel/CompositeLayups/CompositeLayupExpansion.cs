@@ -58,6 +58,9 @@ namespace CaeModel
             {
                 ids = region.CreationIds ?? new int[0];
                 fromParts = region.CreationData != null && region.CreationData.SelectItem == vtkSelectItem.Part;
+                if (region.CreationData != null && (region.CreationData.SelectItem == vtkSelectItem.Geometry ||
+                                                    region.CreationData.SelectItem == vtkSelectItem.GeometrySurface))
+                    ids = mesh.GetIdsFromGeometryIds(ids.ToArray(), vtkSelectItem.Element);
             }
             else throw new CaeException("A composite layup requires a part or element set of solid elements.");
             if (fromParts)
@@ -98,6 +101,30 @@ namespace CaeModel
             }
             if (errors.Count > 0) throw new CaeException(string.Join(Environment.NewLine, errors));
             return result;
+        }
+        // Validate an unsaved editor value without changing the live model, caches or mesh.
+        // Ignore the original being edited; other invalid layups must remain independently repairable.
+        public static List<ExpandedCompositePly> Preview(FeModel model, CompositeLayup layup, string oldName)
+        {
+            var expanded = Expand(model, layup);
+            var ids = new HashSet<int>(expanded.SelectMany(p => p.ElementIds));
+            var names = new HashSet<string>(model.Mesh.GetReservedElementSetNames()
+                .Select(n => CalculixNameShortener.GetShortenedName(n)), StringComparer.OrdinalIgnoreCase);
+            foreach (var ply in expanded)
+                if (!names.Add(ply.Section.RegionName))
+                    throw new CaeException("Generated name collision for '" + ply.Section.RegionName + "'.");
+            foreach (var other in model.CompositeLayups.Values)
+            {
+                if (!other.Active || string.Equals(other.Name, oldName, StringComparison.OrdinalIgnoreCase)) continue;
+                int[] region;
+                try { region = ResolveRegion(model, other); }
+                catch (CaeException) { continue; }
+                int[] overlap = region.Where(ids.Contains).ToArray();
+                if (overlap.Length > 0)
+                    throw new CaeException("Overlaps active layup '" + other.Name + "': " + overlap.Length +
+                                           " elements; IDs " + Ids(overlap) + ".");
+            }
+            return expanded;
         }
         private static List<ExpandedCompositePly> Expand(FeModel model, CompositeLayup layup)
         {

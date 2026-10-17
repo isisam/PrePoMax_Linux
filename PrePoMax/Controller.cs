@@ -4726,6 +4726,7 @@ namespace PrePoMax
                 {
                     meshPart.Name = newPartName;
                     _model.Mesh.Parts.Replace(oldPartName, meshPart.Name, meshPart);
+            CompositeLayupDependencies.RenameRegion(_model, RegionTypeEnum.PartName, oldPartName, meshPart.Name);
                     // Update
                     _form.UpdateTreeNode(ViewGeometryModelResults.Model, oldPartName, meshPart, null);
                 }
@@ -14286,6 +14287,7 @@ namespace PrePoMax
             MeshPart meshPart = GetModelPart(oldPartName);
             meshPart.SetProperties(newPartProperties);
             _model.Mesh.Parts.Replace(oldPartName, meshPart.Name, meshPart);
+            CompositeLayupDependencies.RenameRegion(_model, RegionTypeEnum.PartName, oldPartName, meshPart.Name);
             // Update
             _form.UpdateActor(oldPartName, meshPart.Name, meshPart.Color);
             _form.UpdateTreeNode(ViewGeometryModelResults.Model, oldPartName, meshPart, null);
@@ -14914,6 +14916,7 @@ namespace PrePoMax
             ReselectElementSet(elementSet);
             //
             _model.Mesh.ElementSets.Replace(oldElementSetName, elementSet.Name, elementSet);
+            CompositeLayupDependencies.RenameRegion(_model, RegionTypeEnum.ElementSetName, oldElementSetName, elementSet.Name);
             //
             _form.UpdateTreeNode(ViewGeometryModelResults.Model, oldElementSetName, elementSet, null, feModelUpdate);
             //
@@ -15566,6 +15569,7 @@ namespace PrePoMax
             ReselectModelCoordinateSystem(newCoordinateSystem); // in order for the Regenerate history to work do the selection
             //
             _model.Mesh.CoordinateSystems.Replace(oldCoordinateSystemName, newCoordinateSystem.Name, newCoordinateSystem);
+            CompositeLayupDependencies.RenameCoordinateSystem(_model, oldCoordinateSystemName, newCoordinateSystem.Name);
             //
             _form.UpdateTreeNode(ViewGeometryModelResults.Model, oldCoordinateSystemName, newCoordinateSystem, null);
             //
@@ -15717,6 +15721,7 @@ namespace PrePoMax
         public void ReplaceMaterial(string oldMaterialName, Material newMaterial)
         {
             _model.Materials.Replace(oldMaterialName, newMaterial.Name, newMaterial);
+            CompositeLayupDependencies.RenameMaterial(_model, oldMaterialName, newMaterial.Name);
             //
             _form.UpdateTreeNode(ViewGeometryModelResults.Model, oldMaterialName, newMaterial, null);
             //
@@ -15837,21 +15842,63 @@ namespace PrePoMax
         {
             ConvertSelectionBasedCompositeLayup(layup);
             _model.CompositeLayups.Add(layup.Name, layup);
+            _form.AddTreeNode(ViewGeometryModelResults.Model, layup, null);
             CheckAndUpdateModelValidity();
         }
         public void ReplaceCompositeLayup(string oldName, CompositeLayup layup)
         {
+            // A retained selection owns its internal set; recreate it even for API snapshots.
+            if (layup.CreationData != null) layup.RegionType = RegionTypeEnum.Selection;
             DeleteCompositeLayupSelectionSet(_model.CompositeLayups[oldName]);
             ConvertSelectionBasedCompositeLayup(layup);
             _model.CompositeLayups.Replace(oldName, layup.Name, layup);
+            _form.UpdateTreeNode(ViewGeometryModelResults.Model, oldName, layup, null);
             CheckAndUpdateModelValidity();
         }
         public void RemoveCompositeLayup(string name)
         {
             var layup = _model.CompositeLayups[name];
             _model.CompositeLayups.Remove(name);
+            _form.RemoveTreeNode<CompositeLayup>(ViewGeometryModelResults.Model, name, null);
             DeleteCompositeLayupSelectionSet(layup);
             CheckAndUpdateModelValidity(true);
+        }
+        public string[] GetCompositeLayupNames() { return _model.CompositeLayups.Keys.ToArray(); }
+        public void DuplicateCompositeLayupsCommand(string[] names)
+        {
+            _commands.AddAndExecute(new CDuplicateCompositeLayups(names));
+        }
+        public void DuplicateCompositeLayups(string[] names)
+        {
+            BeginUpdateBatch();
+            try
+            {
+                foreach (string name in names)
+                {
+                    var copy = CompositeLayupDependencies.Duplicate(_model, name);
+                    AddCompositeLayup(copy);
+                    PlaceDuplicatedOrderedDictionaryItem(_model.CompositeLayups, name, copy, ViewGeometryModelResults.Model);
+                }
+            }
+            finally { EndUpdateBatch(); }
+        }
+        public void RenameCompositeLayup(string oldName, string newName)
+        {
+            var copy = _model.CompositeLayups[oldName].DeepClone();
+            copy.Name = newName;
+            ReplaceCompositeLayup(oldName, copy);
+        }
+        public void ActivateDeactivateCompositeLayup(string name, bool active)
+        {
+            var layup = _model.CompositeLayups[name];
+            layup.Active = active;
+            _form.UpdateTreeNode(ViewGeometryModelResults.Model, name, layup, null);
+            CheckAndUpdateModelValidity(true);
+        }
+        public void HighlightCompositePly(int[] elementIds)
+        {
+            ClearSelectionHistory();
+            HighlightElementSet("CompositePly", new FeElementSet("CompositePly", elementIds), Color.Red, vtkRendererLayer.Selection);
         }
         public void AddSectionCommand(Section section)
         {
@@ -21736,6 +21783,7 @@ namespace PrePoMax
                 else if (typeof(FeReferencePoint).IsAssignableFrom(itemType)) dictionary = _model.Mesh.ReferencePoints;
                 else if (typeof(CoordinateSystem).IsAssignableFrom(itemType)) dictionary = _model.Mesh.CoordinateSystems;
                 else if (typeof(Material).IsAssignableFrom(itemType)) dictionary = _model.Materials;
+                else if (itemType == typeof(CompositeLayup)) dictionary = _model.CompositeLayups;
                 else if (typeof(Section).IsAssignableFrom(itemType)) dictionary = _model.Sections;
                 else if (typeof(CaeModel.Constraint).IsAssignableFrom(itemType)) dictionary = _model.Constraints;
                 else if (typeof(SurfaceInteraction).IsAssignableFrom(itemType)) dictionary = _model.SurfaceInteractions;
@@ -21851,6 +21899,7 @@ namespace PrePoMax
             item.Active = activate;
             if (item is MeshSetupItem msi) ActivateDeactivateMeshSetupItem(msi.Name, activate);
             else if (item is MeshPart mp) ActivateDeactivateModelPart(mp.Name, activate);
+            else if (item is CompositeLayup cl) ActivateDeactivateCompositeLayup(cl.Name, activate);
             else if (item is Material ma) ActivateDeactivateMaterials(ma.Name, activate);
             else if (item is Constraint co) ActivateDeactivateConstraint(co.Name, activate);
             else if (item is ContactPair cp) ActivateDeactivateContactPair(cp.Name, activate);
@@ -21918,6 +21967,8 @@ namespace PrePoMax
                     return CheckName(item.Name, newName, GetModelCoordinateSystemNames(), "coordinate system");
                 else if (item is Material)
                     return CheckName(item.Name, newName, GetMaterialNames(), "material");
+                else if (item is CompositeLayup)
+                    return CheckName(item.Name, newName, GetCompositeLayupNames(), "composite layup");
                 else if (item is Section)
                     return CheckName(item.Name, newName, GetSectionNames(), "section");
                 else if (item is Constraint)
@@ -21996,6 +22047,7 @@ namespace PrePoMax
                 else if (itemType == typeof(FeReferencePoint)) RenameModelReferencePoint(itemName, newName);
                 else if (itemType == typeof(CoordinateSystem)) RenameModelCoordinateSystem(itemName, newName);
                 else if (itemType == typeof(Material)) RenameMaterial(itemName, newName);
+                else if (itemType == typeof(CompositeLayup)) RenameCompositeLayup(itemName, newName);
                 else if (typeof(Section).IsAssignableFrom(itemType)) RenameSection(itemName, newName);
                 else if (typeof(Constraint).IsAssignableFrom(itemType)) RenameConstraint(itemName, newName);
                 else if (itemType == typeof(SurfaceInteraction)) RenameSurfaceInteraction(itemName, newName);
@@ -29335,6 +29387,10 @@ namespace PrePoMax
                     else if (obj is CoordinateSystem cs)
                     {
                         HighlightCoordinateSystem(cs);
+                    }
+                    else if (obj is CompositeLayup layup)
+                    {
+                        HighlightCompositePly(CompositeLayupExpansion.ResolveRegion(_model, layup));
                     }
                     else if (obj is Section sec)
                     {

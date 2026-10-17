@@ -153,6 +153,7 @@ namespace PrePoMax
         private FrmCoordinateSystem _frmCoordinateSystem;
         private FrmMaterial _frmMaterial;
         private FrmSection _frmSection;
+        private FrmCompositeLayup _frmCompositeLayup;
         private FrmConstraint _frmConstraint;
         private FrmSurfaceInteraction _frmSurfaceInteraction;
         private FrmContactPair _frmContactPair;
@@ -628,6 +629,8 @@ namespace PrePoMax
                 _frmMaterial = new FrmMaterial(_controller);
                 AddFormToAllForms(_frmMaterial);
                 //
+                _frmCompositeLayup = new FrmCompositeLayup(_controller);
+                AddFormToAllForms(_frmCompositeLayup);
                 _frmSection = new FrmSection(_controller);
                 AddFormToAllForms(_frmSection);
                 //
@@ -1330,6 +1333,7 @@ namespace PrePoMax
                 else if (nodeName == _modelTree.ModelReferencePointsName) tsmiCreateModelReferencePoint_Click(null, null);
                 else if (nodeName == _modelTree.ModelCoordinateSystemsName) tsmiCreateModelCoordinateSystem_Click(null, null);
                 else if (nodeName == _modelTree.MaterialsName) tsmiCreateMaterial_Click(null, null);
+                else if (nodeName == _modelTree.CompositeLayupsName) EditCompositeLayup(null);
                 else if (nodeName == _modelTree.SectionsName) tsmiCreateSection_Click(null, null);
                 else if (nodeName == _modelTree.ConstraintsName) tsmiCreateConstraint_Click(null, null);
                 else if (nodeName == _modelTree.SurfaceInteractionsName) tsmiCreateSurfaceInteraction_Click(null, null);
@@ -1376,6 +1380,7 @@ namespace PrePoMax
                 else if (namedClass is FeReferencePoint) EditModelReferencePoint(namedClass.Name);
                 else if (namedClass is CoordinateSystem) EditModelCoordinateSystem(namedClass.Name);
                 else if (namedClass is Material) EditMaterial(namedClass.Name);
+                else if (namedClass is CompositeLayup) EditCompositeLayup(namedClass.Name);
                 else if (namedClass is Section) EditSection(namedClass.Name);
                 else if (namedClass is CaeModel.Constraint) EditConstraint(namedClass.Name);
                 else if (namedClass is SurfaceInteraction) EditSurfaceInteraction(namedClass.Name);
@@ -1439,6 +1444,7 @@ namespace PrePoMax
                 ApplyActionOnItems<CoordinateSystem>(items, DuplicateModelCoordinateSystems);
                 //
                 ApplyActionOnItems<Material>(items, DuplicateMaterials);
+                ApplyActionOnItems<CompositeLayup>(items, _controller.DuplicateCompositeLayupsCommand);
                 ApplyActionOnItems<Section>(items, DuplicateSections);
                 ApplyActionOnItems<CaeModel.Constraint>(items, DuplicateConstraints);
                 ApplyActionOnItems<SurfaceInteraction>(items, DuplicateSurfaceInteractions);
@@ -1605,6 +1611,7 @@ namespace PrePoMax
                 ApplyActionOnItems<FeReferencePoint>(items, DeleteModelReferencePoints);
                 ApplyActionOnItems<CoordinateSystem>(items, DeleteModelCoordinateSystems);
                 ApplyActionOnItems<Material>(items, DeleteMaterials);
+                ApplyActionOnItems<CompositeLayup>(items, DeleteCompositeLayups);
                 ApplyActionOnItems<Section>(items, DeleteSections);
                 ApplyActionOnItems<CaeModel.Constraint>(items, DeleteConstraints);
                 ApplyActionOnItems<SurfaceInteraction>(items, DeleteSurfaceInteractions);
@@ -6297,6 +6304,17 @@ namespace PrePoMax
             ItemSetDataEditor.SetForms(_frmSelectItemSet, false, _frmSection);
             ShowForm(_frmSection, "Create Section", null);
         }
+        private void EditCompositeLayup(string name)
+        {
+            _controller.CurrentView = ViewGeometryModelResults.Model;
+            ItemSetDataEditor.SetForms(_frmSelectItemSet, false, _frmCompositeLayup);
+            ShowForm(_frmCompositeLayup, name == null ? "Create Composite Layup" : "Edit Composite Layup", name);
+        }
+        private void DeleteCompositeLayups(string[] names)
+        {
+            if (MessageBoxes.ShowWarningQuestionOKCancel("Delete selected composite layups?") == DialogResult.OK)
+                foreach (string name in names) _controller.RemoveCompositeLayupCommand(name);
+        }
         private void EditSection(string sectionName)
         {
             // Data editor
@@ -10786,6 +10804,7 @@ namespace PrePoMax
             if (_frmSurface != null && _frmSurface.Visible) _frmSurface.SelectionChanged(ids);
             if (_frmReferencePoint != null && _frmReferencePoint.Visible) _frmReferencePoint.SelectionChanged(ids);
             if (_frmCoordinateSystem != null && _frmCoordinateSystem.Visible) _frmCoordinateSystem.SelectionChanged(ids);
+            if (_frmCompositeLayup != null && _frmCompositeLayup.Visible) _frmCompositeLayup.SelectionChanged(ids);
             if (_frmSection != null && _frmSection.Visible) _frmSection.SelectionChanged(ids);
             if (_frmConstraint != null && _frmConstraint.Visible) _frmConstraint.SelectionChanged(ids);
             if (_frmContactPair != null && _frmContactPair.Visible) _frmContactPair.SelectionChanged(ids);
