@@ -29,8 +29,11 @@
 #include <vtkGenericRenderWindowInteractor.h>
 #include <vtkOpenGLState.h>
 #include <vtk_glad.h>
+#include <vtkEGLRenderWindow.h>
+#ifdef VTKMAX_HAS_X11
 #include <vtkXOpenGLRenderWindow.h>
 #include <vtkXRenderWindowInteractor.h>
+#endif
 #include <algorithm>
 #include <cmath>
 #include <memory>
@@ -89,7 +92,7 @@ public:
 #define CATCH catch(const std::exception& e) { error=e.what(); return -1; } catch(...) { error="native exception"; return -1; }
 #define VIEW require(v!=nullptr,"null view")
 extern "C" {
-int32_t vm_abi_version() { return 1; }
+int32_t vm_abi_version() { return 2; }
 const char* vm_last_error() { return error.c_str(); }
 vm_view* vm_create(int32_t offscreen,int32_t w,int32_t h) {
     return vm_create_backend(offscreen?1:0,w,h);
@@ -97,15 +100,22 @@ vm_view* vm_create(int32_t offscreen,int32_t w,int32_t h) {
 vm_view* vm_create_backend(int32_t backend,int32_t w,int32_t h) {
     error.clear(); try {
         require(w>0&&h>0&&w<=16384&&h<=16384,"invalid size");
-        require(backend>=0&&backend<=2,"invalid backend");
+        require(backend>=0&&backend<=3,"invalid backend");
         auto v=std::make_unique<vm_view>(); v->offscreen=backend!=0;v->backend=backend;
         if(backend==2) {
             auto g=vtkSmartPointer<vtkGenericOpenGLRenderWindow>::New();
             g->SetOwnContext(0);g->SetReadyForRendering(true);g->SetIsCurrent(true);
             g->SetSupportsOpenGL(1);g->SetIsDirect(1);g->SetFrameBlitModeToBlitToCurrent();
             v->window=g;
-        } else v->window=vtkSmartPointer<vtkXOpenGLRenderWindow>::New();
-        v->window->SetOffScreenRendering(backend==1); v->window->SetSize(w,h);
+        } else if(backend==3) v->window=vtkSmartPointer<vtkEGLRenderWindow>::New();
+        else {
+#ifdef VTKMAX_HAS_X11
+            v->window=vtkSmartPointer<vtkXOpenGLRenderWindow>::New();
+#else
+            require(false,"X11 backend disabled at build time; choose EGL or generic");
+#endif
+        }
+        v->window->SetOffScreenRendering(backend==1||backend==3); v->window->SetSize(w,h);
         v->window->SetMultiSamples(0); v->window->AddRenderer(v->renderer);
         v->renderer->SetBackground(0.075,0.09,0.13);
         v->mapper->SetInputData(v->grid); v->mapper->ScalarVisibilityOff();
@@ -135,6 +145,7 @@ vm_view* vm_create_backend(int32_t backend,int32_t w,int32_t h) {
 void vm_destroy(vm_view* v) { delete v; }
 uintptr_t vm_attach_x11(vm_view* v,uintptr_t parent) {
     error.clear(); try {
+#ifdef VTKMAX_HAS_X11
         VIEW; require(!v->rendered&&!v->offscreen&&parent,"attach requires an unrendered onscreen view and X11 parent");
         auto x=vtkXOpenGLRenderWindow::SafeDownCast(v->window);require(x,"X11 backend required");
         x->SetParentId(static_cast<Window>(parent)); v->window->Render(); v->rendered=true;
@@ -143,6 +154,9 @@ uintptr_t vm_attach_x11(vm_view* v,uintptr_t parent) {
         auto style=vtkSmartPointer<ClickStyle>::New(); style->view=v;
         v->interactor->SetInteractorStyle(style); v->interactor->Initialize();
         return static_cast<uintptr_t>(x->GetWindowId());
+#else
+        (void)v;(void)parent;require(false,"X11 backend disabled at build time");return 0;
+#endif
     } catch(const std::exception& e) { error=e.what(); return 0; } catch(...) {error="attach exception";return 0;}
 }
 int32_t vm_resize(vm_view* v,int32_t w,int32_t h) {

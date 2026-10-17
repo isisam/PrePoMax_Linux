@@ -31,7 +31,7 @@ public sealed class Viewport : IDisposable
     private static void Check(int status) { if (status < 0) throw new InvalidOperationException(Error); }
     public Viewport(bool offscreen = true, int width = 1000, int height = 700, int backend = -1)
     {
-        if (Native.vm_abi_version() != 1) throw new NotSupportedException("vtkmax ABI mismatch");
+        if (Native.vm_abi_version() != 2) throw new NotSupportedException("vtkmax unstable 0.2 ABI mismatch");
         generic = backend == 2;
         handle = backend < 0 ? Native.vm_create(offscreen ? 1 : 0, width, height) : Native.vm_create_backend(backend, width, height);
         if (handle == IntPtr.Zero) throw new InvalidOperationException(Error);

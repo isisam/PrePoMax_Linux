@@ -2,17 +2,25 @@
 # Copyright (c) 2026 PrePoMax-RCM contributors (RCM Lab, NCKU)
 # Copyright (c) Matej Borovinšek (ported vtkControl conventions/code)
 cmake_minimum_required(VERSION 3.16)
-project(vtkmax VERSION 0.1.0 LANGUAGES C CXX)
-find_package(VTK 9 REQUIRED COMPONENTS CommonCore CommonDataModel FiltersExtraction
+project(vtkmax VERSION 0.2.0 LANGUAGES C CXX)
+option(VTKMAX_X11 "Build optional NativeControlHost X11 backend" ON)
+find_package(VTK 9.4 REQUIRED COMPONENTS CommonCore CommonDataModel FiltersExtraction
   RenderingCore RenderingOpenGL2 RenderingUI RenderingFreeType RenderingAnnotation InteractionStyle IOImage)
 add_library(vtkmax SHARED vtkmax.cpp)
 target_compile_features(vtkmax PRIVATE cxx_std_17)
 target_compile_options(vtkmax PRIVATE -Wall -Wextra -Wpedantic)
 target_compile_definitions(vtkmax PRIVATE VTKMAX_BUILD)
+if(VTKMAX_X11)
+  target_compile_definitions(vtkmax PRIVATE VTKMAX_HAS_X11=1)
+endif()
+if(UNIX AND NOT APPLE)
+  target_link_options(vtkmax PRIVATE "-Wl,--exclude-libs,ALL"
+    "-Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/exports.map")
+endif()
 target_link_libraries(vtkmax PRIVATE ${VTK_LIBRARIES})
 vtk_module_autoinit(TARGETS vtkmax MODULES ${VTK_LIBRARIES})
-set_target_properties(vtkmax PROPERTIES VERSION ${PROJECT_VERSION} SOVERSION 1
-  CXX_VISIBILITY_PRESET hidden VISIBILITY_INLINES_HIDDEN YES INSTALL_RPATH "$ORIGIN")
+set_target_properties(vtkmax PROPERTIES VERSION ${PROJECT_VERSION} SOVERSION 0
+  CXX_VISIBILITY_PRESET hidden VISIBILITY_INLINES_HIDDEN YES INSTALL_RPATH "$ORIGIN/lib")
 include(GNUInstallDirs)
 install(TARGETS vtkmax LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
 install(FILES vtkmax.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})

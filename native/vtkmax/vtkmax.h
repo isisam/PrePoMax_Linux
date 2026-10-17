@@ -19,15 +19,17 @@ typedef struct vm_pick_result {
     double x, y, z;
     uint64_t sequence;
 } vm_pick_result;
-/* ABI 1. All calls on the creating thread. Arrays copied, UTF-8 strings borrowed
+/* ABI 0.2, UNSTABLE: vm_abi_version()==2; .so.0. No compatibility promise until 1.x.
+ * All calls on the creating thread. Arrays copied, UTF-8 strings borrowed
  * for the call. Display coordinates are physical pixels, origin bottom-left.
  * Status: 0 success, -1 error; vm_pick returns 1 hit, 0 miss, -1 error.
- * Offscreen on VTK 9.1 still requires an X server (use Xvfb).
+ * Backend 3 uses EGL without an X server. Backend 1 is X11 offscreen.
  */
 VM_API int32_t vm_abi_version(void);
 VM_API const char* vm_last_error(void); /* thread-local; valid until next call */
 VM_API vm_view* vm_create(int32_t offscreen, int32_t width, int32_t height);
-/* 0 native onscreen, 1 native offscreen, 2 externally-owned current GL context.
+/* 0 native onscreen, 1 native offscreen, 2 externally-owned current GL context,
+ * 3 EGL headless (DISPLAY not required).
  * Generic context creation/render/disposal must occur inside host GL callbacks. */
 VM_API vm_view* vm_create_backend(int32_t backend, int32_t width, int32_t height);
 VM_API int32_t vm_render_external(vm_view* v, int32_t framebuffer);
