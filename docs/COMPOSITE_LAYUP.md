@@ -1,8 +1,49 @@
-# Composite layup core (M2a)
+# Composite layups (M2a core and M2b editor)
+
+## Using the Composite Layup editor
+
+In the Model tree, right-click **Composite Layups** and choose **Create**;
+double-click a layup to edit it. The property grid sets its name, region
+(part, element set or retained selection), rectangular coordinate system or
+Global, stacking axis 1/2/3, symmetry and relative boundary tolerance.
+
+The table is ordered **bottom to top**. Select a row and use Add, Insert,
+Delete, Move up/down, Duplicate or Reverse. Material cells list model
+materials. Thickness accepts lengths in current model units or explicit units
+such as `0.125 mm`; angle accepts degrees or explicit angle units. Expressions
+are evaluated on entry to numeric model values, rather than stored as live
+equations. Elements is an optional positive number of element bands through
+that ply, not an element-ID list and not a meshing command. Clearing it omits
+the band-count check. Duplicate rows and duplicate layups own independent data.
+
+The plot shows expanded ply thicknesses with a minimum visible height and a
+dashed symmetry midplane. A symmetric definition appends the entire reversed
+list, including the centre ply. Selecting a row highlights its classified
+elements; for symmetric stacks both corresponding bands are highlighted.
+An invalid stack clears the previous valid highlight. Validation runs before
+OK: thickness mismatch, boundary crossings, empty plies, missing dependencies,
+band-count mismatch and overlaps are reported. Invalid cells are coloured;
+correct the value or cancel. Cancel leaves the stored model unchanged.
+
+Angles follow the **right-hand rule about the positive stacking axis**. The
+zero-degree fibre is CS axis 2, 3 or 1 for stacking axis 1, 2 or 3 respectively.
+For Global/axis 3, zero degrees is +X and +90 degrees is +Y. See the full
+convention below. The editor assigns an existing conforming 3D solid mesh:
+**ply boundaries must coincide with element layers**, including midside nodes.
+It does not extrude, split or repair elements. Boundary tolerance is relative
+to the complete expanded thickness and must not hide misaligned layers.
+
+Use tree Rename, Duplicate, Delete and Activate/Deactivate actions as with
+other model items. Two identical active layups overlap; deactivate one before
+using the other. Renaming materials/CS/regions follows their references;
+deleting a dependency preserves its missing name and invalidates affected
+layups for repair. Undo/redo and the Python journal use the normal command
+history. See [M2b_GUI_CHECKLIST.md](M2b_GUI_CHECKLIST.md) for GUI acceptance.
 
 Mode A assigns a flat stack to an **existing conforming 3D solid mesh**. The core
-is in CaeModel, using CaeMesh geometry and the CalculiX writer. No layup UI,
-extrusion, cohesive insertion or input-deck layup reconstruction is provided.
+is in CaeModel, using CaeMesh geometry and the CalculiX writer. The M2b editor
+wraps this same core. Extrusion, cohesive insertion and input-deck layup
+reconstruction are not provided.
 
 ## Model and persistence
 
@@ -15,8 +56,8 @@ Part-derived element sets resolve part IDs to actual element IDs.
 
 Each `CompositePly` has Name, MaterialName, Thickness, AngleDeg, and nullable
 ElementsThroughThickness. Thickness is a positive finite length in model units;
-angles are finite degrees. There is no equation/unit conversion on these new
-numeric values. Symmetric appends the complete reversed list: `[a,b]` becomes
+angles are finite degrees. The model stores numeric values; the editor converts
+explicit units on entry. Symmetric appends the complete reversed list: `[a,b]` becomes
 `[a,b,b,a]`; the centre ply is duplicated, not shared.
 
 The new collection is explicitly serialized by FeModel, initialized empty when
@@ -113,9 +154,9 @@ owns orientation definitions, so an ordinary section cannot acquire a dangling
 orientation reference. Invalid active layups block export before a new .inp
 is opened. Existing files at the target path are not deleted on refusal.
 
-Named region/material/CS references retain the upstream missing-reference
-behavior after deletion or renaming: validation identifies the missing target;
-use replace to repair it. Geometry/mesh changes trigger fresh classification.
+Named region/material/CS references follow controller renames. Deletion keeps
+the missing reference for validation and repair in the editor or by replace.
+Geometry/mesh changes trigger fresh classification.
 Selection-based layups own an internal element set and retain their selection
 for command/journal replay; replace/remove cleans up that owned set.
 Effective section assignment is recomputed when the collection is nonempty,

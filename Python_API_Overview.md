@@ -4404,14 +4404,16 @@ It exits with 0 only when nothing drifted.
 `test_runner_offline.py` checks the runner itself with `python -m unittest test_runner_offline`, launching no
 PrePoMax process.
 
-## Composite layups (headless core)
+## Composite layups
 
 `pmx.create.composite_ply` makes a detached ply with a material name, positive thickness,
 angle in degrees and optional elements-through-thickness check. `pmx.model.composite_layups`
-supports `add`, complete-definition `replace`, single-name `remove`, `get_names` and detached
-`get` snapshots. A snapshot's `get_plies(expanded=True)` includes its symmetric mirror.
+supports `add`, complete-definition `replace`, single-name `remove`, `get_names`, detached
+`get` snapshots, `duplicate`, `rename`, `activate` and `deactivate`. Duplicate and active-state
+operations accept a name or list of names. A snapshot's `get_plies(expanded=True)` includes its symmetric mirror.
 Regions accept the existing part/element-set regions and solid element/part selections.
-Geometric validation runs on model checks and before export; the UI is not implemented yet.
+Geometric validation runs on model checks, in the Composite Layup editor and before export.
+Python-created layups open in the same editor and use the same command history as GUI edits.
 See [COMPOSITE_LAYUP.md](docs/COMPOSITE_LAYUP.md) for angle conventions, persistence limits,
 examples, periodic-cell CLT acceptance and FATCZM/stock solver compatibility.
 
