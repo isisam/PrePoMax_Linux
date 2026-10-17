@@ -8,6 +8,7 @@
 // Contributors:
 
 using System;
+using System.Runtime.Serialization;
 using CaeGlobals;
 using CaeModel;
 using PrePoMax.Python.Journal;
@@ -56,14 +57,27 @@ namespace PrePoMax.Commands
     [Serializable]
     class CRemoveCompositeLayup : PreprocessCommand
     {
-        private readonly string _name;
-        public CRemoveCompositeLayup(string name) : base("Remove composite layup") { _name = name; }
-        public override bool Execute(Controller receiver) { receiver.RemoveCompositeLayup(_name); return true; }
+        // Do not hide Command._name: BinaryFormatter can restore the command caption
+        // into the target field when both fields have the same name.
+        [OptionalField] private readonly string _layupName;
+        public CRemoveCompositeLayup(string name) : base("Remove composite layup") { _layupName = name; }
+        private bool HasTarget { get { return !string.IsNullOrEmpty(_layupName) && _layupName != base._name; } }
+        public override bool Execute(Controller receiver)
+        {
+            if (!HasTarget) throw new CaeException("The saved remove-composite-layup command has lost its target name.");
+            receiver.RemoveCompositeLayup(_layupName);
+            return true;
+        }
         public override void ToPython(PythonJournalWriter writer)
         {
-            writer.Statement(writer.Call("pmx.model.composite_layups", "remove", PythonValueFormatter.Text(_name)));
+            if (!HasTarget)
+            {
+                writer.Unsupported(this, "the saved remove-composite-layup command has lost its target name");
+                return;
+            }
+            writer.Statement(writer.Call("pmx.model.composite_layups", "remove", PythonValueFormatter.Text(_layupName)));
             writer.CountEmittedCommand();
         }
-        public override string GetCommandString() { return base.GetCommandString() + _name; }
+        public override string GetCommandString() { return base.GetCommandString() + _layupName; }
     }
 }
