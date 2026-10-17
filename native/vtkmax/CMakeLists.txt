@@ -1,0 +1,15 @@
+cmake_minimum_required(VERSION 3.16)
+project(vtkmax VERSION 0.1.0 LANGUAGES C CXX)
+find_package(VTK 9 REQUIRED COMPONENTS CommonCore CommonDataModel FiltersExtraction
+  RenderingCore RenderingOpenGL2 RenderingFreeType RenderingAnnotation InteractionStyle IOImage)
+add_library(vtkmax SHARED vtkmax.cpp)
+target_compile_features(vtkmax PRIVATE cxx_std_17)
+target_compile_options(vtkmax PRIVATE -Wall -Wextra -Wpedantic)
+target_compile_definitions(vtkmax PRIVATE VTKMAX_BUILD)
+target_link_libraries(vtkmax PRIVATE ${VTK_LIBRARIES})
+vtk_module_autoinit(TARGETS vtkmax MODULES ${VTK_LIBRARIES})
+set_target_properties(vtkmax PROPERTIES VERSION ${PROJECT_VERSION} SOVERSION 1
+  CXX_VISIBILITY_PRESET hidden VISIBILITY_INLINES_HIDDEN YES INSTALL_RPATH "$ORIGIN")
+include(GNUInstallDirs)
+install(TARGETS vtkmax LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
+install(FILES vtkmax.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
