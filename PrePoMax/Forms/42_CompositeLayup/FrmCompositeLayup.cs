@@ -12,6 +12,7 @@ namespace PrePoMax.Forms
     public class FrmCompositeLayup : UserControls.FrmProperties, IFormBase, IFormItemSetDataParent, IFormHighlight
     {
         private readonly Controller _controller;
+        private readonly Action<int[]> _highlightPly;
         private FeModel _model;
         private string _oldName;
         private CompositeLayupEditorData _data;
@@ -25,9 +26,11 @@ namespace PrePoMax.Forms
 
         // Passing null permits constructing, filling and reading the form in a headless STA test.
         // No control in this constructor shows a window or constructs the main VTK form.
-        public FrmCompositeLayup(Controller controller)
+        public FrmCompositeLayup(Controller controller) : this(controller, null) { }
+        public FrmCompositeLayup(Controller controller, Action<int[]> highlightPly)
         {
             _controller = controller;
+            _highlightPly = highlightPly ?? (controller == null ? (Action<int[]>)null : controller.HighlightCompositePly);
             Text = "Composite Layup";
             ClientSize = new Size(980, 780);
             MinimumSize = new Size(960, 760);
@@ -123,7 +126,7 @@ namespace PrePoMax.Forms
                     RefreshValidation();
                 }
             };
-            _grid.SelectionChanged += (s, e) => Highlight();
+            _grid.CurrentCellChanged += (s, e) => Highlight();
             _grid.DataError += (s, e) => {
                 e.ThrowException = false;
                 _summary.Text = "The table contains an invalid value: " + e.Exception.Message;
@@ -191,6 +194,9 @@ namespace PrePoMax.Forms
                 cell.ErrorText = "";
                 cell.Style.BackColor = SystemColors.Window;
                 _propertyItemChanged = true;
+                // EndEdit may precede the focus-change validation. Refresh after parsing the
+                // committed value too, otherwise the summary/OK state lags behind by one edit.
+                RefreshValidation();
             }
             catch (Exception ex)
             {
@@ -270,6 +276,7 @@ namespace PrePoMax.Forms
         protected override void OnHideOrClose()
         {
             ItemSetDataEditor.SelectionForm?.Hide();
+            _controller?.SetSelectByToOff();
             base.OnHideOrClose();
         }
         private void ShowHideSelection()
@@ -296,12 +303,14 @@ namespace PrePoMax.Forms
         {
             if (_loading || !Visible || _closing || _controller == null) return;
             _controller.ClearSelectionHistory();
+            // An invalid edited stack must also erase the previous valid ply highlight.
+            if (_expanded == null) _highlightPly(new int[0]);
             int index = _grid.CurrentRow?.Index ?? -1;
             if (_expanded != null && index >= 0 && index < _data.Layup.Plies.Count)
             {
                 var ids = _expanded[index].ElementIds.AsEnumerable();
                 if (_data.Layup.Symmetric) ids = ids.Concat(_expanded[_expanded.Count - 1 - index].ElementIds);
-                _controller.HighlightCompositePly(ids.Distinct().ToArray());
+                _highlightPly(ids.Distinct().ToArray());
             }
             else if (_data?.Layup.RegionType == RegionTypeEnum.Selection && _data.Layup.CreationData != null)
             {
