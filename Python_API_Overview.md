@@ -4413,7 +4413,7 @@ supports `add`, complete-definition `replace`, single-name `remove`, `get_names`
 Regions accept the existing part/element-set regions and solid element/part selections.
 Geometric validation runs on model checks and before export; the UI is not implemented yet.
 See [COMPOSITE_LAYUP.md](docs/COMPOSITE_LAYUP.md) for angle conventions, persistence limits,
-examples and the unresolved original-coupon numerical acceptance gate.
+examples, periodic-cell CLT acceptance and FATCZM/stock solver compatibility.
 
 ## Notes for documentation generation
 

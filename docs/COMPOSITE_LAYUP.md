@@ -145,31 +145,93 @@ the same region/selection journal emitters as sections. Replace supplies the
 complete definition and preserves collection order. Geometric validation is
 deferred to validity/export so an invalid definition can be repaired.
 
-## Acceptance and the reference coupon
+## Acceptance: periodic CLT cells and the finite reference coupon
 
 Run `Run_Composite_Layup_Tests.py --exe <run/PrePoMax.com> --work <empty folder>`
 with the existing external Python. LAYUP_REFERENCE and FATCZM_PYTHON can point
 at the reference generator and an existing Python with NumPy; no installation
-is performed. The tests run the application with `-g No`, and both runtime
-solvers with Spooles. Reports and solver outputs remain in the work directory.
+is performed. Expected overall exit is **0**. All processes start hidden; the
+application uses `-g No`, solvers use Spooles with one CPU, and shared runtime
+settings are not saved. Decks, application reports, solver logs and results
+remain in the specified work directory.
 
-The supplied oracle contains six 0.001 mm FATCZM interfaces between solid ply
-blocks. M2a has no interface insertion or gap metadata: the exact golden uses
-eight independent single-ply layups, with ordinary sections on the separate
-interface elements. Symmetric-list tests use a continuous stack. The reference
-importer's per-part element formulations are explicitly restored through the
-existing part API before comparison. Nodes, connectivity, formulations,
-memberships, materials and orientation semantics must match the oracle.
+### Numerical acceptance: generalised plane-stress periodic cell
 
-**The original 4 x 2 x 1 mm coupon does not pass the specified CLT gate.**
-The unchanged reference and matching writer deck give 60.21798 GPa with
-ccx_fat, about 6.01% below 64.07 GPa. The release solver fails the original
-FATCZM-interface reference with too many cutbacks and produces no completed
-reaction output; the original cannot be a shared stock/fat solver oracle.
-A continuous symmetric stack gives 60.50075 GPa on both solvers, 5.57% below
-target. The solver test deliberately returns failure;
-the 1% tolerance has not been relaxed. Independent +/-30-degree and 90-degree
-rotation tests pass. Reducing continuous-stack thickness to 0.01 mm yields
-64.387 GPa, within 1%, supporting finite-specimen/edge effects as the cause;
-this diagnostic is not substituted for the required original-coupon test.
-See M2a_REPORT.md and retained logs for evidence and the unresolved gate.
+`Test_Solver_Composite_Layup.py` exports the actual layup writer's materials,
+orientations and sections, then appends test-only `*EQUATION` constraints.
+The 4 x 2 x 1 mm cell has eight 0.125 mm C3D8I ply layers. Opposite x **and** y
+faces are periodic, including through-thickness warping; top and bottom have
+no applied traction or displacement constraint (one origin node removes rigid
+translation). Two reference nodes RX/RY carry the displacement jumps:
+
+- x-face pairs: delta ux = RX.1, delta uy = 0, delta uz = 0.
+- y-face pairs: delta ux = RY.1, delta uy = RY.2, delta uz = 0.
+
+RX.2/3 and RY.3 are fixed unused reference DOFs. The zero x-face uy jump fixes
+the in-plane rigid rotation; RY.1 remains free to admit engineering shear.
+Corner equations occur once, with no duplicate dependent DOF or dependency
+cycle. Under x loading prescribe RX.1 = epsilon_x Lx and leave RY.1/2 free;
+under y loading prescribe RY.2 = epsilon_y Ly and leave RX.1/RY.1 free.
+This admits Poisson contraction and enforces zero mean transverse/shear
+resultants. The nominal axial strain is 1e-4. These symmetric laminates have
+no membrane/bending coupling; the periodic membrane cell is not a bending test.
+
+Read macro strains from the reference-node displacements. Integrate all eight
+global stress integration points per element with exact rectangular ply-volume
+weights. Use E = mean axial stress / measured axial strain and
+nu_xy = -epsilon_y / epsilon_x in the x test. Do not infer macro forces from
+reference-node RF: CalculiX's RF output does not include general MPC forces.
+Require complete stress coverage, prescribed macro strain, mean nonaxial
+stresses below 1e-5 of the axial stress, reciprocal Poisson compliance and
+agreement between solvers within 1e-5 relative.
+
+`Composite_Layup_Utils.clt` integrates transformed plane-stress Q through the
+**exact ply thicknesses** and inverts A; E_x = 1/(H a11), E_y = 1/(H a22),
+nu_xy = -a12/a11, where a = inverse(A). FE and CLT share the explicit lamina
+input tuple E1/E2/E3/nu12/nu13/nu23/G12/G13/G23/temperature, rather than a
+hard-coded laminate modulus. Offline checks independently verify 0/90 limits,
+unequal-thickness integration, thickness scaling, balanced coupling and MPC
+topology. The 1% relative CLT gate applies to **all three quantities** for all
+four laminates, both solvers and both 2 x 2 and 4 x 4 in-plane meshes. Mesh
+refinement must change each quantity by less than 0.1%.
+
+| Laminate | CLT E_x (GPa) | CLT E_y (GPa) | CLT nu_xy |
+| --- | ---: | ---: | ---: |
+| [45/90/-45/0]s | 64.387645 | 64.387645 | 0.311151075 |
+| [0]8 | 171 | 9.1 | 0.32 |
+| [90]8 | 9.1 | 171 | 0.017029240 |
+| [+45/-45]2s | 19.040712 | 19.040712 | 0.796293618 |
+
+These numbers describe the current inputs; the test recomputes them. Both
+solvers/meshes pass, with maximum relative error about 0.000015%, limited by
+printed result precision. The existing +/-30 shear-sign/magnitude and
+translated 90-degree CS rotation checks also remain required.
+
+### Golden reference and solver compatibility
+
+The unchanged supplied oracle contains six 0.001 mm FATCZM interfaces between
+solid ply blocks. M2a has no interface insertion or gap metadata: the exact
+golden uses eight independent single-ply layups, with ordinary sections on the
+separate interface elements. Symmetric-list tests use a continuous stack.
+The reference importer's per-part element formulations are explicitly restored
+through the existing part API before comparison. Nodes, connectivity,
+formulations, memberships, materials and orientation semantics must match.
+The ccx_fat writer/reference results must agree within 1e-6 relative.
+
+**FATCZM decks run only with `run/Solver/ccx_fat.exe`.** Stock
+`ccx_dynamic.exe` has no FATCZM UMAT. `run_solver` detects the USERFATCZM material
+prefix and refuses incompatible launches before creating the solver directory;
+the runner tests this guard. The interfaced stock/reference combination is
+recorded as `not_applicable`, with a reason, and is not a failed acceptance
+case. Stock ccx still runs every interface-free numerical acceptance case.
+
+The 4 x 2 x 1 mm finite coupon has width/thickness about 2. Its reference and
+matching writer give E_x = 60.21798 GPa with ccx_fat; the continuous free-edge
+stack gives 60.50075 GPa on both solvers. They remain reproducible finite-coupon
+diagnostics, not infinite-plate CLT gates. At exactly the same cell dimensions,
+removing free edges through periodicity gives 64.387641 GPa, matching CLT.
+The original 64.074791 GPa target additionally used compensated ply thicknesses
+and nominal total thickness including the interfaces; it is not the CLT
+modulus of eight continuous 0.125 mm plies. No writer/orientation or material
+property change was needed. See the fix section of M2a_REPORT.md and
+`logs/M2a_fix_*` for current acceptance evidence; earlier failed logs are kept.

@@ -58,6 +58,8 @@ import sys
 import tempfile
 import time
 
+HIDDEN = {"creationflags": 0x08000000} if os.name == "nt" else {}
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 MODELS = os.path.join(HERE, "Models")
 # The solved model Test_Analysis.py leaves behind, which the result tests read
@@ -226,7 +228,7 @@ def run_offline(name):
     started = time.time()
     try:
         completed = subprocess.run([sys.executable, os.path.join(HERE, name)], cwd=HERE, stdout=subprocess.PIPE,
-                                   stderr=subprocess.STDOUT, timeout=OFFLINE_TIMEOUT)
+                                   stderr=subprocess.STDOUT, timeout=OFFLINE_TIMEOUT, **HIDDEN)
         code, output = completed.returncode, completed.stdout.decode("utf-8", "replace")
     except subprocess.TimeoutExpired:
         code, output = None, "RUNNER TIMEOUT after %d s" % OFFLINE_TIMEOUT
@@ -254,7 +256,7 @@ def build_command(test, executable, work_directory, report_file):
 def kill_process_tree(process):
     if os.name == "nt":
         subprocess.call(["taskkill", "/PID", str(process.pid), "/T", "/F"],
-                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, **HIDDEN)
     else:
         process.kill()
 
@@ -275,7 +277,7 @@ def run(test, executable, work_directory):
         os.remove(report_file)
     command = build_command(test, executable, work_directory, report_file)
     started = time.time()
-    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, **HIDDEN)
     try:
         output = process.communicate(timeout=test.timeout + PROCESS_TIMEOUT_MARGIN)[0].decode("utf-8", "replace")
     except subprocess.TimeoutExpired:

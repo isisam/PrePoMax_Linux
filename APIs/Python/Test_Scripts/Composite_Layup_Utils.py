@@ -2,6 +2,11 @@
 import os
 import re
 import subprocess
+import math
+
+HIDDEN = {"creationflags": 0x08000000} if os.name == "nt" else {}
+# E1,E2,E3,nu12,nu13,nu23,G12,G13,G23,temperature. Shared by FE and CLT.
+LAMINA = (171000., 9100., 9100., .32, .32, .52, 5300., 5300., 3000., 0.)
 
 
 def check(value, message):
@@ -36,8 +41,7 @@ def ply_cards(text):
 
 
 def material(pmx):
-    pmx.model.materials.add("IM7_8552", pmx.create.elastic_engineering_constants([
-        [171000, 9100, 9100, 0.32, 0.32, 0.52, 5300, 5300, 3000, 0]]))
+    pmx.model.materials.add("IM7_8552", pmx.create.elastic_engineering_constants([list(LAMINA)]))
 
 
 def clear(pmx):
@@ -118,20 +122,7 @@ def steps(pmx, length=4., shear_free=False, direction="x"):
 
 
 def solve(executable, deck, label, area=2., strain=0.0001, length=4., direction="x"):
-    directory = os.path.join(os.path.dirname(deck), label)
-    os.makedirs(directory, exist_ok=True)
-    basename = os.path.join(directory, "coupon")
-    with open(deck) as stream:
-        text = stream.read()
-    with open(basename + ".inp", "w") as stream:
-        stream.write(text)
-    env = dict(os.environ, OMP_NUM_THREADS="1", CCX_NPROC_RESULTS="1")
-    result = subprocess.run([executable, "coupon"], cwd=directory, env=env,
-                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=120)
-    output = result.stdout.decode("utf-8", "replace")
-    with open(basename + ".solver.log", "w") as stream:
-        stream.write(output)
-    check(result.returncode == 0 and "*ERROR" not in output, "solver " + label + ": " + output[-1500:])
+    basename = run_solver(executable, deck, label)
     with open(basename + ".dat") as stream:
         dat = stream.read()
     matches = re.findall(r"total force.*?\n\s*\n\s*([\d.E+\-]+)\s+([\d.E+\-]+)\s+([\d.E+\-]+)", dat, re.I | re.S)
@@ -141,3 +132,144 @@ def solve(executable, deck, label, area=2., strain=0.0001, length=4., direction=
     gamma = float(rows[-1][1]) / length if rows else None
     print("SOLVE %s E=%.8f MPa gamma_xy=%s" % (label, modulus, gamma))
     return modulus, gamma
+
+
+def run_solver(executable, deck, label):
+    with open(deck) as stream:
+        text = stream.read()
+    # The stock binary has no FATCZM UMAT. Refuse before launching rather than
+    # misreporting a constitutive incompatibility as a numerical failure.
+    has_fatczm = any(k == "*MATERIAL" and o.get("NAME", "").startswith("USERFATCZM")
+                     for k, o, _ in blocks(text))
+    check(not has_fatczm or os.path.basename(executable).lower() == "ccx_fat.exe",
+          "FATCZM deck requires ccx_fat.exe: " + label)
+    directory = os.path.join(os.path.dirname(deck), label)
+    os.makedirs(directory, exist_ok=True)
+    basename = os.path.join(directory, "coupon")
+    with open(basename + ".inp", "w") as stream:
+        stream.write(text)
+    env = dict(os.environ, OMP_NUM_THREADS="1", CCX_NPROC_RESULTS="1")
+    result = subprocess.run([executable, "coupon"], cwd=directory, env=env,
+                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=120, **HIDDEN)
+    output = result.stdout.decode("utf-8", "replace")
+    with open(basename + ".solver.log", "w") as stream:
+        stream.write(output)
+    check(result.returncode == 0 and "*ERROR" not in output, "solver " + label + ": " + output[-1500:])
+    return basename
+
+
+def clt(ply_data, lamina=LAMINA):
+    """Independent plane-stress Qbar integration; (angle, exact thickness) per ply.
+
+    All acceptance laminates are symmetric, hence B=0 and membrane compliance
+    is inverse(A). No nominal laminate thickness or precomputed modulus is used.
+    """
+    e1, e2, _, nu12, _, _, g12 = lamina[:7]
+    d = 1 - nu12 * nu12 * e2 / e1
+    q11, q22, q12, q66 = e1 / d, e2 / d, nu12 * e2 / d, g12
+    a = [[0.] * 3 for _ in range(3)]
+    h = sum(t for _, t in ply_data)
+    for angle, t in ply_data:
+        c, s = math.cos(math.radians(angle)), math.sin(math.radians(angle))
+        c2, s2 = c*c, s*s
+        q16 = (q11-q12-2*q66)*c*c2*s - (q22-q12-2*q66)*c*s*s2
+        q26 = (q11-q12-2*q66)*c*s*s2 - (q22-q12-2*q66)*c*c2*s
+        qb = [[q11*c2*c2 + 2*(q12+2*q66)*c2*s2 + q22*s2*s2,
+               (q11+q22-4*q66)*c2*s2 + q12*(c2*c2+s2*s2), q16],
+              [0, q11*s2*s2 + 2*(q12+2*q66)*c2*s2 + q22*c2*c2, q26],
+              [0, 0, (q11+q22-2*q12-2*q66)*c2*s2 + q66*(c2*c2+s2*s2)]]
+        for i in range(3):
+            for j in range(3):
+                a[i][j] += t * qb[min(i,j)][max(i,j)]
+    # Gauss-Jordan inverse, independent of solver/native material implementation.
+    aug = [a[i][:] + [float(i == j) for j in range(3)] for i in range(3)]
+    for i in range(3):
+        pivot = aug[i][i]
+        aug[i] = [v / pivot for v in aug[i]]
+        for j in range(3):
+            if i != j:
+                f = aug[j][i]
+                aug[j] = [v - f*w for v, w in zip(aug[j], aug[i])]
+    compliance = [row[3:] for row in aug]
+    return {"Ex": 1/(h*compliance[0][0]), "Ey": 1/(h*compliance[1][1]),
+            "nu_xy": -compliance[0][1]/compliance[0][0], "A": a, "H": h}
+
+
+def periodic_deck(path, nx, ny, levels, lx=4., ly=2., direction="x", strain=.0001):
+    """Append in-plane periodic MPCs to a writer-exported mesh/material/layup.
+
+    ux jump across X = RX.1; uy jump across Y = RY.2;
+    ux jump across Y = RY.1 (free engineering shear); uy jump across X = 0
+    fixes the rigid rotation only. All uz jumps are zero. Top/bottom are free.
+    Corner equations are included once, so each dependent DOF occurs once.
+    """
+    with open(path) as stream:
+        source = stream.read()
+    check(not any(k == "*STEP" for k, _, _ in blocks(source)), "periodic fixture must have no steps")
+    npl = (nx+1)*(ny+1)
+    nid = lambda k,j,i: 1+k*npl+j*(nx+1)+i
+    rx, ry = len(levels)*npl+1, len(levels)*npl+2
+    lines = ["*NODE", "%d,0,0,0" % rx, "%d,0,0,0" % ry,
+             "*NSET,NSET=MACRO", "%d,%d" % (rx,ry), "*EQUATION"]
+    def equation(high, low, dof, ref=None):
+        lines.extend(["3" if ref else "2", "%d,%d,1,%d,%d,-1" % (high,dof,low,dof)
+                      + (",%d,%d,-1" % ref if ref else "")])
+    for k in range(len(levels)):
+        for j in range(ny+1):
+            for dof in (1,2,3):
+                equation(nid(k,j,nx), nid(k,j,0), dof, (rx,1) if dof == 1 else None)
+        for i in range(nx):
+            for dof in (1,2,3):
+                equation(nid(k,ny,i), nid(k,0,i), dof, (ry,dof) if dof < 3 else None)
+    # No reference-node RF is used: MPC forces are not reliable RF output in ccx.
+    # Integrate global integration-point stress over exact ply volumes instead.
+    lines += ["*STEP", "*STATIC,SOLVER=SPOOLES", "1.,1.", "*BOUNDARY", "1,1,3,0",
+              "%d,2,3,0" % rx, "%d,3,3,0" % ry]
+    if direction == "x":
+        lines += ["%d,1,1,%.16g" % (rx,strain*lx)]
+    else:
+        lines += ["%d,2,2,%.16g" % (ry,strain*ly)]
+    lines += ["*NODE PRINT,NSET=MACRO", "U", "*EL PRINT,ELSET=COUPON,GLOBAL=YES", "S",
+              "*END STEP"]
+    with open(path, "w") as stream:
+        stream.write(source + "\n" + "\n".join(lines) + "\n")
+    return rx, ry
+
+
+def solve_periodic(executable, deck, label, nx, ny, levels, lx=4., ly=2., direction="x", strain=.0001):
+    basename = run_solver(executable, deck, label)
+    with open(basename + ".dat") as stream:
+        dat = stream.read()
+    stresses, displacements = {}, {}
+    mode = None
+    for line in dat.splitlines():
+        if "stresses (" in line:
+            mode = "S"
+        elif "displacements (" in line:
+            mode = "U"
+        fields = line.split()
+        if mode == "S" and len(fields) == 8 and fields[0].isdigit() and fields[1].isdigit():
+            key = (int(fields[0]), int(fields[1]))
+            check(key not in stresses, "duplicate integration point " + label)
+            stresses[key] = list(map(float, fields[2:]))
+        elif mode == "U" and len(fields) == 4 and fields[0].isdigit():
+            displacements[int(fields[0])] = list(map(float, fields[1:]))
+    count = nx*ny*(len(levels)-1)
+    check(set(stresses) == {(e,ip) for e in range(1,count+1) for ip in range(1,9)},
+          "incomplete C3D8I stress output " + label)
+    avg = [0.] * 6
+    for (e, _), stress in stresses.items():
+        k = (e-1)//(nx*ny)
+        weight = (levels[k+1]-levels[k])/(levels[-1]-levels[0])/(nx*ny*8)
+        avg = [a+weight*s for a,s in zip(avg,stress)]
+    rx = len(levels)*(nx+1)*(ny+1)+1
+    ex, ey, gamma = displacements[rx][0]/lx, displacements[rx+1][1]/ly, displacements[rx+1][0]/ly
+    axial = 0 if direction == "x" else 1
+    measured = ex if axial == 0 else ey
+    check(abs(measured/strain-1) < 1E-6, "prescribed macro strain " + label)
+    check(max(abs(avg[i]) for i in range(6) if i != axial)/abs(avg[axial]) < 1E-5,
+          "nonzero mean transverse/shear stress " + label + ": " + str(avg))
+    result = {"E": avg[axial]/measured, "nu": -ey/ex if axial == 0 else -ex/ey,
+              "macro_strain": [ex,ey,gamma], "mean_stress": avg, "integration_points": len(stresses)}
+    print("PERIODIC %s E=%.8f MPa nu=%.8f" % (label,result["E"],result["nu"]))
+    return result
