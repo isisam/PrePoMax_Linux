@@ -1579,13 +1579,13 @@ pmx.model.initial_conditions.add_temperature('IC-1', nodes, 20)
 
 `Material` exposes `name`, `description`, `active`, `valid`, `temperature_dependent`, `property_count`, `get_properties()` and
 `get_property_types()`, which names every property after the `pmx.create` maker that makes it: `elastic`, `density`,
-`elastic_with_density`, `elastic_engineering_constants`, `elastic_lamina`, `plastic`, `slip_wear`, `specific_heat`,
+`elastic_with_density`, `elastic_engineering_constants`, `elastic_lamina`, `user_material`, `plastic`, `slip_wear`, `specific_heat`,
 `thermal_conductivity` or `thermal_expansion`. `get_properties()` returns detached `MaterialProperty` copies as a plain Python list, and the
 list can be passed straight to `materials.replace`:
 `pmx.model.materials.replace('Steel', properties=pmx.model.materials['Steel'].get_properties())`.
 
 Every `pmx.create` property maker (`elastic`, `density`, `elastic_with_density`, `elastic_engineering_constants`,
-`elastic_lamina`, `plastic`, `slip_wear`, `specific_heat`, `thermal_conductivity`, `thermal_expansion`) returns a
+`elastic_lamina`, `user_material`, `fatczm`, `plastic`, `slip_wear`, `specific_heat`, `thermal_conductivity`, `thermal_expansion`) returns a
 `MaterialProperty`:
 
 | Member | Description |
@@ -2445,6 +2445,8 @@ only makes the detached **parts** that those methods take as arguments, and reco
 | `elastic_with_density(youngs_modulus, poissons_ratio, density)` | Combined elastic and density property. |
 | `elastic_engineering_constants(constants)` | Orthotropic elastic. Rows of `[E1, E2, E3, v12, v13, v23, G12, G13, G23, temperature]`, each physically stable, with strictly increasing temperatures. |
 | `elastic_lamina(constants)` | Lamina elastic. Rows of `[E1, E2, v12, G12, G13, G23, temperature]`, each physically stable, with strictly increasing temperatures. |
+| `user_material(constants, state_variables=0, fatczm=False, names=None, descriptions=None)` | Ordered mechanical UMAT constants, each a number or equation in model units, and DEPVAR. Optional parallel metadata lists survive `.pmx` and journals. `fatczm=True` enforces the 26-constant preset. |
+| `fatczm(pre_crack=False)` | Fatigue CZM (FATCZM), 26 IM7 ENF constants in N/mm/MPa, DEPVAR 6; insert option sets Dint=0.999999. Use material names starting with `USERFATCZM`, or `USERFATCZMPC` for inserts. See [FATCZM material](docs/FATCZM_material.md) for order, units and step requirements. |
 | `density(density)` | Density. One value, or rows of `[density, temperature]`. |
 | `plastic(stress_strain, hardening=None)` | Plastic. Rows of `[stress, strain, temperature]`. `hardening` is `Isotropic`, `Kinematic` or `Combined` and defaults to `Isotropic`. |
 | `specific_heat(specific_heat)` | Specific heat. One value, or rows of `[value, temperature]`. |

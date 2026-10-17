@@ -62,6 +62,7 @@ EMITTED_NAME_EXCEPTIONS = {
     "cavity_name": "an argument name",
     "coefficient_amplitude_name": "an argument name",
     "contact_pair_name": "an argument name",
+    "constants": "an argument name",
     "distribution_name": "an argument name",
     "emissivity": "an argument name",
     "emissivity_amplitude_name": "an argument name",
