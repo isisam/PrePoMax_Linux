@@ -24,6 +24,7 @@
 #include <vtkUnstructuredGrid.h>
 #include <vtkWindowToImageFilter.h>
 #include <vtkXOpenGLRenderWindow.h>
+#include <vtkXRenderWindowInteractor.h>
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
@@ -110,7 +111,7 @@ uintptr_t vm_attach_x11(vm_view* v,uintptr_t parent) {
     error.clear(); try {
         VIEW; require(!v->rendered&&!v->offscreen&&parent,"attach requires an unrendered onscreen view and X11 parent");
         v->window->SetParentId(static_cast<Window>(parent)); v->window->Render(); v->rendered=true;
-        v->interactor=vtkSmartPointer<vtkRenderWindowInteractor>::New();
+        v->interactor=vtkSmartPointer<vtkXRenderWindowInteractor>::New();
         v->interactor->SetRenderWindow(v->window);
         auto style=vtkSmartPointer<ClickStyle>::New(); style->view=v;
         v->interactor->SetInteractorStyle(style); v->interactor->Initialize();
