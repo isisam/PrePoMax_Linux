@@ -2166,8 +2166,7 @@ namespace PrePoMax
                     if (saveFileDialog.ShowDialog(this) == DialogResult.OK)
                     {
                         SetStateWorking(Globals.ExportingText);
-                        WriteSessionJournal(_controller.GetActiveCommands(), saveFileDialog.FileName,
-                                            _controller.OpenedFileName);
+                        WriteSessionJournal(saveFileDialog.FileName);
                     }
                 }
             }
@@ -2180,11 +2179,9 @@ namespace PrePoMax
                 SetStateReady(Globals.ExportingText);
             }
         }
-        private void WriteSessionJournal(List<PrePoMax.Commands.Command> commands, string fileName, string source)
+        private void WriteSessionJournal(string fileName)
         {
-            PythonJournalReport report = PythonJournalExporter.Export(commands, fileName, source,
-                                                                      _controller.Settings.General.NumOfSplitFaces,
-                                                                      _controller.Settings.GetWorkDirectory());
+            PythonJournalReport report = _controller.ExportSessionJournal(fileName);
             //
             WriteDataToOutput(report.GetSummary());
             foreach (string refusal in report.Refusals) WriteDataToOutput("   Not emitted: " + refusal);

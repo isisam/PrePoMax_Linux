@@ -19,6 +19,7 @@ namespace PrePoMax.Python.Journal
     // writes the header, and collects what could not be emitted.
     public static class PythonJournalExporter
     {
+        internal const string EmptyBaselinePreamble = "# PPM-JOURNAL-BASELINE empty\n";
         // Methods                                                                                                                  
         public static PythonJournalReport Export(List<Command> commands, string fileName, string sourceDescription,
                                                  int numOfLegacySplitFaces = 1, string workDirectory = null)
@@ -150,6 +151,14 @@ namespace PrePoMax.Python.Journal
         {
             string scriptName = fileName == null ? "journal.py" : Path.GetFileName(fileName);
             StringBuilder header = new StringBuilder();
+            if (sessionStartFileName == null) header.Append(EmptyBaselinePreamble);
+            else
+            {
+                string hash;
+                using (var sha = System.Security.Cryptography.SHA256.Create())
+                    hash = BitConverter.ToString(sha.ComputeHash(File.ReadAllBytes(sessionStartFileName))).Replace("-", "").ToLowerInvariant();
+                header.AppendLine("# PPM-JOURNAL-BASELINE file " + Convert.ToBase64String(Encoding.UTF8.GetBytes(sessionStartFileName)) + " " + hash);
+            }
             //
             header.AppendLine("# PrePoMax session journal");
             header.AppendLine("# The PrePoMax object is available as 'pmx'.");
