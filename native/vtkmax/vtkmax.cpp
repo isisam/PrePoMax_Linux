@@ -27,6 +27,7 @@
 #include <vtkXRenderWindowInteractor.h>
 #include <algorithm>
 #include <cmath>
+#include <memory>
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
@@ -85,7 +86,7 @@ const char* vm_last_error() { return error.c_str(); }
 vm_view* vm_create(int32_t offscreen,int32_t w,int32_t h) {
     error.clear(); try {
         require(w>0&&h>0&&w<=16384&&h<=16384,"invalid size");
-        auto v=new vm_view; v->offscreen=offscreen!=0;
+        auto v=std::make_unique<vm_view>(); v->offscreen=offscreen!=0;
         v->window->SetOffScreenRendering(offscreen!=0); v->window->SetSize(w,h);
         v->window->SetMultiSamples(0); v->window->AddRenderer(v->renderer);
         v->renderer->SetBackground(0.075,0.09,0.13);
@@ -103,7 +104,7 @@ vm_view* vm_create(int32_t offscreen,int32_t w,int32_t h) {
         v->highlight->GetProperty()->SetRepresentationToWireframe();
         v->highlight->GetProperty()->SetLineWidth(4); v->highlight->GetProperty()->LightingOff();
         v->renderer->AddActor(v->highlight); v->highlight->VisibilityOff();
-        return v;
+        return v.release();
     } catch(const std::exception& e) { error=e.what(); return nullptr; } catch(...) { error="native exception"; return nullptr; }
 }
 void vm_destroy(vm_view* v) { delete v; }
@@ -140,7 +141,8 @@ int32_t vm_load_grid(vm_view* v,int32_t np,const int64_t* ids,const double* xyz,
             for(int j=0;j<count;++j) { auto p=conn[offsets[i]+j]; require(p>=0&&p<np,"point index out of range"); cell[j]=p; }
             g->InsertNextCell(types[i],count,cell.data());
         }
-        v->grid->ShallowCopy(g); v->nodes.assign(ids,ids+np); v->elements.assign(eids,eids+nc);
+        std::vector<int64_t> node_ids(ids,ids+np), element_ids(eids,eids+nc);
+        v->grid->ShallowCopy(g); v->nodes=std::move(node_ids); v->elements=std::move(element_ids);
         v->node_map=std::move(nm); v->element_map=std::move(em);
         v->mapper->ScalarVisibilityOff(); v->bar->VisibilityOff(); v->highlight->VisibilityOff(); return 0;
     } CATCH
