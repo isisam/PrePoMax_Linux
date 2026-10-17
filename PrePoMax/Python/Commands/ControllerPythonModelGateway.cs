@@ -462,6 +462,7 @@ namespace PrePoMax.Python
         {
             _controller.RemoveMaterialsCommand(materialNames);
         }
+        public void DuplicateCompositeLayups(string[] names) { _controller.DuplicateCompositeLayupsCommand(names); }
         public void AddCompositeLayup(CompositeLayup layup)
         {
             _controller.AddCompositeLayupCommand(layup);

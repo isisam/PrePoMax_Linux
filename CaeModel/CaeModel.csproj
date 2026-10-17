@@ -49,6 +49,7 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CompositeLayups\CompositeLayupDependencies.cs" />
     <Compile Include="CompositeLayups\CompositePly.cs" />
     <Compile Include="CompositeLayups\CompositeLayup.cs" />
     <Compile Include="CompositeLayups\CompositeLayupExpansion.cs" />

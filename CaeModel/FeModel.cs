@@ -383,16 +383,20 @@ namespace CaeModel
                 SetItemValidity(null, section, valid, items);
                 if (!valid && section.Active) invalidItems.Add("Section: " + section.Name);
             }
-            // Layups share export validation; there is no layup tree node until M2b.
-            try
+            // Check individually so deleting one dependency does not invalidate unrelated layups.
+            foreach (var layup in _compositeLayups.Values)
             {
-                CompositeLayupExpansion.Expand(this);
-                foreach (var layup in _compositeLayups.Values) layup.Valid = true;
-            }
-            catch (CaeException ex)
-            {
-                invalidItems.Add(ex.Message);
-                foreach (var layup in _compositeLayups.Values) if (layup.Active) layup.Valid = false;
+                bool layupValid = true;
+                if (layup.Active)
+                {
+                    try { CompositeLayupExpansion.Preview(this, layup, layup.Name); }
+                    catch (CaeException ex)
+                    {
+                        layupValid = false;
+                        invalidItems.Add("Composite layup '" + layup.Name + "': " + ex.Message);
+                    }
+                }
+                SetItemValidity(null, layup, layupValid, items);
             }
             // Constraints
             Constraint constraint;
