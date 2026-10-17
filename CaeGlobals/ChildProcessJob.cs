@@ -21,6 +21,34 @@ namespace CaeGlobals
     /// </summary>
     public static class ChildProcessJob
     {
+        // A net8 console host supporting --process-host supplies its assembly here.
+        public static string LinuxHostAssembly { get; set; }
+
+        public static bool Start(Process process)
+        {
+#if !NETFRAMEWORK
+            if (OperatingSystem.IsLinux())
+            {
+                if (string.IsNullOrEmpty(LinuxHostAssembly))
+                    throw new PlatformNotSupportedException("Configure ChildProcessJob.LinuxHostAssembly before starting a Linux child.");
+                var info = process.StartInfo;
+                string executable = info.FileName;
+                string arguments = info.Arguments;
+                var argumentList = new System.Collections.Generic.List<string>(info.ArgumentList);
+                info.Arguments = "";
+                info.ArgumentList.Clear();
+                info.FileName = Environment.ProcessPath;
+                if (System.IO.Path.GetFileNameWithoutExtension(info.FileName) == "dotnet")
+                    info.ArgumentList.Add(LinuxHostAssembly);
+                info.ArgumentList.Add("--process-host");
+                info.ArgumentList.Add(Environment.ProcessId.ToString(System.Globalization.CultureInfo.InvariantCulture));
+                info.ArgumentList.Add(executable);
+                info.ArgumentList.Add(arguments);
+                foreach (string argument in argumentList) info.ArgumentList.Add(argument);
+            }
+#endif
+            return process.Start();
+        }
         // Variables
         private const int _jobObjectExtendedLimitInformation = 9;
         private const uint _jobObjectLimitKillOnJobClose = 0x2000;
@@ -32,6 +60,7 @@ namespace CaeGlobals
         // Methods
         public static void Add(Process process)
         {
+            if (!PlatformInfo.IsWindows) return; // Linux children are protected before exec by Start's guardian.
             try
             {
                 IntPtr job = GetJob();

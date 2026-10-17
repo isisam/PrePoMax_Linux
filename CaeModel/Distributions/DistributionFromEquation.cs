@@ -14,7 +14,6 @@ using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
-using CaeGlobals;
 using CaeMesh;
 using CaeResults;
 using DynamicTypeDescriptor;
@@ -22,6 +21,7 @@ using static CaeGlobals.Geometry2;
 
 namespace CaeModel
 {
+    using CaeGlobals;
     [Serializable]
     public class DistributionFromEquation : Distribution, ISerializable
     {

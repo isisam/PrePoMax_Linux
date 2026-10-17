@@ -13,11 +13,11 @@ using System.Collections.Generic;
 using System.Data.Common;
 using System.Runtime.InteropServices;
 using System.Text;
-using CaeGlobals;
 using CaeMesh;
 
 namespace CaeModel
 {
+    using CaeGlobals;
     [Serializable]
     public class EquationParameterCollection
     {

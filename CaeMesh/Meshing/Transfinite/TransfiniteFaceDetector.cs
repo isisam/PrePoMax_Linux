@@ -184,14 +184,14 @@ namespace CaeMesh
             }
             //
             if (numOfSides == 4)
-                return DoesTransfiniteGridFold(sides[0], sides[1], sides[2].Reverse().ToArray(),
-                                               sides[3].Reverse().ToArray());
+                return DoesTransfiniteGridFold(sides[0], sides[1], Enumerable.Reverse(sides[2]).ToArray(),
+                                               Enumerable.Reverse(sides[3]).ToArray());
             if (!polarThreeSided)
                 return DoesThreeBlockGridFold(mesh, vis, transfiniteFace.FaceId, polylines, sideLengths);
             //
             int polar = transfiniteFace.GetPolarCornerIndex(sideLengths);
             double[][] collapsed = Enumerable.Repeat(sides[polar][0], m + 1).ToArray();
-            double[][] opposite = sides[(polar + 2) % 3].Reverse().ToArray();
+            double[][] opposite = Enumerable.Reverse(sides[(polar + 2) % 3]).ToArray();
             return DoesTransfiniteGridFold(sides[polar], sides[(polar + 1) % 3], opposite, collapsed);
         }
         /// <summary>

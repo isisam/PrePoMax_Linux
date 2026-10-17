@@ -14,10 +14,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.ComponentModel;
-using CaeGlobals;
 
 namespace CaeResults
 {
+    using CaeGlobals;
     // Compatibility for version v2.6.0
     // The From Element Size history output was replaced by the From Integration history output using the
     // Geometry integral result. It can no longer be created, but existing definitions are still read and

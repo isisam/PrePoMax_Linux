@@ -7,7 +7,6 @@
 // Author: Matej Borovinšek
 // Contributors:
 
-using CaeGlobals;
 using CaeMesh;
 using Octree;
 using System;
@@ -23,6 +22,7 @@ using System.Xml.Linq;
 
 namespace CaeResults
 {
+    using CaeGlobals;
     [Serializable]
     public static class DatFileReader
     {

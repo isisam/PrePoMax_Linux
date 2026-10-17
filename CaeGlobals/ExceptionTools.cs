@@ -36,7 +36,7 @@ namespace CaeGlobals
     {
         public static void Show(object obj, Exception ex)
         {
-            MessageBoxes.ShowError(FormatException(obj, ex));
+            PlatformServices.Messages.Error(FormatException(obj, ex));
         }
         public static string FormatException(object obj, Exception ex)
         {

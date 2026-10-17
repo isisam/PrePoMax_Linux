@@ -56,13 +56,29 @@ namespace CaeGlobals
         }
         public override Type BindToType(string assemblyName, string typeName)
         {
-            if (_renamedTypeNames.Count == 0 || typeName == null) return null;
+#if !NETFRAMEWORK
+            if (typeName == "System.UnitySerializationHolder") return typeof(LegacyFormatter.FrameworkTypeReference);
+#endif
+            if (typeName == null) return null;
             //
             string renamedTypeName;
             if (_renamedTypeNames.TryGetValue(typeName, out renamedTypeName)) return Type.GetType(renamedTypeName, false);
             //
             renamedTypeName = GetRenamedGenericArgumentTypeNames(typeName);
-            if (renamedTypeName == null) return null;
+            if (renamedTypeName == null)
+            {
+                // .NET Core writes BCL assembly identities that do not exist on Framework.
+                // Resolve both direct and nested generic identities without renaming model types.
+                return Type.GetType(typeName + ", " + assemblyName,
+                    name =>
+                    {
+                        string simple = name.Name;
+                        if (simple == "System.Private.CoreLib" || simple == "mscorlib") return typeof(object).Assembly;
+                        if (simple == "System.Drawing.Primitives" || simple == "System.Drawing") return typeof(System.Drawing.Color).Assembly;
+                        try { return System.Reflection.Assembly.Load(name); }
+                        catch (System.IO.FileNotFoundException) { return null; }
+                    }, null, false);
+            }
             //
             return Type.GetType(renamedTypeName + ", " + assemblyName, false);
         }

@@ -267,7 +267,7 @@ namespace CaeMesh.Sweep
             if (reachedVertexIds.Contains(targetEndVertexIds[0])) return true;
             if (!reachedVertexIds.Contains(targetEndVertexIds[1])) return false;
             //
-            targetEdgeIds = targetEdgeIds.Reverse().ToArray();
+            targetEdgeIds = Enumerable.Reverse(targetEdgeIds).ToArray();
             return true;
         }
         /// <summary>

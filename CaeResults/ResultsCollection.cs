@@ -7,7 +7,6 @@
 // Author: Matej Borovinšek
 // Contributors:
 
-using CaeGlobals;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -19,6 +18,7 @@ using System.Threading.Tasks;
 
 namespace CaeResults
 {
+    using CaeGlobals;
     [Serializable]
     public class ResultsCollection
     {

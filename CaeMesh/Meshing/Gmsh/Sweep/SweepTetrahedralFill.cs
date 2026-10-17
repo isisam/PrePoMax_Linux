@@ -325,7 +325,7 @@ namespace CaeMesh.Sweep
             {
                 process.OutputDataReceived += keepLine;
                 process.ErrorDataReceived += keepLine;
-                process.Start();
+                ChildProcessJob.Start(process);
                 ChildProcessJob.Add(process);
                 process.BeginOutputReadLine();
                 process.BeginErrorReadLine();

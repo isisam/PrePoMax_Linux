@@ -13,13 +13,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using CaeMesh;
-using CaeGlobals;
 using System.Runtime.Serialization;
 using System.IO.Compression;
 using System.IO;
 
 namespace CaeResults
 {
+    using CaeGlobals;
     [Serializable]
     public class HistoryResults : NamedClass, ISerializable
     {

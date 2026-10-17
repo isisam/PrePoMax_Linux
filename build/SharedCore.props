@@ -1,0 +1,24 @@
+<Project>
+  <PropertyGroup>
+    <CoreTargetFrameworks Condition="'$(CoreTargetFrameworks)' == ''">net48;net8.0</CoreTargetFrameworks>
+    <TargetFrameworks>$(CoreTargetFrameworks)</TargetFrameworks>
+    <LangVersion>12.0</LangVersion>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <EnableUnsafeBinaryFormatterSerialization>true</EnableUnsafeBinaryFormatterSerialization>
+    <WarningsNotAsErrors>$(WarningsNotAsErrors);SYSLIB0011</WarningsNotAsErrors>
+    <AssetTargetFallback>$(AssetTargetFallback);net48</AssetTargetFallback>
+    <PlatformTarget>x64</PlatformTarget>
+    <Platforms>AnyCPU;x64</Platforms>
+    <UseSharedCompilation>false</UseSharedCompilation>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net48'">
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <OutputPath>bin/x64/$(Configuration)/</OutputPath>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'net48'">
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Numerics" />
+    <Reference Include="System.Drawing" />
+  </ItemGroup>
+</Project>

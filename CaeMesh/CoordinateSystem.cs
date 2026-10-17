@@ -16,7 +16,6 @@ using CaeGlobals;
 using DynamicTypeDescriptor;
 using System.Runtime.Serialization;
 using System.Drawing;
-using System.Net.Configuration;
 
 namespace CaeMesh
 {

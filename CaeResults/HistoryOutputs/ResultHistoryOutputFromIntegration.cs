@@ -14,12 +14,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.ComponentModel;
-using CaeGlobals;
 using CaeMesh;
 using DynamicTypeDescriptor;
 
 namespace CaeResults
 {
+    using CaeGlobals;
     [Serializable]
     public enum IntegralTypeEnum
     {

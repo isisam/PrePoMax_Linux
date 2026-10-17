@@ -8,10 +8,10 @@
 // Contributors:
 
 using System.Collections.Generic;
-using CaeGlobals;
 
 namespace CaeMesh
 {
+    using CaeGlobals;
     /// <summary>
     /// The node and the element labels of the visible parts of a mesh, kept for as long as the parts they
     /// were built from do not change. A symbol is drawn per item but asks the same question of the whole

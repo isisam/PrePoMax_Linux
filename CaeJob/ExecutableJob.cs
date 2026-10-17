@@ -210,7 +210,7 @@ namespace CaeJob
                 _exe.OutputDataReceived += _exe_OutputDataReceived;
                 _exe.ErrorDataReceived += _exe_ErrorDataReceived;
                 //
-                _exe.Start();
+                ChildProcessJob.Start(_exe);
                 ChildProcessJob.Add(_exe);
                 _exe.BeginOutputReadLine();
                 _exe.BeginErrorReadLine();
@@ -246,7 +246,7 @@ namespace CaeJob
             //
             _exe = new Process();
             _exe.StartInfo = psi;
-            _exe.Start();
+            ChildProcessJob.Start(_exe);
             ChildProcessJob.Add(_exe);
             //
             int ms = 1000 * 3600 * 24 * 7 * 3; // 3 weeks
@@ -332,6 +332,7 @@ namespace CaeJob
         }
         private static void KillAllProcessesSpawnedBy(UInt32 parentProcessId)
         {
+#if NETFRAMEWORK
             // NOTE: Process Ids are reused!
             ManagementObjectSearcher searcher = new ManagementObjectSearcher(
                 "SELECT * " +
@@ -360,6 +361,11 @@ namespace CaeJob
                     }
                 }
             }
+#else
+            try { PlatformServices.Processes.Kill((int)parentProcessId); }
+            catch (ArgumentException) { } // already exited
+            catch (InvalidOperationException) { }
+#endif
         }
         private void AddDataToOutput(string data)
         {

@@ -1,4 +1,4 @@
-﻿// PrePoMax - Copyright (C) 2016-2026 Matej Borovinšek
+// PrePoMax - Copyright (C) 2016-2026 Matej Borovinšek
 //
 // Licensed under the terms defined in the LICENSE file located in the root directory of this source code.
 //
@@ -13,7 +13,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using CaeMesh;
-using CaeGlobals;
 using System.Runtime.Serialization;
 using Calculix = FileInOut.Output.Calculix;
 using System.IO;
@@ -31,6 +30,7 @@ using System.Collections.Concurrent;
 
 namespace CaeModel
 {
+    using CaeGlobals;
     [Serializable]
     public class FeModel : ISerializable
     {
@@ -565,7 +565,7 @@ namespace CaeModel
                     throw new CaeException("The selected file does not contain 2D geometry in x-y plane.");
                 else if (!Check2DSurfaceNormals(mesh))
                 {
-                    MessageBoxes.ShowWarning("The imported geometry contains faces oriented in the wrong direction (negative Z). " +
+                    PlatformServices.Messages.Warning("The imported geometry contains faces oriented in the wrong direction (negative Z). " +
                                              "To use them in the analysis, change their orientation.");
                 }
             }
@@ -2410,12 +2410,17 @@ namespace CaeModel
         }
         public List<string> ImportModelFromInpFile(string fileName, Action<string> WriteDataToOutput)
         {
+            return ImportModelFromInpFile(fileName, WriteDataToOutput, false);
+        }
+        public List<string> ImportModelFromInpFile(string fileName, Action<string> WriteDataToOutput,
+                                                   bool preserveUnsupportedUserMaterials)
+        {
             OrderedDictionary<int[], Calculix.CalculixUserKeyword> indexedUserKeywords;
             InpFileReader.Read(fileName,
                                ElementsToImport.Solid | ElementsToImport.Shell, 
                                this,
                                WriteDataToOutput,
-                               out indexedUserKeywords);
+                               out indexedUserKeywords, preserveUnsupportedUserMaterials);
             //
             CalculixUserKeywords = indexedUserKeywords;
             //
@@ -8483,7 +8488,7 @@ namespace CaeModel
                                                                                    out _);
             if (errors.Count > 0)
             {
-                MessageBoxes.ShowError("The following parameters could not be evaluated: " +
+                PlatformServices.Messages.Error("The following parameters could not be evaluated: " +
                                        string.Join(", ", errors.Keys) + "." + Environment.NewLine +
                                        "Check the parameter equations.");
             }

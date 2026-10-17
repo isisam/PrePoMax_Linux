@@ -14,11 +14,11 @@ using System.Text;
 using System.Threading.Tasks;
 using CaeMesh;
 using System.Runtime.Serialization;
-using CaeGlobals;
 using DynamicTypeDescriptor;
 
 namespace CaeModel
 {
+    using CaeGlobals;
     [Serializable]
     public enum IncrementationTypeEnum
     {

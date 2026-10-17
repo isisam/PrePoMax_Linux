@@ -17,7 +17,6 @@ using System.ComponentModel;
 using System.Globalization;
 using UnitsNet;
 using UnitsNet.Units;
-using System.Diagnostics.Eventing.Reader;
 
 namespace CaeGlobals
 {

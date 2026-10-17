@@ -7,7 +7,6 @@
 // Author: Matej Borovinšek
 // Contributors:
 
-using CaeGlobals;
 using System;
 using System.Collections;
 using System.Collections.Concurrent;
@@ -22,20 +21,17 @@ using System.IO.Ports;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
-using System.Runtime.InteropServices.WindowsRuntime;
 using System.Runtime.Serialization;
 using System.Security.AccessControl;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
-using System.Windows.Forms;
-using System.Windows.Forms.VisualStyles;
-using System.Windows.Input;
 using System.Xml.Linq;
 using static GmshCommon.Gmsh;
 
 namespace CaeMesh
 {
+    using CaeGlobals;
     [Serializable]
     public class FeMesh : ISerializable
     {
@@ -1385,7 +1381,7 @@ namespace CaeMesh
                 if (part.PartId >= 9900)
                 {
                     toManyPartsId = true;
-                    MessageBoxes.ShowWarning("The number of parts is too large. Only the first 9900 parts were created.");
+                    PlatformServices.Messages.Warning("The number of parts is too large. Only the first 9900 parts were created.");
                     break;
                 }
             }

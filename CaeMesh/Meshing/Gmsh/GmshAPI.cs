@@ -21,7 +21,10 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+
+#if NETFRAMEWORK
 using System.Windows.Forms;
+#endif
 
 namespace CaeMesh
 {
@@ -156,7 +159,9 @@ namespace CaeMesh
                 while (_thread.ThreadState == System.Threading.ThreadState.Running)
                 {
                     if (count++ % 10 == 0) WriteLog();
-                    Application.DoEvents();
+                    #if NETFRAMEWORK
+                Application.DoEvents();
+#endif
                     Thread.Sleep(100);
                 }
                 // Wait for the worker thread to finish
@@ -170,7 +175,9 @@ namespace CaeMesh
             {
                 _error = ex.Message;
                 _writeOutput?.Invoke(_error);
+                #if NETFRAMEWORK
                 _thread?.Abort();
+#endif
                 //
                 return _error;
             }

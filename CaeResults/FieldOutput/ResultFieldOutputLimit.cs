@@ -13,11 +13,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.ComponentModel;
-using CaeGlobals;
 using DynamicTypeDescriptor;
 
 namespace CaeResults
 {
+    using CaeGlobals;
     [Serializable]
     public enum LimitPlotBasedOnEnum
     {

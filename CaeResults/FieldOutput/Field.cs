@@ -13,14 +13,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using CaeMesh;
-using CaeGlobals;
 using System.ComponentModel;
 using System.Xml.Linq;
 using System.Numerics;
-using System.Diagnostics.Eventing.Reader;
 
 namespace CaeResults
 {
+    using CaeGlobals;
     [Serializable]
     public enum DataTypeEnum
     {

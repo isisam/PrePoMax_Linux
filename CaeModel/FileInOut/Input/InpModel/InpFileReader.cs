@@ -14,12 +14,12 @@ using System.Text;
 using System.Threading.Tasks;
 using System.IO;
 using CaeMesh;
-using CaeGlobals;
 using CaeModel;
 using FileInOut.Output.Calculix;
 
 namespace FileInOut.Input
 {
+    using CaeGlobals;
     [Serializable]
     static public class InpFileReader
     {
@@ -179,6 +179,13 @@ namespace FileInOut.Input
                                 Action<string> WriteDataToOutput,
                                 out OrderedDictionary<int[], CalculixUserKeyword> indexedUserKeywords)
         {
+            Read(fileName, elementsToImport, model, WriteDataToOutput, out indexedUserKeywords, false);
+        }
+        static public void Read(string fileName, ElementsToImport elementsToImport, FeModel model,
+                                Action<string> WriteDataToOutput,
+                                out OrderedDictionary<int[], CalculixUserKeyword> indexedUserKeywords,
+                                bool preserveUnsupportedUserMaterials)
+        {
             WriteDataToOutputStatic = WriteDataToOutput;
             _errors = new List<string>();
             _warnings = new List<string>();
@@ -291,7 +298,7 @@ namespace FileInOut.Input
                     }
                     else if (keyword == "*MATERIAL")
                     {
-                        Material material = GetMaterial(dataSets, ref i, userKeywords);
+                        Material material = GetMaterial(dataSets, ref i, userKeywords, preserveUnsupportedUserMaterials);
                         if (material != null) materials.Add(material.Name, material);
                     }
                     else if (keyword == "*SOLID SECTION")
@@ -738,7 +745,7 @@ namespace FileInOut.Input
                 {
                     userKeyword.Parent = null;
                     while (stackIndices.Peek() == 0) stackIndices.Pop();
-                    return stackIndices.ToArray().Reverse().ToArray();
+                    return Enumerable.Reverse(stackIndices.ToArray()).ToArray();
                 }
                 else if ((keyword is CalMaterial calMat && calMat.GetBase == userKeyword.Parent) ||
                          (keyword is CalSurfaceInteraction calSI && calSI.GetBase == userKeyword.Parent))
@@ -746,14 +753,14 @@ namespace FileInOut.Input
                     userKeyword.Parent = null;
                     count = keyword.Keywords.Count();
                     stackIndices.Push(count);
-                    return stackIndices.ToArray().Reverse().ToArray();
+                    return Enumerable.Reverse(stackIndices.ToArray()).ToArray();
                 }
                 else if (keyword is CalStepHeader calS && calS.GetBase == userKeyword.Parent)
                 {
                     userKeyword.Parent = null;
                     count = keyword.Keywords.Count();
                     stackIndices.Push(count - 1);   // Last one in *End step
-                    return stackIndices.ToArray().Reverse().ToArray();
+                    return Enumerable.Reverse(stackIndices.ToArray()).ToArray();
                 }
                 else
                 {
@@ -1189,7 +1196,8 @@ namespace FileInOut.Input
             }
         }
         // Material
-        private static Material GetMaterial(string[][] dataSets, ref int dataSetId, List<CalculixUserKeyword> userKeywords)
+        private static Material GetMaterial(string[][] dataSets, ref int dataSetId, List<CalculixUserKeyword> userKeywords,
+                                            bool preserveUnsupportedUserMaterials)
         {
             // *Material, Name=S235
             Material material = null;
@@ -1335,6 +1343,20 @@ namespace FileInOut.Input
                                                  { Parent = material });
                             }
                             userKeywords.Add(new CalculixUserKeyword(depvar.ToRows(depvar.Length)) { Parent = material });
+                        }
+                    }
+                    // The CLI can preserve old/unknown UMAT formats as raw text for file conversion.
+                    // This does not make them a validated FATCZM material. The Windows default remains strict.
+                    if (preserveUnsupportedUserMaterials && material.GetProperty<UserMaterial>() is UserMaterial candidate)
+                    {
+                        try { candidate.CheckMaterialName(name); }
+                        catch (CaeException ex)
+                        {
+                            material.Properties.Remove(candidate);
+                            userKeywords.Add(new CalculixUserKeyword(userMaterialData.ToRows(userMaterialData.Length)) { Parent = material });
+                            if (depvar != null)
+                                userKeywords.Add(new CalculixUserKeyword(depvar.ToRows(depvar.Length)) { Parent = material });
+                            WriteDataToOutputStatic?.Invoke("Preserving unvalidated legacy USER MATERIAL as raw keywords: " + name + ": " + ex.Message);
                         }
                     }
                 }

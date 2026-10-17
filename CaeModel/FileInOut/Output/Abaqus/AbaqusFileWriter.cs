@@ -17,11 +17,9 @@ using CaeMesh;
 using System.IO;
 using FileInOut.Output.Calculix;
 using CaeGlobals;
-using Microsoft.SqlServer.Server;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Xml.Linq;
-using System.Diagnostics.Eventing.Reader;
 using System.Security;
 
 namespace FileInOut.Output

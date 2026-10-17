@@ -19,9 +19,10 @@ using System.Management;
 using System.ComponentModel;
 using CaeGlobals;
 using System.Runtime.Serialization;
-using System.Security.RightsManagement;
-using System.Windows;
+
+#if NETFRAMEWORK
 using System.Windows.Forms;
+#endif
 using System.Runtime.InteropServices;
 
 namespace CaeJob
@@ -536,7 +537,7 @@ namespace CaeJob
             ////
             _exe = new Process();
             _exe.StartInfo = psi;
-            _exe.Start();
+            ChildProcessJob.Start(_exe);
             ////
             int ms = GetRemainingRunTime();
             if (_exe.WaitForInputIdle(ms))
@@ -568,7 +569,7 @@ namespace CaeJob
             //
             _exe = new Process();
             _exe.StartInfo = psi;
-            _exe.Start();
+            ChildProcessJob.Start(_exe);
             ChildProcessJob.Add(_exe);
             //
             int ms = GetRemainingRunTime();
@@ -649,7 +650,7 @@ namespace CaeJob
                     }
                 };
                 //
-                _exe.Start();
+                ChildProcessJob.Start(_exe);
                 ChildProcessJob.Add(_exe);
                 //
                 _exe.BeginOutputReadLine();
@@ -719,6 +720,7 @@ namespace CaeJob
         }
         public static void KillAllProcessesSpawnedBy(UInt32 parentProcessId)
         {
+#if NETFRAMEWORK
             // NOTE: Process Ids are reused!
             ManagementObjectSearcher searcher = new ManagementObjectSearcher(
                 "SELECT * " +
@@ -745,6 +747,11 @@ namespace CaeJob
                     }
                 }
             }
+#else
+            try { PlatformServices.Processes.Kill((int)parentProcessId); }
+            catch (ArgumentException) { } // already exited
+            catch (InvalidOperationException) { }
+#endif
         }
         //
         public string GetAllOutputData()
@@ -794,7 +801,9 @@ namespace CaeJob
             if (_myLock == null) _myLock = new object();
             lock (_myLock)
             {
+                #if NETFRAMEWORK
                 Application.DoEvents();
+#endif
                 _sbOutput.AppendLine(data);
                 if (_femSolver == FEMSolverEnum.Calculix)
                 {
@@ -921,6 +930,7 @@ namespace CaeJob
         }
         public static bool IsAdministrator()
         {
+            if (!PlatformInfo.IsWindows) return false;
             System.Security.Principal.WindowsIdentity identity = System.Security.Principal.WindowsIdentity.GetCurrent();
             System.Security.Principal.WindowsPrincipal principal = new System.Security.Principal.WindowsPrincipal(identity);
             // DOMAINNAME\Domain Admins RID: 0x200

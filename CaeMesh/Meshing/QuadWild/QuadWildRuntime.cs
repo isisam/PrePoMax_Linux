@@ -1,4 +1,4 @@
-﻿// PrePoMax - Copyright (C) 2016-2026 Matej Borovinšek
+// PrePoMax - Copyright (C) 2016-2026 Matej Borovinšek
 //
 // Licensed under the terms defined in the LICENSE file located in the root directory of this source code.
 //
@@ -24,8 +24,13 @@ namespace CaeMesh
     public static class QuadWildRuntime
     {
         // Variables                                                                                                                
+#if NETFRAMEWORK
         public const string MesherFileName = "quadwild.exe";
         public const string PatchMesherFileName = "quad_from_patches.exe";
+#else
+        public static readonly string MesherFileName = PlatformInfo.IsWindows ? "quadwild.exe" : "quadwild";
+        public static readonly string PatchMesherFileName = PlatformInfo.IsWindows ? "quad_from_patches.exe" : "quad_from_patches";
+#endif
         private const int _numOfReportedLines = 20;
         // QuadWild options that switch off the patch layout (stage 1) and mesh quality (stage 2) improvements
         public static readonly string[] OldAlgorithmPrepOptions = new string[]
@@ -250,7 +255,7 @@ namespace CaeMesh
             {
                 process.OutputDataReceived += keepLine;
                 process.ErrorDataReceived += keepLine;
-                process.Start();
+                ChildProcessJob.Start(process);
                 ChildProcessJob.Add(process);
                 process.BeginOutputReadLine();
                 process.BeginErrorReadLine();

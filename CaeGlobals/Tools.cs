@@ -45,7 +45,7 @@ namespace CaeGlobals
                 stream.Write(bytes, 0, (int)fs.Length);
                 fs.Close();
                 stream.Position = 0;
-                BinaryFormatter formatter = new BinaryFormatter();
+                BinaryFormatter formatter = LegacyFormatter.Create();
                 formatter.Binder = RenamedTypeSerializationBinder.Instance;
                 return (T)formatter.Deserialize(stream);
             }
@@ -58,7 +58,7 @@ namespace CaeGlobals
                 byte[] bytes = br.ReadBytes((int)length);
                 stream.Write(bytes, 0, (int)length);
                 stream.Position = 0;
-                BinaryFormatter formatter = new BinaryFormatter();
+                BinaryFormatter formatter = LegacyFormatter.Create();
                 formatter.Binder = RenamedTypeSerializationBinder.Instance;
                 return (T)formatter.Deserialize(stream);
             }
@@ -130,7 +130,7 @@ namespace CaeGlobals
         //
         public static string GetLocalPath(string path)
         {
-            string startUpPath = System.Windows.Forms.Application.StartupPath;
+            string startUpPath = PlatformServices.Paths.ApplicationDirectory;
             if (path.StartsWith(startUpPath))
             {
                 return "#" + path.Substring(startUpPath.Length);
@@ -145,6 +145,7 @@ namespace CaeGlobals
         {
             if (path == null || (path.Length <= maxLength && (blanksAllowed || !path.Contains(" ")))) return path;
             //
+            if (!PlatformInfo.IsWindows) return path;
             StringBuilder shortPath = new StringBuilder(path.Length + 1);
             uint length = GetShortPathName(path, shortPath, (uint)shortPath.Capacity);
             if (length == 0 || length >= shortPath.Capacity) return path;
@@ -154,8 +155,8 @@ namespace CaeGlobals
         {
             if (path != null && path.StartsWith("#"))
             {
-                string startUpPath = System.Windows.Forms.Application.StartupPath;
-                return Path.Combine(startUpPath, path.Substring(1).TrimStart('\\'));
+                string startUpPath = PlatformServices.Paths.ApplicationDirectory;
+                return Path.Combine(startUpPath, path.Substring(1).TrimStart('\\', '/'));
             }
             return path;
         }
@@ -235,6 +236,7 @@ namespace CaeGlobals
         // Windows version
         public static string GetWindowsName()
         {
+            if (!PlatformInfo.IsWindows) return Environment.OSVersion.ToString();
             var reg = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows NT\CurrentVersion");
             string productName = (string)reg.GetValue("ProductName");
             return productName;
@@ -242,6 +244,7 @@ namespace CaeGlobals
         // Check if it's Windows 8.1
         public static bool IsWindows10orNewer()
         {
+            if (!PlatformInfo.IsWindows) return true;
             try
             {
                 string[] tmp = GetWindowsName().Split(new string[] {" "}, StringSplitOptions.RemoveEmptyEntries);
@@ -372,6 +375,12 @@ namespace CaeGlobals
             //
             try
             {
+                if (!PlatformInfo.IsWindows)
+                {
+                    using (var process = Process.GetProcessById(processId)) files.Add(process.ProcessName);
+                }
+                else
+                {
                 string query = $"SELECT ProcessId, Name FROM Win32_Process WHERE ProcessId = {processId}";
                 using (var searcher = new System.Management.ManagementObjectSearcher("root\\CIMV2", query))
                 {
@@ -379,6 +388,7 @@ namespace CaeGlobals
                     {
                         files.Add(obj["Name"].ToString());
                     }
+                }
                 }
             }
             catch

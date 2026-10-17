@@ -7,7 +7,6 @@
 // Author: Matej Borovinšek
 // Contributors:
 
-using CaeGlobals;
 using CaeMesh;
 using Octree;
 using System;
@@ -25,18 +24,16 @@ using System.Numerics;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices.WindowsRuntime;
-using System.Runtime.Remoting.Metadata.W3cXsd2001;
 using System.Runtime.Serialization;
 using System.Security.AccessControl;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
-using vtkControl;
 using static CaeGlobals.Geometry2;
 
 namespace CaeResults
 {
+    using CaeGlobals;
     [Serializable]
     public class FeResults : ISerializable
     {
