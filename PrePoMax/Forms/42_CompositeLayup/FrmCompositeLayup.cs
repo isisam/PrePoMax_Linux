@@ -74,7 +74,9 @@ namespace PrePoMax.Forms
             plyBody.Controls.Add(tools, 0, 1);
             foreach (string action in new[] { "Add", "Insert", "Delete", "Move up", "Move down", "Duplicate", "Reverse" })
             {
-                var button = new Button { Text = action, AutoSize = true, MinimumSize = new Size(65, 25), CausesValidation = false };
+                var button = new Button { Name = "btnPly" + action.Replace(" ", ""), Text = action,
+                    AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Padding = new Padding(6, 0, 6, 0),
+                    UseCompatibleTextRendering = true, MinimumSize = new Size(65, 25), CausesValidation = false };
                 button.Click += (s, e) => EditTable(action);
                 tools.Controls.Add(button);
             }
