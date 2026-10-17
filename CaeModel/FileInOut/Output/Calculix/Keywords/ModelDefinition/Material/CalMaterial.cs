@@ -38,6 +38,8 @@ namespace FileInOut.Output.Calculix
         // Methods                                                                                                                  
         public override string GetKeywordString()
         {
+            if (_material.GetProperty<UserMaterial>() != null)
+                return string.Format("*MATERIAL, NAME={0}{1}", _material.Name, Environment.NewLine);
             return string.Format("*Material, Name={0}{1}", _material.Name, Environment.NewLine);
         }
         public override string GetDataString()

@@ -1222,6 +1222,7 @@ namespace FileInOut.Input
                     string keyword;
                     bool temperatureDependent;
                     material = new Material(name);
+                    string[] depvar = null;
                     //
                     for (int i = dataSetId; i < dataSets.Length; i++)
                     {
@@ -1270,6 +1271,14 @@ namespace FileInOut.Input
                                 userKeywords.Add(userKeyword);
                             }
                         }
+                        else if (keyword == "*USER MATERIAL" && IsSupportedUserMaterial(dataSet[0]))
+                        {
+                            material.AddProperty(GetUserMaterial(dataSet, name));
+                        }
+                        else if (keyword == "*DEPVAR" && dataSet[0].Trim().ToUpperInvariant() == "*DEPVAR")
+                        {
+                            depvar = dataSet;
+                        }
                         else if (keyword == "*PLASTIC")
                         {
                             Plastic plastic = GetMaterialPlasticity(dataSet, out temperatureDependent);
@@ -1309,6 +1318,13 @@ namespace FileInOut.Input
                             break;
                         }
                     }
+                    if (depvar != null)
+                    {
+                        if (material.GetProperty<UserMaterial>() is UserMaterial um)
+                            um.NumberOfStateVariables = int.Parse(depvar[1].Trim());
+                        else
+                            userKeywords.Add(new CalculixUserKeyword(depvar.ToRows(depvar.Length)) { Parent = material });
+                    }
                 }
                 else _errors.Add("Material name not found: " + dataSet[0]);
                 //
@@ -1319,6 +1335,20 @@ namespace FileInOut.Input
                 _errors.Add("Failed to import material: " + dataSet != null ? dataSet.ToRows() : "");
                 return null;
             }
+        }
+        private static bool IsSupportedUserMaterial(string header)
+        {
+            string[] options = header.Split(',').Skip(1).Select(item => item.Replace(" ", "").ToUpperInvariant()).ToArray();
+            return options.Length == 1 && options[0].StartsWith("CONSTANTS=");
+        }
+        private static UserMaterial GetUserMaterial(string[] lines, string name)
+        {
+            int count = int.Parse(lines[0].Split('=')[1].Trim());
+            double[] constants = lines.Skip(1).SelectMany(line => line.Split(_splitterComma,
+                StringSplitOptions.RemoveEmptyEntries)).Select(value => double.Parse(value.Trim().Replace('D', 'E')
+                .Replace('d', 'e'), System.Globalization.CultureInfo.InvariantCulture)).ToArray();
+            if (count != constants.Length) throw new CaeException("USER MATERIAL CONSTANTS count does not match the data.");
+            return new UserMaterial(constants, 0, name.StartsWith("USERFATCZM", StringComparison.Ordinal) && count == 26);
         }
         private static Density GetMaterialDensity(string[] lines, out bool temperatureDependent)
         {

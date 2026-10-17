@@ -344,6 +344,15 @@ namespace CaeModel
                 {
                     // Check equations
                     valid &= property.TryCheckEquations();
+                    if (property is UserMaterial um)
+                    {
+                        try
+                        {
+                            um.CheckMaterialName(material.Name);
+                            UserMaterial.CheckSharedFatczmConstants(_materials.Values);
+                        }
+                        catch { valid = false; }
+                    }
                 }
                 //
                 SetItemValidity(null, material, valid, items);

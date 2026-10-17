@@ -1939,6 +1939,7 @@ namespace FileInOut.Output
                 }
             }
             //
+            UserMaterial.CheckSharedFatczmConstants(materials);
             foreach (var material in materials)
             {
                 if ((materialNames != null && materialNames.Contains(material.Name)) || material.Active)
@@ -1964,6 +1965,12 @@ namespace FileInOut.Output
                         else if (property is ElasticEngineeringConstants eec)
                         {
                             calMaterial.AddKeyword(new CalElasticEngineeringConstants(eec, material.TemperatureDependent));
+                        }
+                        else if (property is UserMaterial um)
+                        {
+                            um.CheckMaterialName(material.Name);
+                            calMaterial.AddKeyword(new CalUserMaterial(um));
+                            calMaterial.AddKeyword(new CalDepvar(um.NumberOfStateVariables));
                         }
                         else if (property is ElasticLamina ela)
                         {

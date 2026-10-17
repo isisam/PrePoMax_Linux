@@ -59,6 +59,7 @@ namespace CaeModel
             return property is Elastic ||
                    property is ElasticEngineeringConstants ||
                    property is ElasticLamina ||
+                   property is UserMaterial ||
                    property is ElasticWithDensity;
         }
         public MaterialProperty GetProperty<T>()
@@ -73,7 +74,12 @@ namespace CaeModel
         {
             foreach (var property in _properties)
             {
-                if (property is Density den)
+                if (property is UserMaterial um)
+                {
+                    foreach (UserMaterialConstant constant in um.Constants)
+                        if (constant.Value.IsEquation()) return true;
+                }
+                else if (property is Density den)
                 {
                     for (int i = 0; i < den.DensityTemp.Length; i++)
                     {
