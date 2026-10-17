@@ -134,8 +134,9 @@ namespace CaeModel
             for (int i = 0; i < 6; i++)
                 if (c[i] <= 0) throw new CaeException("FATCZM constants 1-6 must be positive.");
             if (c[4] >= 1) throw new CaeException("FATCZM Dint must be less than 1.");
-            if (c[6] < 0 || c[9] < 0 || c[12] <= 0)
-                throw new CaeException("FATCZM alpha I and alpha II must not be negative; dDmax must be positive.");
+            // The UMAT evaluates log(alpha) in the log-linear mixed-mode law.
+            if (c[6] <= 0 || c[9] <= 0 || c[12] <= 0)
+                throw new CaeException("FATCZM alpha I, alpha II and dDmax must be positive.");
             CheckInteger(c[13], 1, int.MaxValue, "first fatigue step");
             CheckInteger(c[14], 1, 3, "normal axis");
             for (int i = 15; i <= 17; i++)
