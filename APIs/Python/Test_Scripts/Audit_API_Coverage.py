@@ -108,8 +108,8 @@ def audit(root):
                 replacement = "replace" + method[3:]
                 if replacement not in methods:
                     missing.append({"file": relative, "add": method, "missing_replace": replacement})
-    controller = (root / "PrePoMax/Controller.cs").read_text(encoding="utf-8-sig")
-    gateway_sources = [p.read_text(encoding="utf-8-sig") for p in files(root, "PrePoMax/Python/Commands")]
+    controller = (root / "PrePoMax.Core/Controller.cs").read_text(encoding="utf-8-sig")
+    gateway_sources = [p.read_text(encoding="utf-8-sig") for p in files(root, "PrePoMax.Core/Python/Commands")]
     commands = []
     for match in re.finditer(r"public\s+(?:async\s+)?[\w<>\[\],?]+\s+(\w+Command)\s*\(", controller):
         name = match.group(1)
@@ -130,7 +130,7 @@ def audit(root):
 def commands_without_to_python(root):
     """Every concrete command class must say what it is in Python."""
     without = []
-    for path in files(root, "PrePoMax/Commands"):
+    for path in files(root, "PrePoMax.Core/Commands"):
         source = path.read_text(encoding="utf-8-sig")
         classes = re.findall(r"(?:sealed\s+)?class\s+(C[A-Za-z0-9_]+)\s*:", source)
         classes = [name for name in classes if name not in JOURNAL_EXCEPTIONS]
@@ -160,7 +160,7 @@ def api_parameter_names(root):
 def emitted_names(root):
     """Every lower case string literal of the journal emitters and of the ToPython bodies of the commands."""
     emitted = {}
-    sources = list(files(root, "PrePoMax/Python/Journal")) + list(files(root, "PrePoMax/Commands"))
+    sources = list(files(root, "PrePoMax.Core/Python/Journal")) + list(files(root, "PrePoMax.Core/Commands"))
     for path in sources:
         source = path.read_text(encoding="utf-8-sig")
         # A command is only searched inside what it says in Python

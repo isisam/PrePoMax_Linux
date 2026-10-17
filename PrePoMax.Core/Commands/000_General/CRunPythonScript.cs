@@ -1,0 +1,163 @@
+// PrePoMax - Copyright (C) 2016-2026 Matej Borovinšek
+//
+// Licensed under the terms defined in the LICENSE file located in the root directory of this source code.
+//
+// Source code: https://gitlab.com/MatejB/PrePoMax
+//
+// Author: Matej Borovinšek
+// Contributors:
+
+using CaeGlobals;
+using PrePoMax.Python;
+using PrePoMax.Python.Journal;
+using System;
+using System.Collections.Generic;
+using System.Runtime.Serialization;
+using System.Text;
+
+namespace PrePoMax.Commands
+{
+    [System.Runtime.CompilerServices.TypeForwardedFrom("PrePoMax, Version=3.0.0.0, Culture=neutral, PublicKeyToken=null")]
+    [Serializable]
+    class CRunPythonScript : GeneralCommand
+    {
+        // Variables                                                                                                                
+        private string _script;
+        [OptionalField] private string _fileName;
+        [OptionalField] private string[] _arguments;
+        [OptionalField] private bool _failed;
+        [NonSerialized] private PythonEngineResult _executionResult;
+        // Only the instance a run creates starts true; a command read from a history file is always a rerun
+        [NonSerialized] private bool _isFirstRun;
+
+
+        // Properties                                                                                                               
+        public PythonEngineResult ExecutionResult { get { return _executionResult; } }
+        public override bool IsRecordedAsFailed { get { return _failed; } }
+
+
+        // Constructor                                                                                                              
+        public CRunPythonScript(string script, string fileName = null, string[] arguments = null)
+            : base("Run Python script")
+        {
+            if (string.IsNullOrWhiteSpace(script))
+                throw new ArgumentException("The Python script must not be empty.", "script");
+            //
+            _script = script;
+            _fileName = fileName;
+            _arguments = arguments == null ? null : (string[])arguments.Clone();
+            _isFirstRun = true;
+        }
+
+
+        // Methods
+        public override bool Execute(Controller receiver)
+        {
+            bool isRerun = !_isFirstRun;
+            _isFirstRun = false;
+            _executionResult = receiver.RunPythonScript(_script, _fileName, _arguments, isRerun);
+            _failed = !string.IsNullOrEmpty(_executionResult.Error);
+            //
+            if (_failed)
+                throw new CaeException(_executionResult.Error.TrimEnd());
+            //
+            return true;
+        }
+        // The script is emitted as it was recorded and is never expanded into the calls it made. Its
+        // own commands were never recorded, and expanding it would replace a live computation with the
+        // values it produced on its first run. The engine ran it in a namespace of its own holding only
+        // pmx, __name__ and __file__, so the journal executes it in the same kind of namespace: a script
+        // that binds a name the journal uses, such as selection_1, cannot change the lines after it. A
+        // script run from a file read sys.argv as the engine set it, so the journal sets the same value
+        // around it and restores its own afterwards. The engine also put the folder of that file, as a full
+        // path, first on sys.path for the run, so the modules next to the script import, and so does the
+        // journal. Unlike the engine, the journal does not forget the modules the script imported from there:
+        // a later recorded script of the same journal that imports one reuses it rather than importing it anew.
+        public override void ToPython(PythonJournalWriter writer)
+        {
+            string source = _fileName == null ? "embedded script" : _fileName;
+            string scriptFileName = _fileName == null ? PythonValueFormatter.Text("<string>") : writer.Path(_fileName);
+            string folder = GetScriptFolder();
+            writer.Comment("--- Recorded script: " + source + " ---");
+            if (_fileName != null)
+            {
+                List<string> argv = new List<string>();
+                argv.Add(writer.Path(_fileName));
+                if (_arguments != null)
+                {
+                    foreach (string argument in _arguments) argv.Add(PythonValueFormatter.Text(argument));
+                }
+                writer.Line("import sys as _recorded_script_sys");
+                writer.Assign("_recorded_script_saved_argv", "list(_recorded_script_sys.argv)");
+                writer.Assign("_recorded_script_sys.argv", "[" + string.Join(", ", argv) + "]");
+                if (folder != null)
+                {
+                    writer.Assign("_recorded_script_added", folder + " not in _recorded_script_sys.path");
+                    writer.Line("if _recorded_script_added:");
+                    writer.Line("    _recorded_script_sys.path.insert(0, " + folder + ")");
+                }
+            }
+            writer.Line("_recorded_script_source = '''\\");
+            writer.Block(GetTripleQuotedBody(_script) + "'''");
+            string exec = "exec(compile(_recorded_script_source, " + scriptFileName + ", 'exec'), " +
+                          "{'__name__': '__main__', '__file__': " + scriptFileName + ", 'pmx': pmx})";
+            // A script that failed was recorded with the changes it made before its error, so the journal runs it
+            // to that error, reports it and goes on, as Regenerate does
+            if (_failed)
+            {
+                writer.Line("try:");
+                writer.Line("    " + exec);
+                writer.Line("except KeyboardInterrupt:");
+                writer.Line("    raise");
+                writer.Line("except BaseException as _recorded_script_error:");
+                writer.Line("    print('The recorded script failed, as it did when it was recorded: ' + " +
+                            "repr(_recorded_script_error))");
+            }
+            else writer.Statement(exec);
+            if (_fileName != null) writer.Assign("_recorded_script_sys.argv", "_recorded_script_saved_argv");
+            if (folder != null)
+            {
+                writer.Line("if _recorded_script_added and " + folder + " in _recorded_script_sys.path:");
+                writer.Line("    _recorded_script_sys.path.remove(" + folder + ")");
+            }
+            writer.Comment("--- End of recorded script ---");
+            writer.CountEmittedCommand();
+        }
+        private string GetScriptFolder()
+        {
+            if (string.IsNullOrEmpty(_fileName)) return null;
+            //
+            try
+            {
+                string folder = System.IO.Path.GetDirectoryName(System.IO.Path.GetFullPath(_fileName));
+                return string.IsNullOrEmpty(folder) ? null : PythonValueFormatter.Path(folder);
+            }
+            catch (Exception)
+            {
+                // A recorded name that is not a valid path today names no folder to import from
+                return null;
+            }
+        }
+        // The body of a ''' literal that holds the script unchanged and readable: a backslash is doubled,
+        // and a quote is escaped only where it could close the literal - before another quote or at the
+        // end. Python compiles any line break as a newline, so the breaks are normalized.
+        private static string GetTripleQuotedBody(string script)
+        {
+            string text = script.Replace("\r\n", "\n").Replace('\r', '\n');
+            StringBuilder builder = new StringBuilder(text.Length + 16);
+            for (int i = 0; i < text.Length; i++)
+            {
+                char character = text[i];
+                if (character == '\\') builder.Append("\\\\");
+                else if (character == '\'' && (i == text.Length - 1 || text[i + 1] == '\'')) builder.Append("\\'");
+                else builder.Append(character);
+            }
+            //
+            return builder.ToString();
+        }
+        public override string GetCommandString()
+        {
+            return base.GetCommandString() + "Embedded script";
+        }
+    }
+}

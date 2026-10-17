@@ -786,7 +786,7 @@ def check_code_blocks(types, root):
 
 
 # Check e: the texts an agent reads ###################################################################################
-AGENT_TEXTS = ("PrePoMax/Mcp/McpAgentGuide.cs", "PrePoMax/Mcp/McpToolCatalog.cs")
+AGENT_TEXTS = ("PrePoMax.Core/Mcp/McpAgentGuide.cs", "PrePoMax.Core/Mcp/McpToolCatalog.cs")
 AGENT_PATH = re.compile(r"\bpmx(?:\.[A-Za-z_]\w*)+")
 
 

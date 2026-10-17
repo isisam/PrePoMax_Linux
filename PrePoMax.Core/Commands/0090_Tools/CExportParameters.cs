@@ -1,0 +1,62 @@
+// PrePoMax - Copyright (C) 2016-2026 Matej Borovinšek
+//
+// Licensed under the terms defined in the LICENSE file located in the root directory of this source code.
+//
+// Source code: https://gitlab.com/MatejB/PrePoMax
+//
+// Author: Matej Borovinšek
+// Contributors:
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using PrePoMax;
+using CaeModel;
+using CaeMesh;
+using CaeGlobals;
+using PrePoMax.Python.Journal;
+using CaeResults;
+
+
+namespace PrePoMax.Commands
+{
+    [System.Runtime.CompilerServices.TypeForwardedFrom("PrePoMax, Version=3.0.0.0, Culture=neutral, PublicKeyToken=null")]
+    [Serializable]
+    class CExportParameters : PreprocessCommand, IExportFileCommand
+    {
+        // Variables                                                                                                                
+        private string _fileName;
+
+
+        // Properties                                                                                                               
+        public string FileName { get { return _fileName; } set { _fileName = value; } }
+
+
+        // Constructor                                                                                                              
+        public CExportParameters(string fileName)
+            : base("Export parameters")
+        {
+            _fileName = Tools.GetLocalPath(fileName);
+        }
+
+
+        // Methods                                                                                                                  
+        public override bool Execute(Controller receiver)
+        {
+            receiver.ExportParametersToFile(Tools.GetGlobalPath(_fileName));
+            return true;
+        }
+
+        public override void ToPython(PythonJournalWriter writer)
+        {
+            writer.Statement(writer.Call("pmx.model.parameters", "export_to_file", writer.OutputPath(_fileName)));
+            writer.CountEmittedCommand();
+        }
+        public override string GetCommandString()
+        {
+            return base.GetCommandString() + _fileName;
+        }
+    }
+}

@@ -31,12 +31,6 @@ using static System.Windows.Forms.VisualStyles.VisualStyleElement.TextBox;
 
 namespace UserControls
 {
-    public enum ViewType
-    {
-        Geometry,
-        Model,
-        Results
-    }
     public struct ContextMenuFields
     {
         public HashSet<Type> Types;

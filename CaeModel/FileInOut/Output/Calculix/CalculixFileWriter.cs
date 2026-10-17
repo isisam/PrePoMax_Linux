@@ -54,6 +54,9 @@ namespace FileInOut.Output
             {
                 WriteKeywordRecursively(sb, keyword);
             }
+            // Keep the Windows INP wire format on every runtime, including user keyword text.
+            if (Environment.NewLine != "\r\n")
+                sb = new StringBuilder(sb.ToString().Replace("\r\n", "\n").Replace("\n", "\r\n"));
             // Write to file in multiple steps
             int step = 10_000_000;
             int upper;

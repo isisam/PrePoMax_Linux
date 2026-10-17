@@ -138,6 +138,13 @@ namespace CaeModel
                 foreach (var entry in overriddenParameters) _parameters.AddOverriddenParameter(entry.Key, entry.Value);
             }
         }
+        /// <summary>Restore the identity of a saved model reconstructed from its own history.</summary>
+        public void RestoreReplayIdentity(FeModel persistedModel)
+        {
+            if (persistedModel == null) throw new ArgumentNullException(nameof(persistedModel));
+            _hashName = persistedModel._hashName;
+        }
+
         public FeModel(FeModel model)
         {
             FeModel copy = model.DeepCopy();

@@ -12,7 +12,7 @@ namespace CaeGlobals
     {
         public static BinaryFormatter Create()
         {
-            var formatter = new BinaryFormatter { Binder = RenamedTypeSerializationBinder.Instance };
+            var formatter = new BinaryFormatter { Binder = PmxSerializationBinder.Instance };
 #if !NETFRAMEWORK
             var selector = new SurrogateSelector();
             var context = new StreamingContext(StreamingContextStates.All);
@@ -31,9 +31,10 @@ namespace CaeGlobals
                 var type = (Type)obj;
                 info.FullTypeName = "System.UnitySerializationHolder";
                 info.AssemblyName = "mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089";
-                info.AddValue("Data", type.FullName);
+                PmxSerializationBinder.Instance.BindToName(type, out string wireAssembly, out string wireName);
+                info.AddValue("Data", wireName ?? type.FullName);
                 info.AddValue("UnityType", 4);
-                info.AddValue("AssemblyName", type.Assembly.FullName);
+                info.AddValue("AssemblyName", wireAssembly ?? type.Assembly.FullName);
             }
             public object SetObjectData(object obj, SerializationInfo info, StreamingContext context,
                                         ISurrogateSelector selector) => throw new NotSupportedException();
@@ -51,7 +52,7 @@ namespace CaeGlobals
                 assembly = info.GetString("AssemblyName");
             }
             public object GetRealObject(StreamingContext context) =>
-                Type.GetType(name + ", " + assembly, throwOnError: true);
+                PmxSerializationBinder.Instance.BindToType(assembly, name) ?? throw new SerializationException("Unknown Type record: " + name);
             public void GetObjectData(SerializationInfo info, StreamingContext context) => throw new NotSupportedException();
         }
 #endif

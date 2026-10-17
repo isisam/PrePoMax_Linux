@@ -1,0 +1,55 @@
+// PrePoMax - Copyright (C) 2016-2026 Matej Borovinšek
+//
+// Licensed under the terms defined in the LICENSE file located in the root directory of this source code.
+//
+// Source code: https://gitlab.com/MatejB/PrePoMax
+//
+// Author: Matej Borovinšek
+// Contributors:
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using PrePoMax;
+using CaeModel;
+using CaeMesh;
+using CaeGlobals;
+using PrePoMax.Python.Journal;
+
+
+namespace PrePoMax.Commands
+{
+    [System.Runtime.CompilerServices.TypeForwardedFrom("PrePoMax, Version=3.0.0.0, Culture=neutral, PublicKeyToken=null")]
+    [Serializable]
+    class CAddModelCoordinateSystem : PreprocessCommand
+    {
+        // Variables                                                                                                                
+        private CoordinateSystem _coordinateSystem;
+
+
+        // Constructor                                                                                                              
+        public CAddModelCoordinateSystem(CoordinateSystem coordinateSystem)
+            : base("Add model coordinate system")
+        {
+            _coordinateSystem = coordinateSystem.DeepClone();
+        }
+
+
+        // Methods                                                                                                                  
+        public override bool Execute(Controller receiver)
+        {
+            receiver.AddModelCoordinateSystem(_coordinateSystem.DeepClone());
+            return true;
+        }
+        public override void ToPython(PythonJournalWriter writer)
+        {
+            PythonFieldEmitter.CoordinateSystem(writer, null, _coordinateSystem);
+        }
+        public override string GetCommandString()
+        {
+            return base.GetCommandString() + _coordinateSystem.ToString();
+        }
+    }
+}

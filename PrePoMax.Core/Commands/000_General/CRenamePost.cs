@@ -1,0 +1,70 @@
+// PrePoMax - Copyright (C) 2016-2026 Matej Borovinšek
+//
+// Licensed under the terms defined in the LICENSE file located in the root directory of this source code.
+//
+// Source code: https://gitlab.com/MatejB/PrePoMax
+//
+// Author: Matej Borovinšek
+// Contributors:
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using PrePoMax;
+using CaeModel;
+using CaeMesh;
+using CaeGlobals;
+using PrePoMax.Python.Journal;
+
+
+namespace PrePoMax.Commands
+{
+    [System.Runtime.CompilerServices.TypeForwardedFrom("PrePoMax, Version=3.0.0.0, Culture=neutral, PublicKeyToken=null")]
+    [Serializable]
+    class CRenamePost : PostprocessCommand
+    {
+        // Variables                                                                                                                
+        private Type _itemType;
+        private string _itemName;
+        private string _newName;
+        private string _stepName;
+        private ViewGeometryModelResults _view;
+
+
+        // Variables                                                                                                                
+        public ViewGeometryModelResults View { get { return _view; } }
+
+
+        // Constructor                                                                                                              
+        public CRenamePost(Type itemType, string itemName, string newName, string stepName, ViewGeometryModelResults view)
+            : base("Rename")
+        {
+            _itemType = itemType;
+            _itemName = itemName;
+            _newName = newName;
+            _stepName = stepName;
+            _view = view;
+        }
+
+
+        // Methods                                                                                                                  
+        public override bool Execute(Controller receiver)
+        {
+            receiver.Rename(_itemType, _itemName, _newName, _stepName, _view);
+            return true;
+        }
+        public override void ToPython(PythonJournalWriter writer)
+        {
+            string collection = PythonCollectionResolver.GetCollection(_itemType, _stepName, _view);
+            writer.Statement(writer.Call(collection, "rename", PythonValueFormatter.Text(_itemName),
+                                         PythonValueFormatter.Text(_newName)));
+            writer.CountEmittedCommand();
+        }
+        public override string GetCommandString()
+        {
+            return base.GetCommandString() + _itemName + " to " + _newName;
+        }
+    }
+}

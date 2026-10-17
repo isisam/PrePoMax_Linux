@@ -1,0 +1,100 @@
+// PrePoMax - Copyright (C) 2016-2026 Matej Borovinšek
+//
+// Licensed under the terms defined in the LICENSE file located in the root directory of this source code.
+//
+// Source code: https://gitlab.com/MatejB/PrePoMax
+//
+// Author: Matej Borovinšek
+// Contributors:
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using PrePoMax;
+using CaeModel;
+using CaeMesh;
+using CaeGlobals;
+using PrePoMax.Python.Journal;
+using System.IO;
+using System.Runtime.Serialization;
+
+namespace PrePoMax.Commands
+{
+    [System.Runtime.CompilerServices.TypeForwardedFrom("PrePoMax, Version=3.0.0.0, Culture=neutral, PublicKeyToken=null")]
+    [Serializable]
+    public class CSaveToPmx : SaveCommand, IFileCommand
+    {
+        // Variables                                                                                                                
+        private string _fileName;
+        private byte[] _hash;
+        [OptionalField] private bool _resultsSaved;
+
+
+        // Properties
+        public string FileName { get { return _fileName; } set { _fileName = value; } }
+        public byte[] Hash { get { return _hash; } set { _hash = value; } }
+        // The file holds every result the session had when it was saved
+        public bool ResultsSaved { get { return _resultsSaved; } }
+
+
+        // Constructor                                                                                                              
+        public CSaveToPmx(string fileName)
+            :base("Save to file")
+        {
+            _fileName = Tools.GetLocalPath(fileName);
+            _hash = null;
+            _resultsSaved = false;
+        }
+
+
+        // Methods                                                                                                                  
+        private byte[] GetHash()
+        {
+            byte[] hash = null;
+            string globalFileName = Tools.GetGlobalPath(_fileName);
+            //
+            if (File.Exists(globalFileName))
+            {
+                using (FileStream fop = File.OpenRead(Tools.GetGlobalPath(_fileName)))
+                {
+                    hash = System.Security.Cryptography.SHA1.Create().ComputeHash(fop);
+                    string hashString = BitConverter.ToString(hash);
+                }
+            }
+            //
+            return hash;
+        }
+        public bool IsFileHashUnchanged()
+        {
+            byte[] hash = GetHash();
+            if (hash == null || _hash == null) return false;
+            else return hash.SequenceEqual(_hash);
+        }
+        // The history before the save no longer builds what the file holds
+        public void Invalidate()
+        {
+            _hash = null;
+        }
+        public override bool Execute(Controller receiver)
+        {
+            _resultsSaved = receiver.Settings.General.SaveResultsInPmx || receiver.AllResults.Count == 0;
+            receiver.SaveToPmx(Tools.GetGlobalPath(_fileName));
+            //
+            _hash = GetHash();
+            //
+            return true;
+        }
+        public override void ToPython(PythonJournalWriter writer)
+        {
+            writer.Statement(writer.Call("pmx", "save", writer.OutputPath(_fileName)));
+            writer.CountEmittedCommand();
+        }
+        public override string GetCommandString()
+        {
+            return base.GetCommandString() + _fileName;
+            //return _dateCreated.ToString("MM/dd/yy HH:mm:ss") + "   " + "Model saved to file: " + _fileName;
+        }
+    }
+}

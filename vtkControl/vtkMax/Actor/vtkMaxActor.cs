@@ -21,7 +21,7 @@ using System.Runtime.InteropServices;
 
 namespace vtkControl
 {
-    public class vtkMaxActor
+    public class vtkMaxActor : IViewportActor
     {
         // Variables                                                                                                                
         protected string _name;

@@ -1,4 +1,4 @@
-﻿// PrePoMax - Copyright (C) 2016-2026 Matej Borovinšek
+// PrePoMax - Copyright (C) 2016-2026 Matej Borovinšek
 //
 // Licensed under the terms defined in the LICENSE file located in the root directory of this source code.
 //
@@ -40,7 +40,7 @@ using vtkControl;
 
 namespace PrePoMax
 {
-    public partial class FrmMain : MainMouseWheelManagedForm
+    public partial class FrmMain : MainMouseWheelManagedForm, IMainView
     {
         private class ViewportLegendValueEditData
         {
@@ -264,6 +264,9 @@ namespace PrePoMax
         // Constructors                                                                                                             
         public FrmMain(CommandLineOptions cmdOptions)
         {
+            PortableMessageBoxes.Service = new WindowsDialogService();
+            CoreHost.IsMessageLoopThread = () => System.Windows.Forms.Application.MessageLoop;
+            UserControls.XYPlotSettingsExtensions.Initialize();
             // Initialize               
             InitializeComponent();
             ToolStripMenuItem duplicateResultFieldOutputMenuItem = new ToolStripMenuItem();

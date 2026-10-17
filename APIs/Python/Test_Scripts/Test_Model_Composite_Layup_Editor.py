@@ -127,7 +127,7 @@ print("PASS real FrmCompositeLayup constructed/filled/edited/read/disposed on ST
 
 # Replay actual command journal methods through the public gateway, as session journals do.
 import clr
-assembly = clr.GetClrType(FrmCompositeLayup).Assembly
+assembly = clr.GetClrType(PythonJournalWriter).Assembly
 journal_fragments = []
 def emitted(command_name, arguments):
     command_type = assembly.GetType("PrePoMax.Commands." + command_name)
