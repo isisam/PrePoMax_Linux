@@ -138,12 +138,13 @@ namespace CaeModel
             var ids = ResolveRegion(model, layup);
             if (ids.Length == 0) throw new CaeException("The region is empty.");
             var ranges = new Dictionary<int, double[]>();
+            var activePartIds = new HashSet<int>(model.Mesh.Parts.Values.Where(p => p.Active).Select(p => p.PartId));
             foreach (int id in ids)
             {
                 FeElement element;
                 if (!model.Mesh.Elements.TryGetValue(id, out element) || !(element is FeElement3D))
                     throw new CaeException("The region requires solid elements; invalid element ID " + id + ".");
-                if (!model.Mesh.Parts.Values.Any(p => p.PartId == element.PartId && p.Active))
+                if (!activePartIds.Contains(element.PartId))
                     throw new CaeException("Element " + id + " belongs to an inactive or missing part.");
                 var coordinates = element.NodeIds.Select(n => model.Mesh.Nodes[n].Coor).ToArray();
                 var z = coordinates.Select(c => (c[0] - origin.X) * axis.X + (c[1] - origin.Y) * axis.Y + (c[2] - origin.Z) * axis.Z).ToArray();
@@ -176,8 +177,8 @@ namespace CaeModel
                 double lo = ranges[id][0], hi = ranges[id][1];
                 var matches = Enumerable.Range(0, plies.Count)
                     .Where(i => lo >= boundaries[i] - tolerance && hi <= boundaries[i + 1] + tolerance).ToArray();
-                if (matches.Length == 1) groups[matches[0]].Add(id);
-                else if (matches.Length > 1 || hi <= lo) ambiguous.Add(id);
+                if (matches.Length > 1 || hi <= lo) ambiguous.Add(id);
+                else if (matches.Length == 1) groups[matches[0]].Add(id);
                 else if (lo < minimum - tolerance || hi > boundaries.Last() + tolerance) outside.Add(id);
                 else crossing.Add(id);
             }

@@ -8,8 +8,8 @@
 // Contributors:
 
 using System;
+using System.Globalization;
 using System.Linq;
-using CaeGlobals;
 using CaeModel;
 
 namespace FileInOut.Output.Calculix
@@ -35,8 +35,10 @@ namespace FileInOut.Output.Calculix
         }
         public override string GetDataString()
         {
-            return string.Join(",", _a.Concat(_b).Select(v => v.ToCalculiX16String())) + Environment.NewLine +
-                   "3, " + _angle.ToCalculiX16String() + Environment.NewLine;
+            // CalculiX 2.21 reads only the first 20 characters of a numeric field.
+            return string.Join(",", _a.Concat(_b).Select(Number)) + Environment.NewLine +
+                   "3, " + Number(_angle) + Environment.NewLine;
         }
+        private static string Number(double value) { return value.ToString("G12", CultureInfo.InvariantCulture); }
     }
 }
