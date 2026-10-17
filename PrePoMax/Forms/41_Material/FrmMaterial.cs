@@ -78,6 +78,8 @@ namespace PrePoMax.Forms
                 tvProperties.Nodes.Find("Elasticity", true)[0].Nodes.Add(laminaNode);
             }
             //
+            tvProperties.Nodes.Add(new TreeNode("User Material") { Name = "User Material" });
+            tvProperties.Nodes.Add(new TreeNode("Fatigue CZM (FATCZM)") { Name = "Fatigue CZM (FATCZM)" });
             _controller = controller;
             _material = null;
             //
@@ -156,13 +158,14 @@ namespace PrePoMax.Forms
                         if (existingItem == null &&
                             (treeNode.Tag is Elastic ||
                              treeNode.Tag is ElasticEngineeringConstants ||
-                             treeNode.Tag is ElasticLamina))
+                             treeNode.Tag is ElasticLamina || treeNode.Tag is UserMaterial))
                         {
                             foreach (ListViewItem addedItem in lvAddedProperties.Items)
                             {
                                 if (addedItem.Tag is ViewElastic ||
                                     addedItem.Tag is ViewElasticEngineeringConstants ||
                                     addedItem.Tag is ViewElasticLamina ||
+                                    addedItem.Tag is ViewUserMaterial ||
                                     addedItem.Tag is ViewElasticWithDensity)
                                 {
                                     existingItem = addedItem;
@@ -187,6 +190,8 @@ namespace PrePoMax.Forms
                                     item.Tag = new ViewElasticEngineeringConstants(eec.DeepClone());
                                 else if (mp is ElasticLamina ela)
                                     item.Tag = new ViewElasticLamina(ela.DeepClone());
+                                else if (mp is UserMaterial um)
+                                    item.Tag = new ViewUserMaterial(um.DeepClone());
                                 else if (mp is Plastic pl)
                                     item.Tag = new ViewPlastic(pl.DeepClone());
                                 else if (mp is ThermalExpansion te)
@@ -298,6 +303,12 @@ namespace PrePoMax.Forms
                 else if (lvAddedProperties.PossiblySelectedItems[0].Tag is ViewElasticWithDensity)
                 {
                     tcProperties.TabPages.Add(_pages[0]);   // properties
+                }
+                else if (lvAddedProperties.PossiblySelectedItems[0].Tag is ViewUserMaterial vum)
+                {
+                    tcProperties.TabPages.Add(_pages[0]);
+                    tcProperties.TabPages.Add(_pages[1]);
+                    SetDataGridViewBinding(vum.DataPoints);
                 }
                 else if (lvAddedProperties.PossiblySelectedItems[0].Tag is ViewPlastic vp)
                 {
@@ -427,6 +438,8 @@ namespace PrePoMax.Forms
             {
                 new double[ElasticLamina.NumberOfValues]
             });
+            tvProperties.Nodes.Find("User Material", true)[0].Tag = new UserMaterial(new double[] { 0 });
+            tvProperties.Nodes.Find("Fatigue CZM (FATCZM)", true)[0].Tag = UserMaterial.CreateFatczm();
             node = tvProperties.Nodes.Find("Plastic", true)[0];
             node.Tag = new Plastic(new double[][] { new double[] { 0, 0, 0 } });
             node = tvProperties.Nodes.Find("Thermal Expansion", true)[0];
@@ -505,6 +518,8 @@ namespace PrePoMax.Forms
                         view = new ViewElasticEngineeringConstants(eec);
                     else if (property is ElasticLamina ela)
                         view = new ViewElasticLamina(ela);
+                    else if (property is UserMaterial um)
+                        view = new ViewUserMaterial(um);
                     else if (property is ElasticWithDensity ewd)
                     {
                         view = new ViewElasticWithDensity(ewd);
@@ -578,6 +593,16 @@ namespace PrePoMax.Forms
         public void Add()
         {
             // Check if the name exists
+            foreach (ListViewItem item in lvAddedProperties.Items)
+            {
+                if (item.Tag is ViewUserMaterial um && um.Fatczm && !tbName.Text.StartsWith("USERFATCZM", StringComparison.Ordinal))
+                {
+                    if (MessageBoxes.ShowWarningQuestionOKCancel("FATCZM requires a USERFATCZM material name. " +
+                        "Prefix this name with USERFATCZM?") == DialogResult.Cancel)
+                        throw new CaeException("FATCZM requires a material name starting with USERFATCZM.");
+                    tbName.Text = "USERFATCZM" + tbName.Text;
+                }
+            }
             UserControls.FrmProperties.CheckName(_materialToEditName, tbName.Text, _materialNames, "material");
             //
             _material = new Material(tbName.Text);
@@ -594,6 +619,7 @@ namespace PrePoMax.Forms
                 if (property is ViewElastic ||
                     property is ViewElasticEngineeringConstants ||
                     property is ViewElasticLamina ||
+                    property is ViewUserMaterial ||
                     property is ViewElasticWithDensity)
                 {
                     elasticityCount++;
@@ -607,6 +633,7 @@ namespace PrePoMax.Forms
                 materialProperty = property.GetBase();
                 // Check equations
                 materialProperty.CheckEquations();
+                if (materialProperty is UserMaterial um) um.CheckMaterialName(_material.Name);
                 //
                 if (property is ViewDensity vd)
                 {
@@ -681,6 +708,7 @@ namespace PrePoMax.Forms
         }
         private void SetAllGridViewUnits()
         {
+            SetGridViewUnit(nameof(UserMaterialDataPoint.ValueEq), "/", new StringDoubleConverter());
             string noUnit = "/";
             // Density
             SetGridViewUnit(nameof(DensityDataPoint.DensityEq), _controller.Model.UnitSystem.DensityUnitAbbreviation,

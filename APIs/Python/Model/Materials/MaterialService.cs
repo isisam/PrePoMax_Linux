@@ -76,7 +76,7 @@ namespace APIs.Python.Model
             if (temperatureDependent != null)
                 material.TemperatureDependent =
                     PythonValueConverter.ToBool(temperatureDependent, "temperature_dependent");
-            if (properties != null || temperatureDependent != null) CheckRowsAreUsed(material);
+            CheckRowsAreUsed(material);
             //
             EnsureCommandsAvailable();
             _modelGateway.ReplaceMaterial(storedName, material);
@@ -159,6 +159,8 @@ namespace APIs.Python.Model
         // row as one curve, so a temperature would merge the curves of several temperatures into one
         private static void CheckRowsAreUsed(Material material)
         {
+            foreach (UserMaterial um in material.Properties.OfType<UserMaterial>())
+                PythonModelArgumentCheck.Apply(() => um.CheckMaterialName(material.Name), "properties");
             if (material.TemperatureDependent) return;
             //
             foreach (MaterialProperty property in material.Properties)

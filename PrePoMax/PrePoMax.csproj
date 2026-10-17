@@ -677,6 +677,7 @@
     <Compile Include="Forms\41_Material\DataPoints\ElasticDataPoint.cs" />
     <Compile Include="Forms\41_Material\DataPoints\ElasticEngineeringConstantsDataPoint.cs" />
     <Compile Include="Forms\41_Material\DataPoints\ElasticLaminaDataPoint.cs" />
+    <Compile Include="Forms\41_Material\DataPoints\UserMaterialDataPoint.cs" />
     <Compile Include="Forms\41_Material\DataPoints\TempDataPoint.cs" />
     <Compile Include="Forms\41_Material\MaterialLibraryItem.cs" />
     <Compile Include="Forms\41_Material\FrmMaterialLibrary.cs">
@@ -917,6 +918,7 @@
     <Compile Include="Forms\41_Material\ViewElastic.cs" />
     <Compile Include="Forms\41_Material\ViewElasticEngineeringConstants.cs" />
     <Compile Include="Forms\41_Material\ViewElasticLamina.cs" />
+    <Compile Include="Forms\41_Material\ViewUserMaterial.cs" />
     <Compile Include="Forms\41_Material\ViewMaterialProperty.cs" />
     <Compile Include="Forms\41_Material\ViewDensity.cs" />
     <Compile Include="Forms\42_Section\ViewSection.cs" />

@@ -87,6 +87,21 @@ namespace PrePoMax.Python.Journal
                 return PythonJournalWriter.Join("pmx.create.elastic_lamina",
                                                 Table(Used(lamina.LaminaConstantsTemp, temperatureDependent, true),
                                                       "elastic_lamina"));
+            if (property is UserMaterial um)
+            {
+                List<string> values = new List<string>();
+                List<string> names = new List<string>();
+                List<string> descriptions = new List<string>();
+                foreach (UserMaterialConstant constant in um.Constants)
+                {
+                    values.Add(Scalar(constant.Value, "constants"));
+                    names.Add(PythonValueFormatter.Text(constant.Name));
+                    descriptions.Add(PythonValueFormatter.Text(constant.Description));
+                }
+                return PythonJournalWriter.Join("pmx.create.user_material", "[" + string.Join(", ", values) + "]",
+                    "state_variables=" + um.NumberOfStateVariables, "fatczm=" + (um.Fatczm ? "True" : "False"),
+                    "names=[" + string.Join(", ", names) + "]", "descriptions=[" + string.Join(", ", descriptions) + "]");
+            }
             if (property is Plastic plastic)
                 return PythonJournalWriter.Join("pmx.create.plastic",
                                                 Table(Used(plastic.StressStrainTemp, temperatureDependent, false),

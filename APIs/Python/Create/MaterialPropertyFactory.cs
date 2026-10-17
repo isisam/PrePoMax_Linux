@@ -79,6 +79,33 @@ namespace APIs.Python
             //
             return Checked(property, "constants");
         }
+        public static UserMaterial CreateUserMaterial(object constants, int stateVariables, bool fatczm,
+                                                      object names, object descriptions)
+        {
+            List<object> items = ToItems(constants, "user_material", 1);
+            try
+            {
+                if (stateVariables < 0) throw new PythonAPIException("state_variables must not be negative.");
+                EquationString[] equations = PythonValueConverter.ToEquationArray(constants, "constants", items.Count);
+                UserMaterial property = new UserMaterial(new double[items.Count], stateVariables, fatczm);
+                for (int i = 0; i < items.Count; i++)
+                    PythonModelArgumentCheck.SetEquation(property.Constants[i].Value, equations[i], "constants");
+                if (names != null)
+                {
+                    string[] text = PythonStringListConverter.ToStringArrayOrSingle(names, "names");
+                    if (text.Length != items.Count) throw new PythonAPIException("names must match the constant count.");
+                    for (int i = 0; i < text.Length; i++) property.Constants[i].Name = text[i];
+                }
+                if (descriptions != null)
+                {
+                    string[] text = PythonStringListConverter.ToStringArrayOrSingle(descriptions, "descriptions");
+                    if (text.Length != items.Count) throw new PythonAPIException("descriptions must match the constant count.");
+                    for (int i = 0; i < text.Length; i++) property.Constants[i].Description = text[i];
+                }
+                return Checked(property, "constants");
+            }
+            finally { DisposeItems(items); }
+        }
         public static Plastic CreatePlastic(object stressStrain, string hardening)
         {
             string[] argumentNames;

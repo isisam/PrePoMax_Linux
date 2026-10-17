@@ -28,6 +28,7 @@ namespace APIs.Python
             { typeof(ElasticWithDensity), "elastic_with_density" },
             { typeof(ElasticEngineeringConstants), "elastic_engineering_constants" },
             { typeof(ElasticLamina), "elastic_lamina" },
+            { typeof(UserMaterial), "user_material" },
             { typeof(Plastic), "plastic" },
             { typeof(SlipWear), "slip_wear" },
             { typeof(SpecificHeat), "specific_heat" },
@@ -130,6 +131,14 @@ namespace APIs.Python
             else if (_property is ElasticEngineeringConstants engineeringConstants)
                 values["constants"] = ToTable(engineeringConstants.EngineeringConstantsTemp);
             else if (_property is ElasticLamina lamina) values["constants"] = ToTable(lamina.LaminaConstantsTemp);
+            else if (_property is UserMaterial um)
+            {
+                values["constants"] = PythonListConverter.ToPythonList(um.Constants.Select(c => ToValue(c.Value)).ToArray());
+                values["state_variables"] = um.NumberOfStateVariables;
+                values["fatczm"] = um.Fatczm;
+                values["names"] = PythonListConverter.ToPythonList(um.Constants.Select(c => (object)c.Name).ToArray());
+                values["descriptions"] = PythonListConverter.ToPythonList(um.Constants.Select(c => (object)c.Description).ToArray());
+            }
             else if (_property is Plastic plastic)
             {
                 values["stress_strain"] = ToTable(plastic.StressStrainTemp);
