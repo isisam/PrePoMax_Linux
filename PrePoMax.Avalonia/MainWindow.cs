@@ -15,6 +15,9 @@ public sealed class MainWindow : Window
     private readonly TreeView tree = new() { Margin = new Thickness(8) };
     private readonly TextBlock status = new() { Text = "Open an INP model", Margin = new Thickness(12, 8) };
     private ViewerModel? model;
+    private readonly ProgressBar progressBar = new() { IsIndeterminate = true, IsVisible = false, Height = 4 };
+    private bool loading;
+    private double deformationScale;
     private PickResult lastPick = new() { NodeId = -1, ElementId = -1, FaceId = -1 };
     public MainWindow()
     {
@@ -34,6 +37,17 @@ public sealed class MainWindow : Window
         AddButton(toolbar, "Edges", () => Change(v => v.Display(true, true))); AddButton(toolbar, "Wire", () => Change(v => v.Display(false, true)));
         AddButton(toolbar, "Highlight first ply", Highlight); AddButton(toolbar, "Clear", () => Change(v => v.Highlight([])));
         DockPanel.SetDock(toolbar, Dock.Top); root.Children.Add(toolbar);
+        var resultsBar = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Margin = new Thickness(10, 4) };
+        AddButton(resultsBar, "Open FRD", async () => await ChooseResults());
+        AddButton(resultsBar, "S (Mises)", () => Contour("S (Mises)"));
+        AddButton(resultsBar, "U (magnitude)", () => Contour("U (magnitude)"));
+        AddButton(resultsBar, "Undeformed", () => { deformationScale = 0; Change(v => { v.Deformation(model?.Displacement, 0); v.Fit(); }); });
+        var scaleBox = new NumericUpDown { Minimum = -1000, Maximum = 1000, Value = 1, Width = 95, Increment = 1 };
+        resultsBar.Children.Add(new TextBlock { Text = "Deformation scale", VerticalAlignment = VerticalAlignment.Center }); resultsBar.Children.Add(scaleBox);
+        AddButton(resultsBar, "Apply scale", () => { deformationScale = (double)(scaleBox.Value ?? 0); Change(v => { v.Deformation(model?.Displacement, deformationScale); v.Fit(); }); });
+        AddButton(resultsBar, "Animate front", () => Animate(1));
+        DockPanel.SetDock(resultsBar, Dock.Top); root.Children.Add(resultsBar);
+        DockPanel.SetDock(progressBar, Dock.Top); root.Children.Add(progressBar);
         var help = new TextBlock { Text = "Left drag: rotate   •   Middle drag: pan   •   Wheel: zoom   •   Click: element / face / node", Margin = new Thickness(12, 6) };
         DockPanel.SetDock(help, Dock.Bottom); root.Children.Add(help);
         DockPanel.SetDock(status, Dock.Bottom); root.Children.Add(status);
@@ -47,35 +61,60 @@ public sealed class MainWindow : Window
         viewport.Control.ContextMenu = new ContextMenu { ItemsSource = new[] { Item("Fit model", () => Change(v => v.Fit())), Item("Front view", () => Change(v => v.StandardView(1))) } };
         grid.Children.Add(viewport.Control);
         root.Children.Add(grid); Content = root;
-        viewport.Ready += () => { if (Program.Arguments.Length > 0 && !Program.Arguments[0].StartsWith("--")) Open(Program.Arguments[0]); };
+        viewport.Ready += async () => { if (Program.Arguments.Length > 0 && !Program.Arguments[0].StartsWith("--")) await Open(Program.Arguments[0]); };
         viewport.Picked += Picked;
     }
     private static MenuItem Item(string title, Action action) { var item = new MenuItem { Header = title }; item.Click += (_, _) => action(); return item; }
     private static void AddButton(StackPanel panel, string text, Action action) { var b = new Button { Content = text }; b.Click += (_, _) => action(); panel.Children.Add(b); }
     private void Change(Action<Viewport> action)
     {
-        try { viewport.Execute(view => { action(view); view.Render(); }); }
+        try { viewport.Execute(view => { try { action(view); view.Render(); } catch (Exception e) { status.Text=e.Message;Console.Error.WriteLine(e); } }); }
         catch (Exception e) { status.Text = e.Message; Console.Error.WriteLine(e); }
     }
-    private void Open(string path)
+    private async Task Open(string path)
     {
+        if (loading) return;
+        loading = true; progressBar.IsVisible = true;
         try
         {
-            var loaded = ViewerModel.Open(path); loaded.Show(viewport.View!); viewport.View!.Render(); model = loaded;
+            var progress = new Progress<string>(s => status.Text = s);
+            var loaded = await ViewerModel.OpenAsync(path, progress); model = loaded;
+            Change(v => loaded.Show(v));
             tree.ItemsSource = loaded.TreeGroups().Select(g => new TreeViewItem { Header = $"{g.Name} ({g.Items.Count()})",
                 IsExpanded = g.Name is "Materials" or "Composite layups" or "Ply / layer display",
                 ItemsSource = g.Items.Select(n => new TreeViewItem { Header = n }).ToArray() }).ToArray();
             status.Text = $"{Path.GetFileName(path)}  |  {loaded.NodeIds.Length:N0} nodes • {loaded.ElementIds.Length:N0} elements  |  {loaded.PlySource}";
             Console.WriteLine($"OPEN path={path} nodes={loaded.NodeIds.Length} elements={loaded.ElementIds.Length} plies={loaded.Plies.Count}");
-            if (Program.Arguments.Contains("--evidence")) Evidence();
+            int frdFlag=Array.IndexOf(Program.Arguments,"--frd");
+            string frd=frdFlag>=0&&frdFlag+1<Program.Arguments.Length?Program.Arguments[frdFlag+1]:Path.ChangeExtension(path,".frd");
+            if(File.Exists(frd)) await loaded.LoadResultsAsync(frd,progress);
+            if (Environment.GetEnvironmentVariable("PPM_L2B_EVIDENCE") == "1" && Program.Arguments.Contains("--evidence")) Evidence();
         }
         catch (Exception e) { status.Text = "Open failed: " + e.Message; Console.Error.WriteLine(e); }
+        finally { loading = false; progressBar.IsVisible = false; }
     }
     private async Task ChooseFile()
     {
-        var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions { Title = "Open CalculiX input", AllowMultiple = false,
-            FileTypeFilter = [new FilePickerFileType("CalculiX input") { Patterns = ["*.inp"] }] });
-        if (files.Count > 0 && files[0].TryGetLocalPath() is { } path) Open(path);
+        var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions { Title = "Open model", AllowMultiple = false,
+            FileTypeFilter = [new FilePickerFileType("PrePoMax / CalculiX") { Patterns = ["*.inp", "*.pmx"] }] });
+        if (files.Count > 0 && files[0].TryGetLocalPath() is { } path) await Open(path);
+    }
+    private async Task ChooseResults()
+    {
+        if (model == null || loading) return;
+        var files=await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions {Title="Open FRD results", FileTypeFilter=[new FilePickerFileType("CalculiX results") { Patterns=["*.frd"] }]});
+        if(files.Count==0 || files[0].TryGetLocalPath() is not { } path) return;
+        loading=true;progressBar.IsVisible=true;
+        try { await model.LoadResultsAsync(path,new Progress<string>(s=>status.Text=s)); Contour("S (Mises)"); }
+        catch(Exception e){status.Text=e.Message;Console.Error.WriteLine(e);}
+        finally{loading=false;progressBar.IsVisible=false;}
+    }
+    private void Contour(string field) { if(model?.Contours.ContainsKey(field)==true)Change(v=>model.ShowContour(v,field,deformationScale)); }
+    private void Animate(int standard)
+    {
+        Change(v=>v.AnimateStandardBegin(standard));var start=System.Diagnostics.Stopwatch.StartNew();
+        var timer=new DispatcherTimer { Interval=TimeSpan.FromMilliseconds(16) };
+        timer.Tick+=(_,_)=>{double t=Math.Min(1,start.Elapsed.TotalMilliseconds/500);Change(v=>v.AnimateStandardStep(t));if(t==1)timer.Stop();};timer.Start();
     }
     private async Task SavePng()
     {
@@ -98,7 +137,7 @@ public sealed class MainWindow : Window
         var output = Program.Arguments[flag + 1]; Directory.CreateDirectory(output);
         DispatcherTimer.RunOnce(() =>
         {
-            Change(v => { v.StandardView(3); v.Fit(); v.WritePng(Path.Combine(output, "embedded-initial.png")); });
+            Change(v => { v.StandardView(1); v.Fit(); v.WritePng(Path.Combine(output, "embedded-initial.png")); });
             var mesh = model!.Model.Mesh;
             double z = mesh.Nodes.Values.Max(n => n.Z);
             var element = mesh.Elements.Values.OrderBy(e => e.Id).First(e => e.NodeIds.Count(id => Math.Abs(mesh.Nodes[id].Z - z) < 1e-8) >= 3);
@@ -112,11 +151,25 @@ public sealed class MainWindow : Window
                 File.WriteAllText(Path.Combine(output, "state.json"), JsonSerializer.Serialize(new
                 {
                     expectedElement = element.Id, world = new[] { x, y, z }, screen, width = viewport.Bounds.Width,
-                    height = viewport.Bounds.Height, lastPick, runtime = Environment.Version.ToString()
+                    height = viewport.Bounds.Height, scale=RenderScaling, lastPick, runtime = Environment.Version.ToString(),
+                    origin=viewport.Control.TranslatePoint(new Point(0,0),this),
+                    pumpCount=viewport is VtkMaxView native ? native.PumpCount : 0,
+                    focus=viewport.Control.IsFocused
                 }, new JsonSerializerOptions { IncludeFields = true }));
                 if (File.Exists(Path.Combine(output, "capture")))
                 {
                     File.Delete(Path.Combine(output, "capture")); viewport.Execute(v => v.WritePng(Path.Combine(output, "embedded-current.png")));
+                }
+                string commandPath=Path.Combine(output,"command.json");
+                if(File.Exists(commandPath))
+                {
+                    using var command=JsonDocument.Parse(File.ReadAllText(commandPath));File.Delete(commandPath);
+                    var c=command.RootElement;string op=c.GetProperty("op").GetString()!;
+                    if(op=="front")Change(v=>v.StandardView(1));
+                    if(op=="contour")Contour(c.GetProperty("field").GetString()!);
+                    if(op=="tooltip")ToolTip.SetIsOpen(viewport.Control,c.GetProperty("open").GetBoolean());
+                    if(op=="menu") {if(c.GetProperty("open").GetBoolean())viewport.Control.ContextMenu!.Open(viewport.Control);else viewport.Control.ContextMenu!.Close();}
+                    if(op=="close"){monitor.Stop();Close();}
                 }
             };
             monitor.Start();

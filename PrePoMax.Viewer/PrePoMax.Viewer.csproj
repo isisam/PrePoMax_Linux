@@ -3,5 +3,6 @@
   <ItemGroup>
     <ProjectReference Include="../Vtkmax.Interop/Vtkmax.Interop.csproj" />
     <ProjectReference Include="../CaeModel/CaeModel.csproj" />
+    <ProjectReference Include="../PrePoMax.Core/PrePoMax.Core.csproj" />
   </ItemGroup>
 </Project>
