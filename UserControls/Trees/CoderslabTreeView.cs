@@ -456,6 +456,25 @@ namespace UserControls
         
 
         // Methods                                                                                                                  
+        protected override void OnDrawNode(DrawTreeNodeEventArgs e)
+        {
+            base.OnDrawNode(e);
+            // Localized category captions use OwnerDrawText. Native fallback for an
+            // untranslated entity name ignores our managed multiselection background,
+            // leaving HighlightNode's white text on white (e.g. USERFATCZML10N).
+            if (DrawMode == TreeViewDrawMode.OwnerDrawText && e.DrawDefault)
+            {
+                Color foreground = e.Node.ForeColor.IsEmpty ? ForeColor : e.Node.ForeColor;
+                Color background = e.Node.BackColor.IsEmpty ? BackColor : e.Node.BackColor;
+                var bounds = e.Bounds;
+                Font font = e.Node.NodeFont ?? Font;
+                bounds.Width = Math.Max(bounds.Width, TextRenderer.MeasureText(e.Node.Text, font).Width + 6);
+                TextRenderer.DrawText(e.Graphics, e.Node.Text, font, bounds, foreground, background,
+                    TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPrefix);
+                e.DrawDefault = false;
+            }
+        }
+
         public void SetNodeForeColor(TreeNode node, Color color)
         {
             if (htblSelectedNodesOrigColors.TryGetValue(node.GetHashCode(), out Color[] originalColors))
