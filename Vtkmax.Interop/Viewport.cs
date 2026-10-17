@@ -9,6 +9,7 @@ public struct PickResult
     public int FaceId, Hit;
     public double X, Y, Z;
     public ulong Sequence;
+    public long ActorId;
 }
 
 /// <summary>Owned, UI-thread-affine vtkmax view. Dispose on the creating thread.</summary>
@@ -18,6 +19,14 @@ public sealed class Viewport : IDisposable
     private readonly int thread = Environment.CurrentManagedThreadId;
     private readonly bool generic;
     public event Action? RenderRequested;
+    private Native.SelectionCallback? selectionCallback;
+    public Exception? SelectionCallbackError { get; private set; }
+    public void OnSelection(Action<PickResult>? callback)
+    {
+        selectionCallback = callback is null ? null : (ref PickResult result, IntPtr _) =>
+        { try { callback(result); } catch (Exception e) { SelectionCallbackError = e; } };
+        Check(Native.vm_selection_handler(Handle, selectionCallback, IntPtr.Zero));
+    }
     private IntPtr Handle
     {
         get
@@ -49,6 +58,24 @@ public sealed class Viewport : IDisposable
         Check(Native.vm_load_grid(Handle, nodeIds.Length, nodeIds, xyz, elementIds.Length, elementIds, types, offsets, connectivity.Length, connectivity));
     }
     public void Resize(int width, int height) => Check(Native.vm_resize(Handle, width, height));
+    public void AddActor(long id, long[] nodeIds, double[] xyz, long[] elementIds, int[] types, int[] offsets, long[] connectivity)
+    {
+        if (xyz.Length != checked(nodeIds.Length * 3) || types.Length != elementIds.Length || offsets.Length != elementIds.Length + 1)
+            throw new ArgumentException("Grid array lengths disagree.");
+        Check(Native.vm_add_actor(Handle, id, nodeIds.Length, nodeIds, xyz, elementIds.Length, elementIds, types, offsets, connectivity.Length, connectivity));
+    }
+    public void RemoveActor(long id) => Check(Native.vm_remove_actor(Handle, id));
+    public void ActorStyle(long id, bool visible, double r, double g, double b, double opacity = 1, bool edges = true) =>
+        Check(Native.vm_actor_style(Handle, id, visible ? 1 : 0, r, g, b, opacity, edges ? 1 : 0));
+    public void ActorScalars(long id, double[]? values, double min, double max, string title, bool nodes = true) =>
+        Check(Native.vm_actor_scalars(Handle, id, nodes ? 1 : 0, values, values?.Length ?? 0, min, max, title));
+    public void ContourBands(int bands) => Check(Native.vm_contour_bands(Handle, bands));
+    public void Deformation(double[]? displacement, double scale, long actorId = 0) =>
+        Check(Native.vm_deformation(Handle, actorId, displacement, displacement?.Length ?? 0, scale));
+    public void ActorHighlight(long actorId, long[] ids, bool nodes = false) => Check(Native.vm_actor_highlight(Handle, actorId, nodes ? 1 : 0, ids, ids.Length));
+    public void Perspective(bool enabled) => Check(Native.vm_perspective(Handle, enabled ? 1 : 0));
+    public void AnimateStandardBegin(int view) => Check(Native.vm_animate_standard_begin(Handle, view));
+    public void AnimateStandardStep(double fraction) => Check(Native.vm_animate_standard_step(Handle, fraction));
     public void Display(bool surface, bool edges) => Check(Native.vm_display(Handle, surface ? 1 : 0, edges ? 1 : 0));
     public void Scalars(double[]? values, double min = 0, double max = 1, string title = "Ply", bool nodes = false) =>
         Check(Native.vm_scalars(Handle, nodes ? 1 : 0, values, values?.Length ?? 0, min, max, title));
@@ -72,13 +99,25 @@ public sealed class Viewport : IDisposable
     public void Dispose()
     {
         if (handle == IntPtr.Zero) return;
-        var owned = Handle; handle = IntPtr.Zero; Native.vm_destroy(owned);
+        var owned = Handle; Native.vm_selection_handler(owned, null, IntPtr.Zero); handle = IntPtr.Zero; Native.vm_destroy(owned); selectionCallback = null;
     }
 }
 
 internal static class Native
 {
     private const string Lib = "vtkmax";
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)] internal delegate void SelectionCallback(ref PickResult result, IntPtr user);
+    [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)] internal static extern int vm_selection_handler(IntPtr view, SelectionCallback? callback, IntPtr user);
+    [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)] internal static extern int vm_add_actor(IntPtr view, long id, int np, long[] ids, double[] xyz, int nc, long[] eids, int[] types, int[] offsets, int nconn, long[] conn);
+    [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)] internal static extern int vm_remove_actor(IntPtr view, long id);
+    [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)] internal static extern int vm_actor_style(IntPtr view, long id, int visible, double r, double g, double b, double opacity, int edges);
+    [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)] internal static extern int vm_actor_scalars(IntPtr view, long id, int association, double[]? values, int count, double min, double max, [MarshalAs(UnmanagedType.LPUTF8Str)] string title);
+    [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)] internal static extern int vm_actor_highlight(IntPtr view, long id, int association, long[] ids, int count);
+    [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)] internal static extern int vm_contour_bands(IntPtr view, int bands);
+    [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)] internal static extern int vm_deformation(IntPtr view, long id, double[]? displacement, int count, double scale);
+    [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)] internal static extern int vm_perspective(IntPtr view, int enabled);
+    [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)] internal static extern int vm_animate_standard_begin(IntPtr view, int standard);
+    [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)] internal static extern int vm_animate_standard_step(IntPtr view, double fraction);
     // Every entry point is Cdecl; native strings use UTF-8, IDs are int64 on all platforms.
     [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)] internal static extern int vm_abi_version();
     [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)] internal static extern IntPtr vm_last_error();

@@ -4,6 +4,7 @@
 #include "vtkmax.h"
 #include <vtkActor.h>
 #include <vtkCamera.h>
+#include <vtkCameraInterpolator.h>
 #include <vtkCell.h>
 #include <vtkCellData.h>
 #include <vtkCellPicker.h>
@@ -52,24 +53,38 @@ int nodes_per_cell(int t) {
 }
 bool finite3(const double* p) { return std::isfinite(p[0]) && std::isfinite(p[1]) && std::isfinite(p[2]); }
 }
-struct vm_view {
-    vtkSmartPointer<vtkOpenGLRenderWindow> window;
-    vtkNew<vtkRenderer> renderer;
+struct actor_state {
     vtkNew<vtkUnstructuredGrid> grid;
     vtkNew<vtkDataSetMapper> mapper;
     vtkNew<vtkActor> actor;
+    std::vector<int64_t> nodes, elements;
+    std::unordered_map<int64_t, vtkIdType> node_map, element_map;
+    std::vector<double> original;
+};
+struct vm_view : actor_state {
+    vtkSmartPointer<vtkOpenGLRenderWindow> window;
+    vtkNew<vtkRenderer> renderer;
     vtkNew<vtkLookupTable> lut;
     vtkNew<vtkScalarBarActor> bar;
     vtkNew<vtkActor> highlight;
     vtkSmartPointer<vtkRenderWindowInteractor> interactor;
-    std::vector<int64_t> nodes, elements;
-    std::unordered_map<int64_t, vtkIdType> node_map, element_map;
-    vm_pick_result last{-1,-1,-1,0,0,0,0,0};
+    std::unordered_map<int64_t,std::unique_ptr<actor_state>> actors;
+    vtkNew<vtkCameraInterpolator> animation;
+    vtkNew<vtkCamera> animation_start;
+    vtkNew<vtkCamera> animation_end;
+    bool animating=false;
+    vm_selection_callback callback=nullptr;
+    void* callback_user=nullptr;
+    vm_pick_result last{-1,-1,-1,0,0,0,0,0,-1};
     bool rendered=false, offscreen=true;
     int backend=1;
     std::string gl_info;
-    ~vm_view() { if(interactor) { interactor->Disable(); interactor->SetRenderWindow(nullptr); } window->Finalize(); }
+    ~vm_view() { if(interactor) { interactor->Disable(); interactor->SetRenderWindow(nullptr); } if(window)window->Finalize(); }
 };
+actor_state* find_actor(vm_view* v,int64_t id) {
+    require(v,"null view");if(id==0)return v;
+    auto it=v->actors.find(id);require(it!=v->actors.end(),"unknown actor ID");return it->second.get();
+}
 class ClickStyle : public vtkInteractorStyleTrackballCamera {
 public:
     static ClickStyle* New() { return new ClickStyle; }
@@ -84,7 +99,7 @@ public:
         vtkInteractorStyleTrackballCamera::OnLeftButtonUp();
         auto p=GetInteractor()->GetEventPosition();
         if(std::abs(p[0]-start[0])+std::abs(p[1]-start[1])<4) {
-            vm_pick_result r; if(vm_pick(view,p[0],p[1],&r)>=0) { r.sequence=view->last.sequence+1; view->last=r; }
+            vm_pick_result r;vm_pick(view,p[0],p[1],&r);
         }
     }
 };
@@ -164,7 +179,7 @@ int32_t vm_resize(vm_view* v,int32_t w,int32_t h) {
         if(v->interactor) v->interactor->UpdateSize(w,h);
         return 0; } CATCH
 }
-int32_t vm_load_grid(vm_view* v,int32_t np,const int64_t* ids,const double* xyz,int32_t nc,
+int32_t load_grid(actor_state* v,int32_t np,const int64_t* ids,const double* xyz,int32_t nc,
     const int64_t* eids,const int32_t* types,const int32_t* offsets,int32_t nconn,const int64_t* conn) {
     TRY { VIEW; require(np>0&&nc>0&&nconn>0&&ids&&xyz&&eids&&types&&offsets&&conn,"invalid grid arrays");
         require(offsets[0]==0&&offsets[nc]==nconn,"invalid connectivity offsets");
@@ -184,8 +199,44 @@ int32_t vm_load_grid(vm_view* v,int32_t np,const int64_t* ids,const double* xyz,
         std::vector<int64_t> node_ids(ids,ids+np), element_ids(eids,eids+nc);
         v->grid->ShallowCopy(g); v->nodes=std::move(node_ids); v->elements=std::move(element_ids);
         v->node_map=std::move(nm); v->element_map=std::move(em);
-        v->mapper->ScalarVisibilityOff(); v->bar->VisibilityOff(); v->highlight->VisibilityOff(); return 0;
+        v->original.assign(xyz,xyz+3*np);
+        v->mapper->SetInputData(v->grid);v->actor->SetMapper(v->mapper);
+        v->mapper->ScalarVisibilityOff();return 0;
     } CATCH
+}
+int32_t vm_load_grid(vm_view* v,int32_t np,const int64_t* ids,const double* xyz,int32_t nc,
+    const int64_t* eids,const int32_t* types,const int32_t* offsets,int32_t nconn,const int64_t* conn) {
+    int result=load_grid(v,np,ids,xyz,nc,eids,types,offsets,nconn,conn);
+    if(result==0){v->bar->VisibilityOff();v->highlight->VisibilityOff();}return result;
+}
+int32_t vm_add_actor(vm_view* v,int64_t id,int32_t np,const int64_t* ids,const double* xyz,int32_t nc,
+    const int64_t* eids,const int32_t* types,const int32_t* offsets,int32_t nconn,const int64_t* conn) {
+    TRY {VIEW;require(id>0&&!v->actors.count(id),"duplicate/invalid actor ID");
+        auto m=std::make_unique<actor_state>();
+        if(load_grid(m.get(),np,ids,xyz,nc,eids,types,offsets,nconn,conn)<0)return -1;
+        m->actor->GetProperty()->SetColor(.65,.78,.89);m->actor->GetProperty()->SetEdgeColor(.12,.16,.22);
+        v->renderer->AddActor(m->actor);v->actors.emplace(id,std::move(m));return 0;} CATCH
+}
+int32_t vm_remove_actor(vm_view* v,int64_t id) {
+    TRY {VIEW;require(id>0,"cannot remove default actor");auto m=find_actor(v,id);
+        v->renderer->RemoveActor(m->actor);v->actors.erase(id);v->highlight->VisibilityOff();return 0;} CATCH
+}
+int32_t vm_actor_style(vm_view* v,int64_t id,int32_t visible,double r,double g,double b,double opacity,int32_t edges) {
+    TRY {auto m=find_actor(v,id);for(double x:{r,g,b,opacity})require(std::isfinite(x)&&x>=0&&x<=1,"invalid color/opacity");
+        m->actor->SetVisibility(visible!=0);auto p=m->actor->GetProperty();p->SetColor(r,g,b);p->SetOpacity(opacity);p->SetEdgeVisibility(edges!=0);return 0;} CATCH
+}
+int32_t vm_deformation(vm_view* v,int64_t id,const double* u,int32_t count,double scale) {
+    TRY {auto m=find_actor(v,id);require(std::isfinite(scale),"nonfinite deformation scale");
+        require((!u&&count==0)||(u&&count==static_cast<int>(m->original.size())),"displacement count mismatch");
+        vtkNew<vtkPoints> points;points->SetDataTypeToDouble();
+        for(size_t i=0;i<m->original.size();i+=3) {double p[3];
+            for(int j=0;j<3;++j){double d=u?u[i+j]:0;require(std::isfinite(d),"nonfinite displacement");p[j]=m->original[i+j]+scale*d;require(std::isfinite(p[j]),"deformation overflow");}
+            points->InsertNextPoint(p);}
+        m->grid->SetPoints(points);m->grid->Modified();return 0;} CATCH
+}
+int32_t vm_selection_handler(vm_view* v,vm_selection_callback cb,void* user) {TRY {VIEW;v->callback=cb;v->callback_user=user;return 0;} CATCH}
+int32_t vm_contour_bands(vm_view* v,int32_t bands) {
+    TRY {VIEW;require(bands>=2&&bands<=256,"bands outside 2..256");v->lut->SetNumberOfTableValues(bands);v->lut->Build();v->bar->SetMaximumNumberOfColors(bands);return 0;} CATCH
 }
 int32_t vm_display(vm_view* v,int32_t surface,int32_t edges) {
     TRY { VIEW; v->actor->SetVisibility(surface||edges);
@@ -194,32 +245,40 @@ int32_t vm_display(vm_view* v,int32_t surface,int32_t edges) {
         v->actor->GetProperty()->SetEdgeVisibility(edges!=0); return 0; } CATCH
 }
 int32_t vm_scalars(vm_view* v,int32_t association,const double* values,int32_t count,double lo,double hi,const char* title) {
+    return vm_actor_scalars(v,0,association,values,count,lo,hi,title);
+}
+int32_t vm_actor_scalars(vm_view* v,int64_t actor_id,int32_t association,const double* values,int32_t count,double lo,double hi,const char* title) {
     TRY { VIEW; require(association==0||association==1,"invalid scalar association");
-        if(!values&&count==0) {v->mapper->ScalarVisibilityOff();v->bar->VisibilityOff();return 0;}
-        require(values&&count==static_cast<int>(association?v->nodes.size():v->elements.size())&&count>0,"scalar count mismatch");
+        auto m=find_actor(v,actor_id);
+        if(!values&&count==0) {m->mapper->ScalarVisibilityOff();v->bar->VisibilityOff();return 0;}
+        require(values&&count==static_cast<int>(association?m->nodes.size():m->elements.size())&&count>0,"scalar count mismatch");
         require(std::isfinite(lo)&&std::isfinite(hi)&&lo<=hi,"invalid scalar range");
         vtkNew<vtkDoubleArray> a; a->SetName("vm_scalars");
         for(int i=0;i<count;++i) { require(std::isfinite(values[i]),"nonfinite scalar"); a->InsertNextValue(values[i]); }
-        if(association) {v->grid->GetPointData()->SetScalars(a);v->mapper->SetScalarModeToUsePointData();}
-        else {v->grid->GetCellData()->SetScalars(a);v->mapper->SetScalarModeToUseCellData();}
+        if(association) {m->grid->GetPointData()->SetScalars(a);m->mapper->SetScalarModeToUsePointData();}
+        else {m->grid->GetCellData()->SetScalars(a);m->mapper->SetScalarModeToUseCellData();}
         if(lo==hi) hi=lo+1;
-        v->lut->SetTableRange(lo,hi); v->mapper->SetLookupTable(v->lut);
-        v->mapper->SetScalarRange(lo,hi); v->mapper->ScalarVisibilityOn();
+        v->lut->SetTableRange(lo,hi); m->mapper->SetLookupTable(v->lut);
+        m->mapper->SetScalarRange(lo,hi); m->mapper->ScalarVisibilityOn();
         v->bar->SetTitle(title?title:""); v->bar->VisibilityOn(); return 0; } CATCH
 }
 int32_t vm_highlight(vm_view* v,int32_t association,const int64_t* ids,int32_t count) {
+    return vm_actor_highlight(v,0,association,ids,count);
+}
+int32_t vm_actor_highlight(vm_view* v,int64_t actor_id,int32_t association,const int64_t* ids,int32_t count) {
     TRY { VIEW; require((association==0||association==1)&&count>=0&&(count==0||ids),"invalid highlight arguments");
+        auto mesh=find_actor(v,actor_id);
         if(count==0) {v->highlight->VisibilityOff();return 0;}
-        const auto& map=association?v->node_map:v->element_map;
+        const auto& map=association?mesh->node_map:mesh->element_map;
         vtkNew<vtkIdList> list;
         for(int i=0;i<count;++i) {auto p=map.find(ids[i]);require(p!=map.end(),"unknown highlight ID");list->InsertNextId(p->second);}
         vtkNew<vtkDataSetMapper> m;
         if(association) {
-            vtkNew<vtkUnstructuredGrid> g; g->SetPoints(v->grid->GetPoints());
+            vtkNew<vtkUnstructuredGrid> g; g->SetPoints(mesh->grid->GetPoints());
             for(vtkIdType i=0;i<list->GetNumberOfIds();++i) {auto p=list->GetId(i);g->InsertNextCell(VTK_VERTEX,1,&p);}
             m->SetInputData(g);v->highlight->GetProperty()->SetRepresentationToPoints();v->highlight->GetProperty()->SetPointSize(10);
         } else {
-            vtkNew<vtkExtractCells> extract;extract->SetInputData(v->grid);extract->SetCellList(list);extract->Update();
+            vtkNew<vtkExtractCells> extract;extract->SetInputData(mesh->grid);extract->SetCellList(list);extract->Update();
             m->SetInputData(extract->GetOutput());v->highlight->GetProperty()->SetRepresentationToWireframe();
         }
         m->ScalarVisibilityOff();m->SetResolveCoincidentTopologyToPolygonOffset();
@@ -237,6 +296,25 @@ int32_t vm_standard_view(vm_view* v,int32_t view) {
 int32_t vm_camera(vm_view* v,double* position,double* focal,double* up) {
     TRY {VIEW;require(position&&focal&&up,"null camera output");auto c=v->renderer->GetActiveCamera();
         std::copy_n(c->GetPosition(),3,position);std::copy_n(c->GetFocalPoint(),3,focal);std::copy_n(c->GetViewUp(),3,up);return 0;} CATCH
+}
+int32_t vm_perspective(vm_view* v,int32_t enabled) {
+    TRY {VIEW;v->renderer->GetActiveCamera()->SetParallelProjection(!enabled);v->renderer->ResetCameraClippingRange();return 0;} CATCH
+}
+int32_t vm_animate_standard_begin(vm_view* v,int32_t view) {
+    TRY {VIEW;v->animation_start->DeepCopy(v->renderer->GetActiveCamera());
+        if(vm_standard_view(v,view)<0)return -1;
+        v->animation_end->DeepCopy(v->renderer->GetActiveCamera());
+        v->animation->Initialize();v->animation->SetInterpolationTypeToLinear();
+        v->animation->AddCamera(0,v->animation_start);v->animation->AddCamera(1,v->animation_end);
+        v->renderer->GetActiveCamera()->DeepCopy(v->animation_start);v->animating=true;return 0;} CATCH
+}
+int32_t vm_animate_standard_step(vm_view* v,double t) {
+    TRY {VIEW;require(v->animating&&std::isfinite(t)&&t>=0&&t<=1,"invalid animation fraction/state");
+        // CameraInterpolator uses quaternion orientation interpolation; preserve both
+        // position and focal point while interpolating zoom, as in vtkControl.
+        if(t==1){v->renderer->GetActiveCamera()->DeepCopy(v->animation_end);v->animating=false;}
+        else v->animation->InterpolateCamera(t,v->renderer->GetActiveCamera());
+        v->renderer->ResetCameraClippingRange();return 0;} CATCH
 }
 int32_t vm_rotate(vm_view* v,double az,double el) {
     TRY {VIEW;require(std::isfinite(az)&&std::isfinite(el),"invalid rotation");auto c=v->renderer->GetActiveCamera();
@@ -270,14 +348,17 @@ int32_t vm_project(vm_view* v,const double* xyz,double* out) {
         v->renderer->WorldToDisplay();std::copy_n(v->renderer->GetDisplayPoint(),3,out);return 0;} CATCH
 }
 int32_t vm_pick(vm_view* v,int32_t x,int32_t y,vm_pick_result* r) {
-    TRY { VIEW;require(r,"null pick output");*r={-1,-1,-1,0,0,0,0,0};
+    TRY { VIEW;require(r,"null pick output");*r={-1,-1,-1,0,0,0,0,0,-1};
         require(v->rendered,"render before picking");auto size=v->window->GetSize();
         if(x<0||y<0||x>=size[0]||y>=size[1]) return 0;
         vtkNew<vtkCellPicker> p;p->SetTolerance(0.0005);p->PickFromListOn();p->AddPickList(v->actor);
+        for(auto& pair:v->actors) if(pair.second->actor->GetVisibility())p->AddPickList(pair.second->actor);
         if(!p->Pick(x,y,0,v->renderer)||p->GetCellId()<0) return 0;
-        auto id=p->GetCellId();require(id<static_cast<vtkIdType>(v->elements.size()),"unexpected picker cell mapping");
-        auto pos=p->GetPickPosition();r->hit=1;r->element_id=v->elements[id];r->x=pos[0];r->y=pos[1];r->z=pos[2];
-        auto cell=v->grid->GetCell(id);double best=1e100;
+        actor_state* mesh=v;r->actor_id=0;
+        for(auto& pair:v->actors)if(pair.second->actor==p->GetActor()){mesh=pair.second.get();r->actor_id=pair.first;break;}
+        auto id=p->GetCellId();require(id<static_cast<vtkIdType>(mesh->elements.size()),"unexpected picker cell mapping");
+        auto pos=p->GetPickPosition();r->hit=1;r->element_id=mesh->elements[id];r->x=pos[0];r->y=pos[1];r->z=pos[2];
+        auto cell=mesh->grid->GetCell(id);double best=1e100;
         if(cell->GetCellDimension()==2) r->face_id=0;
         else for(int f=0;f<cell->GetNumberOfFaces();++f) {
             auto face=cell->GetFace(f);double closest[3],pc[3],distance;int sub;
@@ -287,15 +368,15 @@ int32_t vm_pick(vm_view* v,int32_t x,int32_t y,vm_pick_result* r) {
         }
         best=100.0; double bestWorld=1e100; // 10 physical pixel tolerance
         for(vtkIdType i=0;i<cell->GetNumberOfPoints();++i) {
-            auto ni=cell->GetPointId(i);double point[3],display[3];v->grid->GetPoint(ni,point);vm_project(v,point,display);
+            auto ni=cell->GetPointId(i);double point[3],display[3];mesh->grid->GetPoint(ni,point);vm_project(v,point,display);
             double d=(display[0]-x)*(display[0]-x)+(display[1]-y)*(display[1]-y);
             // Reject nodes on the back of a volume at the same screen position.
             double worlddist=0;for(int k=0;k<3;++k) worlddist+=(point[k]-pos[k])*(point[k]-pos[k]);
             if((d<best-0.01)||(d<100.0&&std::abs(d-best)<=0.01&&worlddist<bestWorld)) {
-                best=d;bestWorld=worlddist;r->node_id=v->nodes[ni];
+                best=d;bestWorld=worlddist;r->node_id=mesh->nodes[ni];
             }
         }
-        return 1;
+        r->sequence=v->last.sequence+1;v->last=*r;if(v->callback)v->callback(r,v->callback_user);return 1;
     } CATCH
 }
 int32_t vm_write_png(vm_view* v,const char* path) {

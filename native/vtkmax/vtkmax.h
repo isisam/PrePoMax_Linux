@@ -18,7 +18,9 @@ typedef struct vm_pick_result {
     int32_t face_id, hit; /* zero-based VTK local face; shells = 0; miss IDs = -1 */
     double x, y, z;
     uint64_t sequence;
+    int64_t actor_id; /* default actor=0; miss=-1 */
 } vm_pick_result;
+typedef void (*vm_selection_callback)(const vm_pick_result* result, void* user);
 /* ABI 0.2, UNSTABLE: vm_abi_version()==2; .so.0. No compatibility promise until 1.x.
  * All calls on the creating thread. Arrays copied, UTF-8 strings borrowed
  * for the call. Display coordinates are physical pixels, origin bottom-left.
@@ -49,12 +51,32 @@ VM_API int32_t vm_resize(vm_view* v, int32_t width, int32_t height);
 VM_API int32_t vm_load_grid(vm_view* v, int32_t np, const int64_t* node_ids,
     const double* xyz, int32_t nc, const int64_t* element_ids,
     const int32_t* types, const int32_t* offsets, int32_t nconn, const int64_t* connectivity);
+/* Actor 0 is the backwards-compatible default. IDs must be positive and unique.
+ * A failed add is atomic. Each actor may reuse node/element IDs; picks carry actor_id. */
+VM_API int32_t vm_add_actor(vm_view* v, int64_t actor_id, int32_t np, const int64_t* node_ids,
+    const double* xyz, int32_t nc, const int64_t* element_ids,
+    const int32_t* types, const int32_t* offsets, int32_t nconn, const int64_t* connectivity);
+VM_API int32_t vm_remove_actor(vm_view* v, int64_t actor_id);
+VM_API int32_t vm_actor_style(vm_view* v, int64_t actor_id, int32_t visible,
+    double red, double green, double blue, double opacity, int32_t edges);
+VM_API int32_t vm_actor_scalars(vm_view* v, int64_t actor_id, int32_t association,
+    const double* values, int32_t count, double minimum, double maximum, const char* title);
+VM_API int32_t vm_contour_bands(vm_view* v, int32_t bands);
+/* Absolute displacement from original coordinates, never cumulative. NULL/0 resets. */
+VM_API int32_t vm_deformation(vm_view* v, int64_t actor_id, const double* displacement,
+    int32_t count, double scale);
+VM_API int32_t vm_selection_handler(vm_view* v, vm_selection_callback callback, void* user);
+VM_API int32_t vm_perspective(vm_view* v, int32_t enabled);
+/* Nonblocking camera animation: begin then step(elapsed/total) from host frame clock. */
+VM_API int32_t vm_animate_standard_begin(vm_view* v, int32_t view);
+VM_API int32_t vm_animate_standard_step(vm_view* v, double fraction);
 VM_API int32_t vm_display(vm_view* v, int32_t surface, int32_t edges);
 /* association 0=elements, 1=nodes. count must match. NULL/0 disables scalars. */
 VM_API int32_t vm_scalars(vm_view* v, int32_t association, const double* values,
     int32_t count, double minimum, double maximum, const char* title);
 /* association 0=elements, 1=nodes. Unknown IDs are rejected atomically. */
 VM_API int32_t vm_highlight(vm_view* v, int32_t association, const int64_t* ids, int32_t count);
+VM_API int32_t vm_actor_highlight(vm_view* v, int64_t actor_id, int32_t association, const int64_t* ids, int32_t count);
 VM_API int32_t vm_fit(vm_view* v);
 /* Windows convention: 0 iso(+X,+Y,+Z), 1 front(+Z/up+Y), 2 back(-Z/up+Y),
  * 3 top(+Y/up-Z), 4 bottom(-Y/up+Z), 5 right(+X/up+Y), 6 left(-X/up+Y). */
