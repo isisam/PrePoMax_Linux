@@ -1223,6 +1223,7 @@ namespace FileInOut.Input
                     bool temperatureDependent;
                     material = new Material(name);
                     string[] depvar = null;
+                    string[] userMaterialData = null;
                     //
                     for (int i = dataSetId; i < dataSets.Length; i++)
                     {
@@ -1273,9 +1274,10 @@ namespace FileInOut.Input
                         }
                         else if (keyword == "*USER MATERIAL" && IsSupportedUserMaterial(dataSet[0]))
                         {
+                            userMaterialData = dataSet;
                             material.AddProperty(GetUserMaterial(dataSet, name));
                         }
-                        else if (keyword == "*DEPVAR" && dataSet[0].Trim().ToUpperInvariant() == "*DEPVAR")
+                        else if (keyword == "*DEPVAR")
                         {
                             depvar = dataSet;
                         }
@@ -1320,30 +1322,44 @@ namespace FileInOut.Input
                     }
                     if (depvar != null)
                     {
-                        if (material.GetProperty<UserMaterial>() is UserMaterial um)
+                        UserMaterial um = material.GetProperty<UserMaterial>() as UserMaterial;
+                        if (um != null && depvar[0].Trim().ToUpperInvariant() == "*DEPVAR" && depvar.Length == 2)
                             um.NumberOfStateVariables = int.Parse(depvar[1].Trim());
                         else
+                        {
+                            // Keep the pair raw when DEPVAR options/labels are outside the typed property.
+                            if (um != null)
+                            {
+                                material.Properties.Remove(um);
+                                userKeywords.Add(new CalculixUserKeyword(userMaterialData.ToRows(userMaterialData.Length))
+                                                 { Parent = material });
+                            }
                             userKeywords.Add(new CalculixUserKeyword(depvar.ToRows(depvar.Length)) { Parent = material });
+                        }
                     }
                 }
                 else _errors.Add("Material name not found: " + dataSet[0]);
                 //
                 return material;
             }
-            catch
+            catch (Exception ex)
             {
-                _errors.Add("Failed to import material: " + dataSet != null ? dataSet.ToRows() : "");
+                _errors.Add("Failed to import material: " + ex.Message + Environment.NewLine +
+                            (dataSet != null ? dataSet.ToRows() : ""));
                 return null;
             }
         }
         private static bool IsSupportedUserMaterial(string header)
         {
             string[] options = header.Split(',').Skip(1).Select(item => item.Replace(" ", "").ToUpperInvariant()).ToArray();
-            return options.Length == 1 && options[0].StartsWith("CONSTANTS=");
+            return options.Count(item => item.StartsWith("CONSTANTS=")) == 1 &&
+                   options.All(item => item.StartsWith("CONSTANTS=") || item == "TYPE=MECHANICAL");
         }
         private static UserMaterial GetUserMaterial(string[] lines, string name)
         {
-            int count = int.Parse(lines[0].Split('=')[1].Trim());
+            string option = lines[0].Split(',').Skip(1).Select(item => item.Replace(" ", "").ToUpperInvariant())
+                                   .Single(item => item.StartsWith("CONSTANTS="));
+            int count = int.Parse(option.Split('=')[1]);
             double[] constants = lines.Skip(1).SelectMany(line => line.Split(_splitterComma,
                 StringSplitOptions.RemoveEmptyEntries)).Select(value => double.Parse(value.Trim().Replace('D', 'E')
                 .Replace('d', 'e'), System.Globalization.CultureInfo.InvariantCulture)).ToArray();
