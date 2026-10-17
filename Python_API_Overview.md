@@ -4404,6 +4404,17 @@ It exits with 0 only when nothing drifted.
 `test_runner_offline.py` checks the runner itself with `python -m unittest test_runner_offline`, launching no
 PrePoMax process.
 
+## Composite layups (headless core)
+
+`pmx.create.composite_ply` makes a detached ply with a material name, positive thickness,
+angle in degrees and optional elements-through-thickness check. `pmx.model.composite_layups`
+supports `add`, complete-definition `replace`, single-name `remove`, `get_names` and detached
+`get` snapshots. A snapshot's `get_plies(expanded=True)` includes its symmetric mirror.
+Regions accept the existing part/element-set regions and solid element/part selections.
+Geometric validation runs on model checks and before export; the UI is not implemented yet.
+See [COMPOSITE_LAYUP.md](docs/COMPOSITE_LAYUP.md) for angle conventions, persistence limits,
+examples and the unresolved original-coupon numerical acceptance gate.
+
 ## Notes for documentation generation
 
 - The `[PythonAPI]` attribute descriptions are the best source for generated member documentation.
