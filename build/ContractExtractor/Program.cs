@@ -2,6 +2,25 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Text.Json;
+if(args[0]=="--forwards") {
+ var groups=new Dictionary<string,SortedSet<string>>();
+ foreach(var path in args.Skip(1)) {
+  var root=CSharpSyntaxTree.ParseText(File.ReadAllText(path)).GetRoot();
+  foreach(var type in root.DescendantNodes().OfType<BaseTypeDeclarationSyntax>()) {
+   if(type.Parent is not NamespaceDeclarationSyntax ns || !type.Modifiers.Any(SyntaxKind.PublicKeyword)) continue;
+   string target=Path.GetFullPath(path).Replace('\\','/').Contains("/PrePoMax.Core/") ? "PrePoMax" : ns.Name.ToString()=="UserControls" ? "UserControls" : "vtkControl";
+   if(!groups.ContainsKey(target)) groups[target]=new SortedSet<string>();
+   var generic=type is TypeDeclarationSyntax td && td.TypeParameterList != null ? "<"+new string(',',td.TypeParameterList.Parameters.Count-1)+">" : "";
+   groups[target].Add(ns.Name+"."+type.Identifier.Text+generic);
+  }
+ }
+ foreach(var group in groups) {
+  var output="// Legacy Windows assembly entry points; implementation lives in the shared projects.\n"+string.Join("\n",group.Value.Select(name=>"[assembly: System.Runtime.CompilerServices.TypeForwardedTo(typeof(global::"+name+"))]"))+"\n";
+  File.WriteAllText(Path.Combine(group.Key,"Properties","ForwardedCoreTypes.cs"),output,new System.Text.UTF8Encoding(false));
+  Console.WriteLine(group.Key+" forwards="+group.Value.Count);
+ }
+ return;
+}
 if(args[0]=="--forward") {
  foreach(var path in args.Skip(1)) {
   var source=File.ReadAllText(path); var root=CSharpSyntaxTree.ParseText(source).GetRoot();

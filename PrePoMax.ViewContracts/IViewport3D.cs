@@ -24,6 +24,9 @@ namespace vtkControl
     /// <summary>Portable viewport operations; native actor handles belong to the implementing viewport.</summary>
     public interface IViewport3D
     {
+        event Action<double[], double[], double[][], bool, vtkSelectOperation, string[]> OnMouseLeftButtonUpSelection;
+        event Action<double[]> RotationPointChanged;
+
         double[][][] GetStlTriangles(vtkMaxActorData data);
         bool RenderingOn { get; set; }
 

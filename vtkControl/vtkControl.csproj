@@ -55,6 +55,7 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Properties\ForwardedCoreTypes.cs" />
     <Compile Include="vtkMax\Actor\vtkMaxActorDataExtensions.cs"/>
     <Compile Include="SectionViewProperites.cs"/>
     <Compile Include="vtkControl.Contracts.cs" />

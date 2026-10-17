@@ -7,6 +7,9 @@ namespace vtkControl
 {
     public class NullViewport3D : IViewport3D
     {
+        public event Action<double[], double[], double[][], bool, vtkSelectOperation, string[]> OnMouseLeftButtonUpSelection { add { } remove { } }
+        public event Action<double[]> RotationPointChanged { add { } remove { } }
+
         public virtual double[][][] GetStlTriangles(vtkMaxActorData data)
         {
             throw new NotSupportedException("STL triangulation requires a viewport backend.");

@@ -57,6 +57,7 @@
     <StartupObject />
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Properties\ForwardedCoreTypes.cs" />
     <Compile Include="Forms\WindowsDialogService.cs" />
     <Compile Include="Forms\WindowGeometryAdapter.cs" />
     <Compile Include="Forms\FrmMain.Core.cs" />
