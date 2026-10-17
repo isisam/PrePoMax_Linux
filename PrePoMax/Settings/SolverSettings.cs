@@ -10,6 +10,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.Serialization;
 using CaeGlobals;
 using CaeJob;
 using CaeMesh;
@@ -115,6 +116,31 @@ namespace PrePoMax
             _binaryResultsFile = false;
             _abaqusExe = null;
             _femasterExe = null;
+            SetBundledCalculixDefault(true);
+        }
+        [OnDeserialized]
+        private void OnDeserialized(StreamingContext context)
+        {
+            // A saved matrix solver is an existing user choice, including in older settings files.
+            SetBundledCalculixDefault(false);
+        }
+        private void SetBundledCalculixDefault(bool resetMatrixSolver)
+        {
+            if (!string.IsNullOrWhiteSpace(_calculixExe)) return;
+            string executable = Tools.GetGlobalPath("#\\Solver\\ccx_fat.exe");
+            if (File.Exists(executable))
+            {
+                _calculixExe = Tools.GetLocalPath(executable);
+                if (resetMatrixSolver) _calculixDefaultSolverType = SolverTypeEnum.Spooles;
+            }
+        }
+        public static bool IsCcxFat(string executable)
+        {
+            return string.Equals(Path.GetFileName(executable), "ccx_fat.exe", StringComparison.OrdinalIgnoreCase);
+        }
+        public static bool IsUnsupportedCcxFatSolver(SolverTypeEnum solver)
+        {
+            return solver == SolverTypeEnum.Pardiso || solver == SolverTypeEnum.PaStiX;
         }
         private static string SetExecutable(string value, string solverName)
         {

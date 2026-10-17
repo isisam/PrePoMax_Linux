@@ -19638,6 +19638,21 @@ namespace PrePoMax
             //
             if (File.Exists(job.Executable))
             {
+                if (job.FEMSolver == FEMSolverEnum.Calculix && SolverSettings.IsCcxFat(job.Executable))
+                {
+                    List<string> unsupported = new List<string>();
+                    if (SolverSettings.IsUnsupportedCcxFatSolver(_settings.Solver.CalculixDefaultSolverType))
+                        unsupported.Add("Settings: " + _settings.Solver.CalculixDefaultSolverType);
+                    foreach (Step step in _model.StepCollection.StepsList)
+                    {
+                        if (step.Active && SolverSettings.IsUnsupportedCcxFatSolver(step.SolverType))
+                            unsupported.Add("Step '" + step.Name + "': " + step.SolverType);
+                    }
+                    if (unsupported.Count > 0 && MessageBoxes.ShowWarningQuestionOKCancel(
+                        "ccx_fat.exe does not include Pardiso or PaStiX. Select Spooles in Settings and in the " +
+                        "affected steps before running.\n" + string.Join("\n", unsupported) + "\nContinue anyway?") ==
+                        DialogResult.Cancel) return false;
+                }
                 if (CheckModelBeforeJobRun(job.FEMSolver) && DeleteFilesBeforeJobRun(inputFileName, job)) // must be separate due to exception
                 {
                     if (onlyCheckModel) _model.StepCollection.SetCheckModel();
