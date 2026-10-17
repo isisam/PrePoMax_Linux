@@ -2426,6 +2426,17 @@ namespace CaeModel
             //
             return InpFileReader.Errors;
         }
+        // Viewer-only import: raw user keywords are returned without export-tree
+        // positions. Do not use this model for lossless re-export or PMX saves.
+        // Existing editing/CLI import overloads retain full keyword indexing.
+        public List<string> ImportModelFromInpFileForViewing(string fileName, Action<string> writeDataToOutput,
+                                                            out string[] rawUserKeywords)
+        {
+            InpFileReader.Read(fileName, ElementsToImport.Solid | ElementsToImport.Shell, this,
+                               writeDataToOutput, out var indexedUserKeywords, true, false, out rawUserKeywords);
+            CalculixUserKeywords = indexedUserKeywords;
+            return InpFileReader.Errors;
+        }
         public List<string> ImportMaterialsFromInpFile(string fileName, Action<string> WriteDataToOutput)
         {
             FeModel model = new FeModel("Imported Materials", _unitSystem, false);

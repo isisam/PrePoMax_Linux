@@ -102,11 +102,11 @@ namespace CaeMesh
             //
             _smoothShaded = part.SmoothShaded;
             //
-            _boundingBox = part.BoundingBox.DeepClone();
+            _boundingBox = new BoundingBox(part.BoundingBox);
             //
             if (part.Offset != null) _offset = part.Offset.ToArray();
             //
-            _massProperties = part.MassProperties.DeepClone();
+            _massProperties = part.MassProperties.DeepCopy();
             _geometryMetadata = part.GeometryMetadata != null ? part.GeometryMetadata.DeepCopy() : null;
             _geometryToMeshTransform = part.GeometryToMeshTransform;
         }

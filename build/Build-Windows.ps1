@@ -17,7 +17,9 @@ try {
     $env:DOTNET_PROCESSOR_COUNT = '8'
     Push-Location $repo
     try {
-        & $msbuild PrePoMax.sln /t:Restore,Build "/p:Configuration=$Configuration" /p:Platform=x64 /p:CoreTargetFrameworks=net48 /p:RestorePackagesConfig=true /m:1 /nr:false /v:minimal
+        # /restore reevaluates generated package imports before Build. A combined
+        # /t:Restore,Build fails on a fresh Linux-built checkout (NETSDK1216).
+        & $msbuild PrePoMax.sln /restore /t:Build "/p:Configuration=$Configuration" /p:Platform=x64 /p:CoreTargetFrameworks=net48 /p:RestorePackagesConfig=true /m:1 /nr:false /v:minimal
         if ($LASTEXITCODE -ne 0) { throw "Windows build failed: $LASTEXITCODE" }
     } finally { Pop-Location }
 } finally {

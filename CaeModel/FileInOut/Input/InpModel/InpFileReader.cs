@@ -186,6 +186,18 @@ namespace FileInOut.Input
                                 out OrderedDictionary<int[], CalculixUserKeyword> indexedUserKeywords,
                                 bool preserveUnsupportedUserMaterials)
         {
+            Read(fileName, elementsToImport, model, WriteDataToOutput, out indexedUserKeywords,
+                 preserveUnsupportedUserMaterials, true, out _);
+        }
+        // A read-only viewer does not need the export keyword tree. That tree
+        // currently clones via BinaryFormatter, unavailable in .NET 10.
+        static public void Read(string fileName, ElementsToImport elementsToImport, FeModel model,
+                                Action<string> WriteDataToOutput,
+                                out OrderedDictionary<int[], CalculixUserKeyword> indexedUserKeywords,
+                                bool preserveUnsupportedUserMaterials, bool indexUserKeywords,
+                                out string[] unindexedUserKeywords)
+        {
+            unindexedUserKeywords = new string[0];
             WriteDataToOutputStatic = WriteDataToOutput;
             _errors = new List<string>();
             _warnings = new List<string>();
@@ -385,6 +397,8 @@ namespace FileInOut.Input
                         userKeywords.Add(mergedKeyword);
                     }
                 }
+                unindexedUserKeywords = userKeywords.Select(k => k.GetKeywordString()).ToArray();
+                if (!indexUserKeywords) return;
                 // Add indices of user keywords
                 int[] indices;
                 Stack<int> indexStack = new Stack<int>();

@@ -48,6 +48,21 @@ namespace CaeMesh
                 InertiaMatrixOrigin = null;
             }
         }
+        // Explicit value/array copy keeps INP import usable without BinaryFormatter
+        // on .NET 10. Serialized fields and model persistence remain unchanged.
+        public PartMassProperties DeepCopy()
+        {
+            return new PartMassProperties(false)
+            {
+                Volume = Volume,
+                Area = Area,
+                CenterOfMass = CenterOfMass != null ? CenterOfMass.ToArray() : null,
+                InertiaMatrixCG = InertiaMatrixCG != null
+                    ? InertiaMatrixCG.Select(row => row != null ? row.ToArray() : null).ToArray() : null,
+                InertiaMatrixOrigin = InertiaMatrixOrigin != null
+                    ? InertiaMatrixOrigin.Select(row => row != null ? row.ToArray() : null).ToArray() : null
+            };
+        }
         //public PartMassProperties(PartMassProperties massProperties)
         //{
         //    PartMassProperties copy = new PartMassProperties(true);
