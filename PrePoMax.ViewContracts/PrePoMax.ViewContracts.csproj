@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="../build/SharedCore.props" />
+  <PropertyGroup>
+    <ProjectGuid>{71D5471A-3B23-42BB-A10E-2C0551307C81}</ProjectGuid>
+    <AssemblyName>PrePoMax.ViewContracts</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../CaeGlobals/CaeGlobals.csproj" />
+  </ItemGroup>
+</Project>

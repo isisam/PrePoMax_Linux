@@ -1,0 +1,61 @@
+// PrePoMax - Copyright (C) 2016-2026 Matej Borovinšek
+//
+// Licensed under the terms defined in the LICENSE file located in the root directory of this source code.
+//
+// Source code: https://gitlab.com/MatejB/PrePoMax
+//
+// Author: Matej Borovinšek
+// Contributors:
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using PrePoMax;
+using CaeModel;
+using CaeMesh;
+using CaeGlobals;
+using PrePoMax.Python.Journal;
+
+
+namespace PrePoMax.Commands
+{
+    [System.Runtime.CompilerServices.TypeForwardedFrom("PrePoMax, Version=3.0.0.0, Culture=neutral, PublicKeyToken=null")]
+    [Serializable]
+    class CSplitAFaceUsingTwoPoints : PreprocessCommand
+    {
+        // Variables                                                                                                                
+        private GeometrySelection _surfaceSelection;
+        private GeometrySelection _verticesSelection;
+
+
+        // Constructor                                                                                                              
+        public CSplitAFaceUsingTwoPoints(GeometrySelection surfaceSelection, GeometrySelection verticesSelection)
+            : base("Split a face using two points")
+        {
+            _surfaceSelection = surfaceSelection.DeepClone();
+            _verticesSelection = verticesSelection.DeepClone();
+        }
+
+
+        // Methods                                                                                                                  
+        public override bool Execute(Controller receiver)
+        {
+            receiver.SplitAFaceUsingTwoPoints(_surfaceSelection.DeepClone(), _verticesSelection.DeepClone());
+            return true;
+        }
+        public override void ToPython(PythonJournalWriter writer)
+        {
+            writer.Unsupported(this, "the retired Split a Face Using Two Points has no Python form: its face was " +
+                                     "picked in the 'geometry' target, which split_face does not take, and its " +
+                                     "vertices in a vertex target the API has no form for. " +
+                                     "Split the face again with pmx.model.geometry.parts.split_face(surfaces, " +
+                                     "pmx.create.split_tool_line_by_two_points(splitter=vertices)).");
+        }
+        public override string GetCommandString()
+        {
+            return base.GetCommandString() + "Surface: " + _surfaceSelection.ToString() + ", Vertices: " + _verticesSelection.ToString();
+        }
+    }
+}

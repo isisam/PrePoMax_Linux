@@ -53,7 +53,7 @@ namespace vtkControl
     /// an instance of a vtkRenderWindow.
     /// </summary>
     [ComVisible(true), ClassInterface(ClassInterfaceType.AutoDual)]
-    public partial class vtkControl : UserControl, IMessageFilter
+    public partial class vtkControl : UserControl, IViewport3D, IMessageFilter
     {
         int countError;
         // Variables                                                                                                                        

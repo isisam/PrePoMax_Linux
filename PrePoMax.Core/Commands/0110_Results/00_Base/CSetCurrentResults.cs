@@ -1,0 +1,62 @@
+// PrePoMax - Copyright (C) 2016-2026 Matej Borovinšek
+//
+// Licensed under the terms defined in the LICENSE file located in the root directory of this source code.
+//
+// Source code: https://gitlab.com/MatejB/PrePoMax
+//
+// Author: Matej Borovinšek
+// Contributors:
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using PrePoMax;
+using CaeModel;
+using CaeMesh;
+using CaeGlobals;
+using PrePoMax.Python.Journal;
+using CaeJob;
+using System.IO;
+
+namespace PrePoMax.Commands
+{
+    [System.Runtime.CompilerServices.TypeForwardedFrom("PrePoMax, Version=3.0.0.0, Culture=neutral, PublicKeyToken=null")]
+    [Serializable]
+    class CSetCurrentResults : PostprocessCommand
+    {
+        // Variables                                                                                                                
+        private string _resultsName;
+
+
+        // Properties                                                                                                               
+        public string ResultsName { get { return _resultsName; } }
+        public string JobName { get { return Path.GetFileNameWithoutExtension(_resultsName); } }
+
+
+        // Constructor                                                                                                              
+        public CSetCurrentResults(string resultsName)
+            : base("Set current results")
+        {
+            _resultsName = resultsName;
+        }
+
+
+        // Methods                                                                                                                  
+        public override bool Execute(Controller receiver)
+        {
+            receiver.SetCurrentResults(_resultsName);
+            return true;
+        }
+        public override void ToPython(PythonJournalWriter writer)
+        {
+            writer.Assign("pmx.results.current", PythonValueFormatter.Text(_resultsName));
+            writer.CountEmittedCommand();
+        }
+        public override string GetCommandString()
+        {
+            return base.GetCommandString() + _resultsName;
+        }
+    }
+}

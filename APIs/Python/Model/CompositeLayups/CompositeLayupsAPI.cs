@@ -109,6 +109,37 @@ namespace APIs.Python.Model
         {
             _resolver.ModelGateway.RemoveCompositeLayup(Resolve(PythonValueConverter.ToText(name, "name", false)).Name);
         }
+        [PythonAPI("Duplicates layups with independent ply and retained-selection data.", Arguments = "names: str or list[str]")]
+        public void duplicate(object names)
+        {
+            var values = Names(names);
+            _resolver.ModelGateway.DuplicateCompositeLayups(values);
+        }
+        [PythonAPI("Renames a composite layup.", Arguments = "name: str, new_name: str")]
+        public void rename(object name, object new_name)
+        {
+            var item = Resolve(PythonValueConverter.ToText(name, "name", false));
+            string text = PythonValueConverter.ToText(new_name, "new_name", false);
+            PythonNameComparer.ValidateFormat(text, "new_name", item.Name);
+            if (_resolver.GetModel().CompositeLayups.ContainsKey(text) && !PythonNameComparer.AreSame(text, item.Name))
+                throw new PythonAPIException("The composite layup '" + text + "' already exists.");
+            _resolver.ModelGateway.RenameModelItem(item, text, null);
+        }
+        [PythonAPI("Activates composite layups.", Arguments = "names: str or list[str]")]
+        public void activate(object names) { SetActive(names, true); }
+        [PythonAPI("Deactivates composite layups.", Arguments = "names: str or list[str]")]
+        public void deactivate(object names) { SetActive(names, false); }
+        private string[] Names(object names)
+        {
+            return (names is string ? new[] { PythonValueConverter.ToText(names, "names", false) }
+                : PythonObjectListConverter.ToList<string>(names, "names", "a list of layup names").ToArray())
+                .Select(n => Resolve(n).Name).ToArray();
+        }
+        private void SetActive(object names, bool active)
+        {
+            var items = Names(names).Select(n => (NamedClass)Resolve(n)).ToArray();
+            _resolver.ModelGateway.ActivateDeactivateItems(items, active, new string[items.Length]);
+        }
         private CompositeLayup Build(string oldName, object name, object region, object plies, object cs,
                                      object axis, object symmetric, object tolerance, object active)
         {

@@ -1,0 +1,156 @@
+// PrePoMax - Copyright (C) 2016-2026 Matej Borovinšek
+//
+// Licensed under the terms defined in the LICENSE file located in the root directory of this source code.
+//
+// Source code: https://gitlab.com/MatejB/PrePoMax
+//
+// Author: Matej Borovinšek
+// Contributors:
+
+using CaeMesh;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace PrePoMax
+{
+    [System.Runtime.CompilerServices.TypeForwardedFrom("PrePoMax, Version=3.0.0.0, Culture=neutral, PublicKeyToken=null")]
+    [Serializable]
+    public class PartAnnotation : AnnotationBase
+    {
+        // Variables                                                                                                                
+
+
+        // Properties                                                                                                               
+
+
+        // Constructors                                                                                                             
+        public PartAnnotation(string name, string partName)
+            : base(name)
+        {
+            _partIds = new int[] { Controller.DisplayedMesh.Parts[partName].PartId };
+        }
+
+
+        // Methods
+        public override void GetAnnotationData(out string text, out double[] coor)
+        {
+            FeMesh mesh = Controller.DisplayedMesh;
+            BasePart part = mesh.GetPartFromId(_partIds[0]);
+            if (part == null) throw new NotSupportedException();
+            // Coor
+            if (Controller.UpdatingAnimationAnnotations && !Controller.InitializingAnimationAnnotationAnchors)
+                coor = null; // The VTK material attachment updates the anchor.
+            else coor = Controller.GetPartAnchorPoint(part.PartId);
+            //
+            bool showPartName = Controller.Settings.Annotations.ShowPartName;
+            bool showPartId = Controller.Settings.Annotations.ShowPartId;
+            bool showPartType = Controller.Settings.Annotations.ShowPartType;
+            bool showPartNumberOfElements = Controller.Settings.Annotations.ShowPartNumberOfElements;
+            bool showPartNumberOfNodes = Controller.Settings.Annotations.ShowPartNumberOfNodes;
+            bool showPartVolumeArea = Controller.Settings.Annotations.ShowPartVolumeArea;
+            // The mass is computed from the sections which exist only in the model
+            bool showPartMass = Controller.Settings.Annotations.ShowPartMass &&
+                                Controller.CurrentView == ViewGeometryModelResults.Model;
+            if (!showPartId && !showPartType && !showPartNumberOfElements && !showPartNumberOfNodes &&
+                !showPartVolumeArea && !showPartMass)
+                showPartName = true;
+            // Item name
+            string elementsName = "Number of elements:";
+            string nodesName = "Number of nodes:";
+            if (Controller.CurrentView == ViewGeometryModelResults.Geometry)
+            {
+                elementsName = "Number of facets:";
+                nodesName = "Number of vertices:";
+            }
+            // Volume/Area
+            string areaUnit = Controller.GetAreaUnit();
+            string volumeUnit = Controller.GetVolumeUnit();
+            string numberFormat = Controller.Settings.NumberFormat.GetNumberFormat();
+            bool volume = part.PartType == PartType.Solid || part.PartType == PartType.SolidAsShell ||
+                          part.PartType == PartType.Compound;
+            string volumeArea = null;
+            if (showPartVolumeArea)
+            {
+                double value;
+                if (Controller.CurrentView == ViewGeometryModelResults.Results)
+                {
+                    FeNode[] nodes = Controller.GetScaledNodes(1, part.NodeLabels, false);
+                    Dictionary<int, FeNode> nodesDic = new Dictionary<int, FeNode>();
+                    foreach (var node in nodes) nodesDic.Add(node.Id, node);
+                    PartMassProperties massProperties = mesh.ComputeVolumeArea(part, nodesDic);
+                    //
+                    if (volume) value = massProperties.Volume;
+                    else value = massProperties.Area;
+                }
+                else
+                {
+                    if (volume) value = part.MassProperties.Volume;
+                    else value = part.MassProperties.Area;
+                }
+                if (volume)
+                    volumeArea = string.Format("Part volume: {0} {1}", value.ToString(numberFormat), volumeUnit);
+                else volumeArea = string.Format("Part area: {0} {1}", value.ToString(numberFormat), areaUnit);
+            }
+            // Mass
+            string partMass = null;
+            if (showPartMass)
+            {
+                double mass;
+                if (Controller.TryGetPartMass(part, out mass, out _, out _))
+                    partMass = string.Format("Part mass: {0} {1}", mass.ToString(numberFormat), Controller.GetMassUnit());
+                else partMass = "Part mass: not available";
+            }
+            //
+            text = "";
+            //
+            if (showPartName)
+            {
+                text += string.Format("Part name: {0}", part.Name);
+            }
+            if (showPartId)
+            {
+                if (text.Length > 0) text += Environment.NewLine;
+                text += string.Format("Part id: {0}", part.PartId);
+            }
+            if (showPartType)
+            {
+                string partTypeName;
+                if (part.PartType == PartType.SolidAsShell) partTypeName = "Solid as shell";
+                else partTypeName = part.PartType.ToString();
+                //
+                if (text.Length > 0) text += Environment.NewLine;
+                text += string.Format("Part type: {0}", partTypeName);
+            }
+            if (showPartVolumeArea)
+            {
+                if (text.Length > 0) text += Environment.NewLine;
+                text += volumeArea;
+            }
+            if (showPartMass)
+            {
+                if (text.Length > 0) text += Environment.NewLine;
+                text += partMass;
+            }
+            if (showPartNumberOfElements)
+            {
+                if (text.Length > 0) text += Environment.NewLine;
+                text += string.Format("{0} {1}", elementsName, part.Labels.Length);
+            }
+            if (showPartNumberOfNodes)
+            {
+                if (text.Length > 0) text += Environment.NewLine;
+                text += string.Format("{0} {1}", nodesName, part.NodeLabels.Length);
+            }
+            //
+            if (IsTextOverridden) text = OverriddenText;
+        }
+        public override bool IsAnimationTextChanged()
+        {
+            return !IsTextOverridden && Controller.CurrentView == ViewGeometryModelResults.Results &&
+                   Controller.Settings.Annotations.ShowPartVolumeArea;
+        }
+    }
+}

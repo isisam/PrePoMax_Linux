@@ -1,0 +1,79 @@
+// PrePoMax - Copyright (C) 2016-2026 Matej Borovinšek
+//
+// Licensed under the terms defined in the LICENSE file located in the root directory of this source code.
+//
+// Source code: https://gitlab.com/MatejB/PrePoMax
+//
+// Author: Matej Borovinšek
+// Contributors:
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using PrePoMax;
+using CaeModel;
+using CaeMesh;
+using CaeGlobals;
+using PrePoMax.Python.Journal;
+
+
+namespace PrePoMax.Commands
+{
+    [System.Runtime.CompilerServices.TypeForwardedFrom("PrePoMax, Version=3.0.0.0, Culture=neutral, PublicKeyToken=null")]
+    [Serializable]
+    class CAddElementSet : PreprocessCommand
+    {
+        // Variables                                                                                                                
+        private FeElementSet _elementSet;
+
+
+        // Constructor                                                                                                              
+        public CAddElementSet(FeElementSet elementSet)
+            : base("Add element set")
+        {
+            _elementSet = elementSet.DeepClone();
+        }
+
+
+        // Methods                                                                                                                  
+        public override bool Execute(Controller receiver)
+        {
+            receiver.AddElementSet(_elementSet.DeepClone());
+            return true;
+        }
+        public override void ToPython(PythonJournalWriter writer)
+        {
+            if (_elementSet.CreationData != null)
+            {
+                PythonModelItemEmitter.AddFromSelection(writer, "pmx.model.element_sets", _elementSet,
+                                                        _elementSet.CreationData);
+                return;
+            }
+            // A set the application made from element IDs is rebuilt from them. The application may have made a set
+            // of the elements a run found without a section or with a nonpositive Jacobian during the replay, so it
+            // is added only when it is not there; a replayed run keeps a set holding those elements and makes none.
+            Selection selection = new Selection();
+            selection.CurrentView = (int)ViewGeometryModelResults.Model;
+            selection.SelectItem = vtkSelectItem.Element;
+            selection.Add(new SelectionNodeIds(vtkSelectOperation.None, false, _elementSet.Labels));
+            string selectionVariable = PythonSelectionEmitter.Emit(writer, selection);
+            string name = PythonValueFormatter.Text(_elementSet.Name);
+            string add = writer.Call("pmx.model.element_sets", "add", name, selectionVariable);
+            if (_elementSet.Name.StartsWith(Globals.MissingSectionName) ||
+                _elementSet.Name.StartsWith(Globals.NonpositiveJacobian))
+            {
+                writer.Line("if not pmx.model.element_sets.contains(" + name + "):");
+                writer.Line("    " + add);
+            }
+            else writer.Statement(add);
+            PythonModelItemEmitter.EmitState(writer, "pmx.model.element_sets", _elementSet);
+            writer.CountEmittedCommand();
+        }
+        public override string GetCommandString()
+        {
+            return base.GetCommandString() + _elementSet.ToString();
+        }
+    }
+}

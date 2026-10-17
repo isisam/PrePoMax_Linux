@@ -1,4 +1,4 @@
-﻿// PrePoMax - Copyright (C) 2016-2026 Matej Borovinšek
+// PrePoMax - Copyright (C) 2016-2026 Matej Borovinšek
 //
 // Licensed under the terms defined in the LICENSE file located in the root directory of this source code.
 //
@@ -25,7 +25,7 @@ namespace CaeGlobals
 
 
         // Constructors                                                                                                             
-        private RenamedTypeSerializationBinder()
+        protected RenamedTypeSerializationBinder()
         {
         }
 
@@ -60,27 +60,43 @@ namespace CaeGlobals
             if (typeName == "System.UnitySerializationHolder") return typeof(LegacyFormatter.FrameworkTypeReference);
 #endif
             if (typeName == null) return null;
+            // Old histories persisted the undo/redo event's Controller callback. Callbacks are rebound by
+            // the host after loading, so their runtime-specific delegate/method records are only consumed.
+            if (typeName.StartsWith("System.DelegateSerializationHolder", StringComparison.Ordinal) ||
+                typeName == "System.Reflection.MemberInfoSerializationHolder") return typeof(LegacyCallbackRecord);
+            if (typeName == "System.Windows.Forms.FormWindowState") return Resolve("PrePoMax.WindowState, PrePoMax.Core");
             //
             string renamedTypeName;
-            if (_renamedTypeNames.TryGetValue(typeName, out renamedTypeName)) return Type.GetType(renamedTypeName, false);
-            //
-            renamedTypeName = GetRenamedGenericArgumentTypeNames(typeName);
-            if (renamedTypeName == null)
-            {
-                // .NET Core writes BCL assembly identities that do not exist on Framework.
-                // Resolve both direct and nested generic identities without renaming model types.
-                return Type.GetType(typeName + ", " + assemblyName,
-                    name =>
-                    {
-                        string simple = name.Name;
-                        if (simple == "System.Private.CoreLib" || simple == "mscorlib") return typeof(object).Assembly;
-                        if (simple == "System.Drawing.Primitives" || simple == "System.Drawing") return typeof(System.Drawing.Color).Assembly;
-                        try { return System.Reflection.Assembly.Load(name); }
-                        catch (System.IO.FileNotFoundException) { return null; }
-                    }, null, false);
-            }
-            //
-            return Type.GetType(renamedTypeName + ", " + assemblyName, false);
+            if (_renamedTypeNames.TryGetValue(typeName, out renamedTypeName))
+                return Resolve(renamedTypeName);
+            string genericName = GetRenamedGenericArgumentTypeNames(typeName) ?? typeName;
+            return Resolve(genericName + ", " + assemblyName);
+        }
+        internal static Type Resolve(string qualifiedName)
+        {
+            return Type.GetType(qualifiedName,
+                name => {
+                    if (name.Name == "System.Private.CoreLib" || name.Name == "mscorlib") return typeof(object).Assembly;
+                    if (name.Name == "System.Drawing.Primitives" || name.Name == "System.Drawing") return typeof(System.Drawing.Color).Assembly;
+                    // Never load WinForms/ActiViz just to read a Controller/history/side-panel record.
+                    if (name.Name == "PrePoMax") return TryLoad("PrePoMax.Core") ?? TryLoad(name.FullName);
+                    if (name.Name == "UserControls" || name.Name == "vtkControl") return TryLoad("PrePoMax.ViewContracts") ?? TryLoad(name.FullName);
+                    return TryLoad(name.FullName);
+                },
+                (assembly, name, ignoreCase) => {
+                    Type found = assembly?.GetType(name, false, ignoreCase);
+                    if (found != null) return found;
+                    foreach (string candidate in new[] { "PrePoMax.Core", "PrePoMax.ViewContracts" }) {
+                        found = TryLoad(candidate)?.GetType(name, false, ignoreCase);
+                        if (found != null) return found;
+                    }
+                    return null;
+                }, false);
+        }
+        private static System.Reflection.Assembly TryLoad(string name)
+        {
+            try { return System.Reflection.Assembly.Load(name); }
+            catch (System.IO.FileNotFoundException) { return null; }
         }
         private static string GetRenamedGenericArgumentTypeNames(string typeName)
         {

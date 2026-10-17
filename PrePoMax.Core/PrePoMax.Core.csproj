@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="../build/SharedCore.props" />
+  <PropertyGroup>
+    <ProjectGuid>{97D8970E-490F-4D9B-B497-B7BB5E418A12}</ProjectGuid>
+    <AssemblyName>PrePoMax.Core</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="CommandLineParser" Version="2.9.1" />
+    <ProjectReference Include="../CaeGlobals/CaeGlobals.csproj" />
+    <ProjectReference Include="../CaeMesh/CaeMesh.csproj" />
+    <ProjectReference Include="../CaeModel/CaeModel.csproj" />
+    <ProjectReference Include="../CaeResults/CaeResults.csproj" />
+    <ProjectReference Include="../CaeJob/CaeJob.csproj" />
+    <ProjectReference Include="../APIs/APIs.csproj" />
+    <ProjectReference Include="../PrePoMax.ViewContracts/PrePoMax.ViewContracts.csproj" />
+    <ProjectReference Include="../STL/STL.csproj" />
+  </ItemGroup>
+</Project>

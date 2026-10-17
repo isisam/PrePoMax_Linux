@@ -31,12 +31,6 @@ using static System.Windows.Forms.VisualStyles.VisualStyleElement.TextBox;
 
 namespace UserControls
 {
-    public enum ViewType
-    {
-        Geometry,
-        Model,
-        Results
-    }
     public struct ContextMenuFields
     {
         public HashSet<Type> Types;
@@ -154,6 +148,7 @@ namespace UserControls
         private TreeNode _modelReferencePoints;     //     3
         private TreeNode _modelCoordinateSystems;   //     3
         private TreeNode _materials;                //   2
+        private TreeNode _compositeLayups;
         private TreeNode _sections;                 //   2
         private TreeNode _constraints;              //   2
         private TreeNode _contacts;                 //   2
@@ -193,6 +188,7 @@ namespace UserControls
         private string _modelReferencePointsName = "Reference Points";
         private string _modelCoordinateSystemsName = "Coordinate Systems";
         private string _materialsName = "Materials";
+        private string _compositeLayupsName = "Composite Layups";
         private string _sectionsName = "Sections";
         private string _constraintsName = "Constraints";
         private string _contactsName = "Contacts";
@@ -291,6 +287,7 @@ namespace UserControls
         public string ModelReferencePointsName { get { return _modelReferencePointsName; } }
         public string ModelCoordinateSystemsName { get { return _modelCoordinateSystemsName; } }
         public string MaterialsName { get { return _materialsName; } }
+        public string CompositeLayupsName { get { return _compositeLayupsName; } }
         public string SectionsName { get { return _sectionsName; } }
         public string ConstraintsName { get { return _constraintsName; } }
         public string SurfaceInteractionsName { get { return _surfaceInteractionsName; } }
@@ -417,6 +414,8 @@ namespace UserControls
             _modelCoordinateSystems = cltvModel.Nodes.Find(_modelCoordinateSystemsName, true)[0];
             _materials = cltvModel.Nodes.Find(_materialsName, true)[0];
             _sections = cltvModel.Nodes.Find(_sectionsName, true)[0];
+            _compositeLayups = new TreeNode(_compositeLayupsName) { Name = _compositeLayupsName, StateImageKey = "Section" };
+            _model.Nodes.Insert(_sections.Index + 1, _compositeLayups);
             _constraints = cltvModel.Nodes.Find(_constraintsName, true)[0];
             _contacts = cltvModel.Nodes.Find(_contactsName, true)[0];
             _surfaceInteractions = cltvModel.Nodes.Find(_surfaceInteractionsName, true)[0];
@@ -3367,6 +3366,7 @@ namespace UserControls
             _modelCoordinateSystems.Nodes.Clear();
             _materials.Nodes.Clear();
             _sections.Nodes.Clear();
+            _compositeLayups.Nodes.Clear();
             _constraints.Nodes.Clear();
             _contacts.Nodes.Clear();
             _surfaceInteractions.Nodes.Clear();
@@ -3392,6 +3392,7 @@ namespace UserControls
             _modelCoordinateSystems.Text = _modelCoordinateSystemsName;
             _materials.Text = _materialsName;
             _sections.Text = _sectionsName;
+            _compositeLayups.Text = _compositeLayupsName;
             _constraints.Text = _constraintsName;
             _surfaceInteractions.Text = _surfaceInteractionsName;
             _contactPairs.Text = _contactPairsName;
@@ -3418,6 +3419,7 @@ namespace UserControls
             _modelFeatures.Nodes.Add(_modelCoordinateSystems);
             _model.Nodes.Add(_materials);
             _model.Nodes.Add(_sections);
+            _model.Nodes.Add(_compositeLayups);
             _model.Nodes.Add(_constraints);
             _model.Nodes.Add(_contacts);
             _contacts.Nodes.Add(_surfaceInteractions);
@@ -3695,6 +3697,7 @@ namespace UserControls
                     AddObjectsToNode(_materialsName, _materials, model.Materials);
                     // Sections
                     AddObjectsToNode(_sectionsName, _sections, model.Sections);
+                    AddObjectsToNode(_compositeLayupsName, _compositeLayups, model.CompositeLayups);
                     // Constraints
                     AddObjectsToNode(_constraintsName, _constraints, model.Constraints);
                     // Surface interactions
@@ -3886,6 +3889,13 @@ namespace UserControls
                 else if (item is Material)
                 {
                     parent = _materials;
+                    node = parent.Nodes.Add(item.Name);
+                    node.Name = node.Text;
+                    node.Tag = item;
+                }
+                else if (item is CompositeLayup)
+                {
+                    parent = _compositeLayups;
                     node = parent.Nodes.Add(item.Name);
                     node.Name = node.Text;
                     node.Tag = item;
@@ -5039,7 +5049,7 @@ namespace UserControls
             else if (node.Name == _modelReferencePointsName) return true;
             else if (node.Name == _modelCoordinateSystemsName) return true;
             else if (node.Name == _materialsName) return true;
-            else if (node.Name == _sectionsName) return true;
+            else if (node.Name == _sectionsName || node.Name == _compositeLayupsName) return true;
             else if (node.Name == _constraintsName) return true;
             else if (node.Name == _surfaceInteractionsName) return true;
             else if (node.Name == _contactPairsName) return true;
@@ -5075,6 +5085,7 @@ namespace UserControls
             else if (node.Tag is FeSurface) return true;
             else if (node.Tag is FeReferencePoint) return true;
             else if (node.Tag is CoordinateSystem) return true;
+            else if (node.Tag is CompositeLayup) return true;
             else if (node.Tag is Material) return true;
             else if (node.Tag is Section) return true;
             else if (node.Tag is Constraint) return true;
@@ -5105,6 +5116,7 @@ namespace UserControls
             else if (node.TreeView == cltvModel && node.Tag is FeSurface) return true;
             else if (node.TreeView == cltvModel && node.Tag is FeReferencePoint) return true;
             else if (node.TreeView == cltvModel && node.Tag is CoordinateSystem) return true;
+            else if (node.Tag is CompositeLayup) return true;
             else if (node.Tag is Material) return true;
             else if (node.Tag is Section) return true;
             else if (node.Tag is Constraint) return true;
@@ -5170,6 +5182,7 @@ namespace UserControls
         {
             if (node.Tag is MeshSetupItem) return true;
             else if (node.Tag is MeshPart) return true;
+            else if (node.Tag is CompositeLayup) return true;
             else if (node.Tag is Material) return true;
             else if (node.Tag is Constraint) return true;
             else if (node.Tag is ContactPair) return true;
