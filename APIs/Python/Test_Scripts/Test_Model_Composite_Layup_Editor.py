@@ -1,4 +1,6 @@
 #PrePoMax Python Script
+# PrePoMax.com -f cube.inp -u MM_TON_S_C --script Test_Model_Composite_Layup_Editor.py -g No -x Yes
+#Expected process exit code 0.
 # Run with -g No -x Yes. Never calls Show, ShowDialog, Application.Run or creates FrmMain.
 import json
 import os
