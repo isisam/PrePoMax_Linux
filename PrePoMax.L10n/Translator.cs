@@ -49,7 +49,7 @@ namespace PrePoMax.L10n
                         var tokens = Regex.Matches(pair.Key, @"\{[0-9]+\}");
                         if (tokens.Count == 0) continue;
                         string pattern = Regex.Escape(pair.Key);
-                        foreach (Match token in tokens) pattern = pattern.Replace(Regex.Escape(token.Value), "(.+?)");
+                        foreach (Match token in tokens) pattern = pattern.Replace(Regex.Escape(token.Value), "(.*?)");
                         _templates.Add(new KeyValuePair<Regex, string>(
                             new Regex("^" + pattern + "$", RegexOptions.Singleline | RegexOptions.CultureInvariant,
                                 TimeSpan.FromMilliseconds(30)), pair.Key));
