@@ -25,6 +25,10 @@
 #include <vtkTextProperty.h>
 #include <vtkUnstructuredGrid.h>
 #include <vtkWindowToImageFilter.h>
+#include <vtkGenericOpenGLRenderWindow.h>
+#include <vtkGenericRenderWindowInteractor.h>
+#include <vtkOpenGLState.h>
+#include <vtk_glad.h>
 #include <vtkXOpenGLRenderWindow.h>
 #include <vtkXRenderWindowInteractor.h>
 #include <algorithm>
@@ -46,7 +50,7 @@ int nodes_per_cell(int t) {
 bool finite3(const double* p) { return std::isfinite(p[0]) && std::isfinite(p[1]) && std::isfinite(p[2]); }
 }
 struct vm_view {
-    vtkNew<vtkXOpenGLRenderWindow> window;
+    vtkSmartPointer<vtkOpenGLRenderWindow> window;
     vtkNew<vtkRenderer> renderer;
     vtkNew<vtkUnstructuredGrid> grid;
     vtkNew<vtkDataSetMapper> mapper;
@@ -59,6 +63,8 @@ struct vm_view {
     std::unordered_map<int64_t, vtkIdType> node_map, element_map;
     vm_pick_result last{-1,-1,-1,0,0,0,0,0};
     bool rendered=false, offscreen=true;
+    int backend=1;
+    std::string gl_info;
     ~vm_view() { if(interactor) { interactor->Disable(); interactor->SetRenderWindow(nullptr); } window->Finalize(); }
 };
 class ClickStyle : public vtkInteractorStyleTrackballCamera {
@@ -86,10 +92,20 @@ extern "C" {
 int32_t vm_abi_version() { return 1; }
 const char* vm_last_error() { return error.c_str(); }
 vm_view* vm_create(int32_t offscreen,int32_t w,int32_t h) {
+    return vm_create_backend(offscreen?1:0,w,h);
+}
+vm_view* vm_create_backend(int32_t backend,int32_t w,int32_t h) {
     error.clear(); try {
         require(w>0&&h>0&&w<=16384&&h<=16384,"invalid size");
-        auto v=std::make_unique<vm_view>(); v->offscreen=offscreen!=0;
-        v->window->SetOffScreenRendering(offscreen!=0); v->window->SetSize(w,h);
+        require(backend>=0&&backend<=2,"invalid backend");
+        auto v=std::make_unique<vm_view>(); v->offscreen=backend!=0;v->backend=backend;
+        if(backend==2) {
+            auto g=vtkSmartPointer<vtkGenericOpenGLRenderWindow>::New();
+            g->SetOwnContext(0);g->SetReadyForRendering(true);g->SetIsCurrent(true);
+            g->SetSupportsOpenGL(1);g->SetIsDirect(1);g->SetFrameBlitModeToBlitToCurrent();
+            v->window=g;
+        } else v->window=vtkSmartPointer<vtkXOpenGLRenderWindow>::New();
+        v->window->SetOffScreenRendering(backend==1); v->window->SetSize(w,h);
         v->window->SetMultiSamples(0); v->window->AddRenderer(v->renderer);
         v->renderer->SetBackground(0.075,0.09,0.13);
         v->mapper->SetInputData(v->grid); v->mapper->ScalarVisibilityOff();
@@ -106,6 +122,13 @@ vm_view* vm_create(int32_t offscreen,int32_t w,int32_t h) {
         v->highlight->GetProperty()->SetRepresentationToWireframe();
         v->highlight->GetProperty()->SetLineWidth(4); v->highlight->GetProperty()->LightingOff();
         v->renderer->AddActor(v->highlight); v->highlight->VisibilityOff();
+        if(backend==2) {
+            v->window->OpenGLInitContext();
+            v->interactor=vtkSmartPointer<vtkGenericRenderWindowInteractor>::New();
+            v->interactor->SetRenderWindow(v->window);
+            auto style=vtkSmartPointer<ClickStyle>::New();style->view=v.get();
+            v->interactor->SetInteractorStyle(style);v->interactor->Initialize();
+        }
         return v.release();
     } catch(const std::exception& e) { error=e.what(); return nullptr; } catch(...) { error="native exception"; return nullptr; }
 }
@@ -113,12 +136,13 @@ void vm_destroy(vm_view* v) { delete v; }
 uintptr_t vm_attach_x11(vm_view* v,uintptr_t parent) {
     error.clear(); try {
         VIEW; require(!v->rendered&&!v->offscreen&&parent,"attach requires an unrendered onscreen view and X11 parent");
-        v->window->SetParentId(static_cast<Window>(parent)); v->window->Render(); v->rendered=true;
+        auto x=vtkXOpenGLRenderWindow::SafeDownCast(v->window);require(x,"X11 backend required");
+        x->SetParentId(static_cast<Window>(parent)); v->window->Render(); v->rendered=true;
         v->interactor=vtkSmartPointer<vtkXRenderWindowInteractor>::New();
         v->interactor->SetRenderWindow(v->window);
         auto style=vtkSmartPointer<ClickStyle>::New(); style->view=v;
         v->interactor->SetInteractorStyle(style); v->interactor->Initialize();
-        return static_cast<uintptr_t>(v->window->GetWindowId());
+        return static_cast<uintptr_t>(x->GetWindowId());
     } catch(const std::exception& e) { error=e.what(); return 0; } catch(...) {error="attach exception";return 0;}
 }
 int32_t vm_resize(vm_view* v,int32_t w,int32_t h) {
@@ -208,6 +232,25 @@ int32_t vm_zoom(vm_view* v,double factor) {
     TRY {VIEW;require(std::isfinite(factor)&&factor>0,"invalid zoom");v->renderer->GetActiveCamera()->Zoom(factor);return 0;} CATCH
 }
 int32_t vm_render(vm_view* v) {TRY {VIEW;v->window->Render();v->rendered=true;return 0;} CATCH}
+int32_t vm_render_external(vm_view* v,int32_t framebuffer) {
+    TRY {VIEW;require(v->backend==2&&framebuffer>=0,"generic framebuffer required");
+        auto s=v->window->GetState();s->Reset();s->Push();
+        s->vtkglBindFramebuffer(GL_FRAMEBUFFER,static_cast<unsigned>(framebuffer));
+        v->window->Render();v->rendered=true;s->Pop();return 0;} CATCH
+}
+int32_t vm_input(vm_view* v,int32_t kind,int32_t x,int32_t y,int32_t ctrl,int32_t shift) {
+    TRY {VIEW;require(v->interactor&&kind>=0&&kind<=8,"invalid input/interactor");
+        auto i=v->interactor;i->SetEventInformation(x,y,ctrl,shift);
+        switch(kind) {case 0:i->MouseMoveEvent();break;case 1:i->LeftButtonPressEvent();break;
+        case 2:i->LeftButtonReleaseEvent();break;case 3:i->MiddleButtonPressEvent();break;
+        case 4:i->MiddleButtonReleaseEvent();break;case 5:i->MouseWheelForwardEvent();break;
+        case 6:i->MouseWheelBackwardEvent();break;case 7:i->RightButtonPressEvent();break;
+        case 8:i->RightButtonReleaseEvent();break;} return 0;} CATCH
+}
+const char* vm_gl_info(vm_view* v) {
+    if(!v)return "null view";
+    v->gl_info=v->window->ReportCapabilities();return v->gl_info.c_str();
+}
 int32_t vm_project(vm_view* v,const double* xyz,double* out) {
     TRY {VIEW;require(xyz&&out&&finite3(xyz),"invalid projection arrays");v->renderer->SetWorldPoint(xyz[0],xyz[1],xyz[2],1);
         v->renderer->WorldToDisplay();std::copy_n(v->renderer->GetDisplayPoint(),3,out);return 0;} CATCH

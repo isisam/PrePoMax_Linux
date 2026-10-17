@@ -5,8 +5,10 @@ using Avalonia.Threading;
 using Vtkmax.Interop;
 
 namespace PrePoMax.Avalonia;
-public sealed class VtkMaxView : NativeControlHost
+public sealed class VtkMaxView : NativeControlHost, IViewportHost
 {
+    public Control Control => this;
+    public void Execute(Action<Viewport> action) { if (View is { } v) action(v); }
     public Viewport? View { get; private set; }
     public event Action? Ready;
     public event Action<PickResult>? Picked;

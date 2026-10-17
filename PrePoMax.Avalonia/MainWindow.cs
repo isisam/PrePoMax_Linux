@@ -11,7 +11,7 @@ using Avalonia.Input;
 namespace PrePoMax.Avalonia;
 public sealed class MainWindow : Window
 {
-    private readonly VtkMaxView viewport = new();
+    private readonly IViewportHost viewport = Environment.GetEnvironmentVariable("VTKMAX_EMBED") == "generic" ? new GenericVtkView() : new VtkMaxView();
     private readonly TreeView tree = new() { Margin = new Thickness(8) };
     private readonly TextBlock status = new() { Text = "Open an INP model", Margin = new Thickness(12, 8) };
     private ViewerModel? model;
@@ -42,7 +42,10 @@ public sealed class MainWindow : Window
         var heading = new TextBlock { Text = "MODEL", Margin = new Thickness(12), FontWeight = global::Avalonia.Media.FontWeight.Bold };
         DockPanel.SetDock(heading, Dock.Top); sidebar.Children.Add(heading); sidebar.Children.Add(tree);
         grid.Children.Add(sidebar); var splitter = new GridSplitter { ResizeDirection = GridResizeDirection.Columns };
-        Grid.SetColumn(splitter, 1); grid.Children.Add(splitter); Grid.SetColumn(viewport, 2); grid.Children.Add(viewport);
+        Grid.SetColumn(splitter, 1); grid.Children.Add(splitter); Grid.SetColumn(viewport.Control, 2);
+        ToolTip.SetTip(viewport.Control, "VTK viewport tooltip");
+        viewport.Control.ContextMenu = new ContextMenu { ItemsSource = new[] { Item("Fit model", () => Change(v => v.Fit())), Item("Front view", () => Change(v => v.StandardView(1))) } };
+        grid.Children.Add(viewport.Control);
         root.Children.Add(grid); Content = root;
         viewport.Ready += () => { if (Program.Arguments.Length > 0 && !Program.Arguments[0].StartsWith("--")) Open(Program.Arguments[0]); };
         viewport.Picked += Picked;
@@ -51,7 +54,7 @@ public sealed class MainWindow : Window
     private static void AddButton(StackPanel panel, string text, Action action) { var b = new Button { Content = text }; b.Click += (_, _) => action(); panel.Children.Add(b); }
     private void Change(Action<Viewport> action)
     {
-        try { if (viewport.View is { } view) { action(view); view.Render(); } }
+        try { viewport.Execute(view => { action(view); view.Render(); }); }
         catch (Exception e) { status.Text = e.Message; Console.Error.WriteLine(e); }
     }
     private void Open(string path)
@@ -113,7 +116,7 @@ public sealed class MainWindow : Window
                 }, new JsonSerializerOptions { IncludeFields = true }));
                 if (File.Exists(Path.Combine(output, "capture")))
                 {
-                    File.Delete(Path.Combine(output, "capture")); view.WritePng(Path.Combine(output, "embedded-current.png"));
+                    File.Delete(Path.Combine(output, "capture")); viewport.Execute(v => v.WritePng(Path.Combine(output, "embedded-current.png")));
                 }
             };
             monitor.Start();

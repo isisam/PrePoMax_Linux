@@ -27,6 +27,14 @@ typedef struct vm_pick_result {
 VM_API int32_t vm_abi_version(void);
 VM_API const char* vm_last_error(void); /* thread-local; valid until next call */
 VM_API vm_view* vm_create(int32_t offscreen, int32_t width, int32_t height);
+/* 0 native onscreen, 1 native offscreen, 2 externally-owned current GL context.
+ * Generic context creation/render/disposal must occur inside host GL callbacks. */
+VM_API vm_view* vm_create_backend(int32_t backend, int32_t width, int32_t height);
+VM_API int32_t vm_render_external(vm_view* v, int32_t framebuffer);
+/* Pointer events in physical pixels, bottom-left. 0 move,1/2 left down/up,
+ * 3/4 middle down/up,5/6 wheel forward/backward,7/8 right down/up. */
+VM_API int32_t vm_input(vm_view* v, int32_t kind, int32_t x, int32_t y, int32_t ctrl, int32_t shift);
+VM_API const char* vm_gl_info(vm_view* v);
 VM_API void vm_destroy(vm_view* v);
 /* Attach before first render. Returns the VTK-owned X11 child window.
  * The caller owns parent, vtkmax owns child/display/context. */

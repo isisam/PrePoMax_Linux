@@ -16,6 +16,8 @@ public sealed class Viewport : IDisposable
 {
     private IntPtr handle;
     private readonly int thread = Environment.CurrentManagedThreadId;
+    private readonly bool generic;
+    public event Action? RenderRequested;
     private IntPtr Handle
     {
         get
@@ -27,10 +29,11 @@ public sealed class Viewport : IDisposable
     }
     private static string Error => Marshal.PtrToStringUTF8(Native.vm_last_error()) ?? "vtkmax error";
     private static void Check(int status) { if (status < 0) throw new InvalidOperationException(Error); }
-    public Viewport(bool offscreen = true, int width = 1000, int height = 700)
+    public Viewport(bool offscreen = true, int width = 1000, int height = 700, int backend = -1)
     {
         if (Native.vm_abi_version() != 1) throw new NotSupportedException("vtkmax ABI mismatch");
-        handle = Native.vm_create(offscreen ? 1 : 0, width, height);
+        generic = backend == 2;
+        handle = backend < 0 ? Native.vm_create(offscreen ? 1 : 0, width, height) : Native.vm_create_backend(backend, width, height);
         if (handle == IntPtr.Zero) throw new InvalidOperationException(Error);
     }
     public IntPtr AttachX11(IntPtr parent)
@@ -54,7 +57,10 @@ public sealed class Viewport : IDisposable
     public void StandardView(int view = 0) => Check(Native.vm_standard_view(Handle, view));
     public void Rotate(double azimuth, double elevation) => Check(Native.vm_rotate(Handle, azimuth, elevation));
     public void Zoom(double factor) => Check(Native.vm_zoom(Handle, factor));
-    public void Render() => Check(Native.vm_render(Handle));
+    public void Render() { if (generic) RenderRequested?.Invoke(); else Check(Native.vm_render(Handle)); }
+    public void RenderExternal(int framebuffer) => Check(Native.vm_render_external(Handle, framebuffer));
+    public void Input(int kind, int x, int y, bool control = false, bool shift = false) => Check(Native.vm_input(Handle, kind, x, y, control ? 1 : 0, shift ? 1 : 0));
+    public string GlInfo => Marshal.PtrToStringUTF8(Native.vm_gl_info(Handle)) ?? "";
     public PickResult Pick(int x, int y) { Check(Native.vm_pick(Handle, x, y, out var r)); return r; }
     public double[] Project(double x, double y, double z)
     {
@@ -77,6 +83,10 @@ internal static class Native
     [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)] internal static extern int vm_abi_version();
     [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)] internal static extern IntPtr vm_last_error();
     [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)] internal static extern IntPtr vm_create(int offscreen, int width, int height);
+    [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)] internal static extern IntPtr vm_create_backend(int backend, int width, int height);
+    [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)] internal static extern int vm_render_external(IntPtr view, int framebuffer);
+    [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)] internal static extern int vm_input(IntPtr view, int kind, int x, int y, int control, int shift);
+    [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)] internal static extern IntPtr vm_gl_info(IntPtr view);
     [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)] internal static extern void vm_destroy(IntPtr view);
     [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)] internal static extern UIntPtr vm_attach_x11(IntPtr view, UIntPtr parent);
     [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)] internal static extern int vm_resize(IntPtr view, int width, int height);
