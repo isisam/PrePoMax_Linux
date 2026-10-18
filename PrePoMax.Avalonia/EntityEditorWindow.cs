@@ -47,28 +47,28 @@ public sealed class EntityEditorWindow : Window
             MaterialDescription.Text = ((CaeModel.Material)material.Draft).Description;
             MaterialTemperature.IsChecked = material.TemperatureDependent;
             MaterialName.TextChanged += (_, _) => { if (!preparing) dirty = true; };
-            MaterialDescription.TextChanged += (_, _) => { if (!preparing) dirty = true; };
+            MaterialDescription.TextChanged += (_, _) => { if (!preparing) { dirty = true; Session.MarkChanged(); } };
             MaterialTemperature.IsCheckedChanged += (_, _) =>
             {
                 if (preparing) return;
                 if (!Flush()) { preparing = true; MaterialTemperature.IsChecked = material.TemperatureDependent; preparing = false; return; }
-                material.TemperatureDependent = MaterialTemperature.IsChecked == true; dirty = true; ShowPage();
+                material.TemperatureDependent = MaterialTemperature.IsChecked == true; dirty = true; Session.MarkChanged(); ShowPage();
             };
             header.Children.Add(new TextBlock { Text = "Name" }); header.Children.Add(MaterialName);
             header.Children.Add(new TextBlock { Text = "Description" }); header.Children.Add(MaterialDescription); header.Children.Add(MaterialTemperature);
             var tools = new WrapPanel { Orientation = Orientation.Horizontal };
             tools.Children.Add(MaterialType);
-            tools.Children.Add(Button("Add property", () => { if (!Flush()) return; material.AddProperty((string)MaterialType.SelectedItem!); dirty = true; ReloadPages(session.Pages.Count - 1); }));
-            tools.Children.Add(Button("Remove property", () => { if (PageSelector.SelectedIndex < 0) return; material.RemoveProperty(PageSelector.SelectedIndex); dirty = true; ReloadPages(); }));
+            tools.Children.Add(Button("Add property", () => { if (!Flush()) return; material.AddProperty((string)MaterialType.SelectedItem!); dirty = true; Session.MarkChanged(); ReloadPages(session.Pages.Count - 1); }));
+            tools.Children.Add(Button("Remove property", () => { if (PageSelector.SelectedIndex < 0) return; material.RemoveProperty(PageSelector.SelectedIndex); dirty = true; Session.MarkChanged(); ReloadPages(); }));
             tools.Children.Add(Button("Move up", () => Move(-1)));
             tools.Children.Add(Button("Move down", () => Move(1)));
-            tools.Children.Add(Button("Prefix USERFATCZM", () => { material.Draft.Name = MaterialName.Text ?? ""; material.PrefixFatczmName(); MaterialName.Text = material.Draft.Name; dirty = true; }));
+            tools.Children.Add(Button("Prefix USERFATCZM", () => { material.Draft.Name = MaterialName.Text ?? ""; material.PrefixFatczmName(); MaterialName.Text = material.Draft.Name; dirty = true; Session.MarkChanged(); }));
             header.Children.Add(tools);
             void Move(int delta)
             {
                 int from = PageSelector.SelectedIndex, to = from + delta;
                 if (from < 0 || to < 0 || to >= session.Pages.Count || !Flush()) return;
-                material.MoveProperty(from, to); dirty = true; ReloadPages(to);
+                material.MoveProperty(from, to); dirty = true; Session.MarkChanged(); ReloadPages(to);
             }
         }
         root.Children.Add(header);
@@ -76,19 +76,19 @@ public sealed class EntityEditorWindow : Window
         {
             var preset = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
             preset.Children.Add(new TextBlock { Text = "Jumps", VerticalAlignment = VerticalAlignment.Center }); preset.Children.Add(Jumps);
-            preset.Children.Add(Button("FATCZM fatigue step", () => { if (!Flush()) return; step.FatiguePreset((int)Jumps.Value!); dirty = true; Properties.Rebuild(); }));
+            preset.Children.Add(Button("FATCZM fatigue step", () => { if (!Flush()) return; step.FatiguePreset((int)Jumps.Value!); dirty = true; Session.MarkChanged(); Properties.Rebuild(); }));
             header.Children.Add(preset);
             var controlType = new ComboBox { ItemsSource = StepFormSession.ControlTypes, SelectedIndex = 0 };
             var controlTools = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 }; controlTools.Children.Add(controlType);
-            controlTools.Children.Add(Button("Add step control", () => { if (!Flush()) return; step.AddControl((string)controlType.SelectedItem!); dirty = true; ReloadPages(step.Pages.Count - 1); }));
-            controlTools.Children.Add(Button("Remove step control", () => { if (PageSelector.SelectedIndex <= 0) return; step.RemoveControl(PageSelector.SelectedIndex - 1); dirty = true; ReloadPages(); }));
+            controlTools.Children.Add(Button("Add step control", () => { if (!Flush()) return; step.AddControl((string)controlType.SelectedItem!); dirty = true; Session.MarkChanged(); ReloadPages(step.Pages.Count - 1); }));
+            controlTools.Children.Add(Button("Remove step control", () => { if (PageSelector.SelectedIndex <= 0) return; step.RemoveControl(PageSelector.SelectedIndex - 1); dirty = true; Session.MarkChanged(); ReloadPages(); }));
             header.Children.Add(controlTools);
             header.Children.Add(new TextBlock { Text = "Step-1: static peak-load ramp. Step-2: Direct, 1 increment/jump, Spooles, SDV. Existing steps are unchanged.", TextWrapping = TextWrapping.Wrap });
         }
         if (session is IIdSelectionSession selection && controller != null)
         {
             SelectionPanel = new IdSelectionPanel(controller, selection) { IsVisible = selection.SelectionVisible };
-            SelectionPanel.Changed += () => { dirty = true; Properties.Rebuild(); DraftChanged?.Invoke(); };
+            SelectionPanel.Changed += () => { dirty = true; Session.MarkChanged(); Properties.Rebuild(); DraftChanged?.Invoke(); };
             header.Children.Add(SelectionPanel); Closed += (_, _) => SelectionPanel.Dispose();
         }
         var chooser = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Margin = new Thickness(0, 6) };
@@ -102,13 +102,13 @@ public sealed class EntityEditorWindow : Window
         {
             if (!Flush() || page?.DataRows is not { } data) return;
             if (page.View is ViewUserMaterial { Fatczm: true }) throw new InvalidOperationException("The FATCZM preset requires exactly 26 constants.");
-            data.Add(Activator.CreateInstance(data.GetType().GetGenericArguments()[0])); dirty = true; ShowPage(); RowSelector.SelectedIndex = data.Count - 1;
+            data.Add(Activator.CreateInstance(data.GetType().GetGenericArguments()[0])); dirty = true; Session.MarkChanged(); ShowPage(); RowSelector.SelectedIndex = data.Count - 1;
         }));
         dataTools.Children.Add(Button("Remove data row", () =>
         {
             if (page?.DataRows is not { } data || RowSelector.SelectedIndex < 0) return;
             if (page.View is ViewUserMaterial { Fatczm: true }) throw new InvalidOperationException("The FATCZM preset requires exactly 26 constants.");
-            data.RemoveAt(RowSelector.SelectedIndex); dirty = true; ShowPage();
+            data.RemoveAt(RowSelector.SelectedIndex); dirty = true; Session.MarkChanged(); ShowPage();
         }));
         Grid.SetRow(dataTools, 3); propertyArea.Children.Add(dataTools);
         Grid.SetRow(DataProperties, 4); propertyArea.Children.Add(DataProperties);
@@ -136,7 +136,7 @@ public sealed class EntityEditorWindow : Window
         Properties.PropertyChanged += Changed; DataProperties.PropertyChanged += Changed;
         void Changed(string name)
         {
-            dirty = true; Session.Changed(name);
+            dirty = true; Session.MarkChanged(); Session.Changed(name);
             if (Session is StepFormSession step && Properties.SelectedObject is ViewStepControlParameter) step.ControlsChanged = true;
             if (SelectionPanel != null && session is IIdSelectionSession s) SelectionPanel.IsVisible = s.SelectionVisible;
             DraftChanged?.Invoke();
@@ -214,7 +214,7 @@ public sealed class EntityEditorWindow : Window
             if (!Flush()) { Error.Text = "Correct the highlighted property before applying."; return false; }
             if (Session is MaterialFormSession material)
             { material.Draft.Name = MaterialName.Text ?? ""; ((CaeModel.Material)material.Draft).Description = MaterialDescription.Text ?? ""; }
-            if (dirty || Session.OriginalName == null) { Session.Apply(); dirty = false; Applied?.Invoke(); }
+            bool published = Session.Apply(); dirty = false; if (published) Applied?.Invoke();
             Error.Text = ""; return true;
         }
         catch (Exception ex) { Error.Text = DescriptorPropertyGrid.Message(ex); return false; }

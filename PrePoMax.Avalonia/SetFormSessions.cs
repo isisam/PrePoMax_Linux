@@ -17,6 +17,7 @@ public interface IIdSelectionSession
 
 public sealed class NodeSetFormSession : EntityFormSession, IIdSelectionSession
 {
+    protected override bool ReplaceNeeded => PropertyItemChanged || !set.Valid;
     private readonly FeNodeSet set;
     private readonly ViewNodeSet view;
     public override string Kind => "NodeSet";
@@ -46,6 +47,7 @@ public sealed class NodeSetFormSession : EntityFormSession, IIdSelectionSession
 
 public sealed class ElementSetFormSession : EntityFormSession, IIdSelectionSession
 {
+    protected override bool ReplaceNeeded => PropertyItemChanged || !set.Valid;
     private readonly FeElementSet set;
     private readonly ViewElementSet view;
     public override string Kind => "ElementSet";
@@ -75,6 +77,7 @@ public sealed class ElementSetFormSession : EntityFormSession, IIdSelectionSessi
 
 public sealed class SurfaceFormSession : EntityFormSession, IIdSelectionSession
 {
+    protected override bool ReplaceNeeded => PropertyItemChanged || !surface.Valid;
     private readonly FeSurface surface;
     private readonly ViewFeSurface view;
     public override string Kind => "Surface";
@@ -92,6 +95,7 @@ public sealed class SurfaceFormSession : EntityFormSession, IIdSelectionSession
     }
     public override void Changed(string property)
     {
+        base.Changed(property);
         if (surface.CreatedFrom == FeSurfaceCreatedFrom.NodeSet && surface.CreatedFromNodeSetName != null) Controller.UpdateSurfaceArea(surface);
     }
     public void SelectionChanged(int[] ids, Selection selection)

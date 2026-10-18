@@ -22,10 +22,19 @@ public abstract class EntityFormSession(Controller controller, string? originalN
     public abstract NamedClass Draft { get; }
     public abstract IReadOnlyList<FormPage> Pages { get; }
     public virtual bool OkAddNew => OriginalName == null;
-    public virtual void Changed(string property) { }
+    public bool PropertyItemChanged { get; private set; }
+    public void MarkChanged() => PropertyItemChanged = true;
+    public virtual void Changed(string property) => MarkChanged();
+    protected virtual bool ReplaceNeeded => PropertyItemChanged;
+    public bool RequiresPublish => OriginalName == null || ReplaceNeeded;
     public abstract void Validate();
     protected abstract void Publish();
-    public void Apply() { Validate(); Publish(); OriginalName = Draft.Name; }
+    public bool Apply()
+    {
+        Validate();
+        if (!RequiresPublish) return false;
+        Publish(); OriginalName = Draft.Name; PropertyItemChanged = false; return true;
+    }
     protected void CheckName(IEnumerable<string> names, string label) => CheckName(OriginalName, Draft.Name, names, label);
     public static void CheckName(string? previous, string name, IEnumerable<string> names, string label)
     {
@@ -36,6 +45,7 @@ public abstract class EntityFormSession(Controller controller, string? originalN
 
 public sealed class MaterialFormSession : EntityFormSession
 {
+    protected override bool ReplaceNeeded => OriginalName != material.Name || PropertyItemChanged;
     private readonly Material material;
     private readonly List<ViewMaterialProperty> properties;
     public UnitSystem Units => Controller.Model.UnitSystem;
@@ -155,10 +165,12 @@ public sealed class SectionFormSession : EntityFormSession
         if (source == null && c.GetMaterialNames().Length == 0) throw new CaeException("There is no material defined for the solid section definition.");
         section = source?.DeepClone() ?? new SolidSection(c.GetSectionNames().GetNextNumberedKey("Solid_Section"), c.GetMaterialNames()[0],
             c.GetModelPartNames().FirstOrDefault() ?? "", RegionTypeEnum.PartName, 1, c.Model.Properties.ModelSpace.IsTwoD());
+        if (source?.CreationData != null && (!c.Model.IsSectionRegionValid(section) || !c.Model.RegionValid(section)))
+        { section.CreationData = null; section.CreationIds = null; section.RegionType = RegionTypeEnum.Selection; MarkChanged(); }
         View = new ViewSolidSection(section);
         View.PopulateDropDownLists(c.GetMaterialNames(), c.GetModelPartNames(), null!, c.GetUserElementSetNames(), null!, null!);
     }
-    public override void Changed(string property) => View.UpdateRegionVisibility();
+    public override void Changed(string property) { base.Changed(property); View.UpdateRegionVisibility(); }
     public override void Validate()
     {
         CheckName(Controller.GetSectionNames(), "section"); section.CheckEquations();

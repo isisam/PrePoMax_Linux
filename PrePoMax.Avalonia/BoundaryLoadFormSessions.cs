@@ -8,6 +8,7 @@ namespace PrePoMax.Avalonia;
 
 public sealed class BoundaryFormSession : EntityFormSession, IIdSelectionSession
 {
+    protected override bool ReplaceNeeded => PropertyItemChanged || !bc.Valid;
     private readonly BoundaryCondition bc;
     private readonly ViewBoundaryCondition view;
     private readonly string stepName;
@@ -26,6 +27,8 @@ public sealed class BoundaryFormSession : EntityFormSession, IIdSelectionSession
         string? region = c.GetUserNodeSetNames().FirstOrDefault();
         var type = region == null ? RegionTypeEnum.Selection : RegionTypeEnum.NodeSetName;
         bc = source?.DeepClone() ?? (displacement ? new DisplacementRotation(name, region!, type, twoD, false, 0) : new FixedBC(name, region!, type, twoD));
+        if (source?.CreationData != null && (!c.Model.IsBoundaryConditionRegionValid(bc) || !c.Model.RegionValid(bc)))
+        { bc.CreationData = null; bc.CreationIds = null; bc.RegionType = RegionTypeEnum.Selection; MarkChanged(); }
         if (bc is FixedBC fixedBc)
         {
             var v = new ViewFixedBC(fixedBc); v.PopulateDropDownLists(c.GetUserNodeSetNames(), c.GetUserSurfaceNames(), c.GetModelReferencePointNames()); view = v;
@@ -37,7 +40,7 @@ public sealed class BoundaryFormSession : EntityFormSession, IIdSelectionSession
         }
         else throw new NotSupportedException("Unsupported boundary condition " + bc.GetType().Name);
     }
-    public override void Changed(string property) { view.UpdateRegionVisibility(); view.UpdateVisibility(); }
+    public override void Changed(string property) { base.Changed(property); view.UpdateRegionVisibility(); view.UpdateVisibility(); }
     public void SelectionChanged(int[] ids, Selection selection) { bc.CreationIds = ids; bc.CreationData = selection.DeepCopy(true, false); }
     public string? Confirmation() => bc is DisplacementRotation dr && dr.RegionType == RegionTypeEnum.ReferencePointName &&
         dr.CoordinateSystemName != CoordinateSystem.DefaultCoordinateSystemName
@@ -56,6 +59,7 @@ public sealed class BoundaryFormSession : EntityFormSession, IIdSelectionSession
     {
         if (OriginalName == null) Controller.AddBoundaryConditionCommand(stepName, bc.DeepClone());
         else Controller.ReplaceBoundaryConditionCommand(stepName, OriginalName, bc.DeepClone());
+        bc.Valid = Controller.GetBoundaryCondition(stepName, bc.Name).Valid;
     }
 }
 
@@ -84,6 +88,8 @@ public sealed class LoadFormSession : EntityFormSession, IIdSelectionSession
             "Pressure" => new DLoad(name, region!, regionType, 0, twoD, false, 0),
             _ => new CLoad(name, region!, regionType, 0, 0, 0, twoD, false, 0)
         };
+        if (source?.CreationData != null && (!c.Model.IsLoadRegionValid(load) || !c.Model.RegionValid(load)))
+        { load.CreationData = null; load.CreationIds = null; load.RegionType = RegionTypeEnum.Selection; MarkChanged(); }
         if (load is CLoad cl)
         {
             var v = new ViewCLoad(cl); v.PopulateDropDownLists(c.GetUserNodeSetNames(), c.GetModelReferencePointNames(), c.GetAmplitudeNames(), c.GetModelCoordinateSystemNames()); view = v;
@@ -98,7 +104,7 @@ public sealed class LoadFormSession : EntityFormSession, IIdSelectionSession
         }
         else throw new NotSupportedException("Unsupported load " + load.GetType().Name);
     }
-    public override void Changed(string property) => view.UpdateRegionVisibility();
+    public override void Changed(string property) { base.Changed(property); view.UpdateRegionVisibility(); }
     public void SelectionChanged(int[] ids, Selection selection) { load.CreationIds = ids; load.CreationData = selection.DeepCopy(true, false); }
     public string? Confirmation()
     {
