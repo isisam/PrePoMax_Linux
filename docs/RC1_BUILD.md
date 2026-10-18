@@ -2,6 +2,10 @@
 
 Research assistant: Lota. Release: PrePoMax-RCM 0.1.0-rc1.
 
+The upstream base has English UI only and no language field. RC1 therefore
+uses English on first launch, reset, and when old settings lack the optional
+language field. Saved explicit English/zh-TW choices remain supported.
+
 The Windows integration starts at rcm/m2c (413e11f6) and merges rcm/l10n
 (84d8eff7), retaining the GUI3 event/serialization fixes and localization.
 No l1g/l2 feature branch is merged. The inherited portable core remains part

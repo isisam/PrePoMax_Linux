@@ -5,8 +5,9 @@ Windows build ships `lib/PrePoMax.L10n.dll` and `lang/zh-TW.json`. No installati
 registry change, network access or translation service is needed by the app.
 
 Choose **Tools → Settings → General → Language → English / 繁體中文**, then accept
-the settings. A missing language field in old settings, or Reset, follows the
-Windows UI culture. Changing language does not change numeric or UI thread culture.
+the settings. RC1 uses English for a missing language field in old settings and
+for Reset, preserving the English-only upstream default. Explicit saved choices
+are retained. Changing language does not change numeric or UI thread culture.
 
 The startup hook installs the walker and two optional `CaeGlobals.UiLocalization`
 callbacks. The shared helper has no dependency on the translator or WinForms.

@@ -67,7 +67,7 @@ namespace PrePoMax
         // Properties                                                                                                               
         public string Language
         {
-            get { return _language ?? UiLocalization.DefaultLanguage; }
+            get { return _language ?? "en"; }
             set { _language = value == "zh-TW" ? "zh-TW" : "en"; }
         }
         public bool OpenLastFile { get { return _openLastFile; } set { _openLastFile = value; } }
@@ -115,7 +115,7 @@ namespace PrePoMax
         }
         public void Reset()
         {
-            _language = null;
+            _language = "en";
             _openLastFile = false;
             _lastFileName = null;
             _saveResultsInPmx = true;
