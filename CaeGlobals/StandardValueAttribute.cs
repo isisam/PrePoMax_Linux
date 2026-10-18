@@ -1,6 +1,6 @@
 // Extracted VERBATIM from CaeGlobals/DynamicTypeDescriptor/DynamicTypeDescriptor.cs (class StandardValueAttribute).
-// The rest of that file is the WinForms PropertyGrid framework (UITypeEditor etc.) and is split out of the Linux core;
-// only this attribute is used by core code (213 [StandardValue(...)] enum-member annotations).
+// The descriptor engine now lives in PrePoMax.PropertyMetadata. Keep this enum
+// attribute in CaeGlobals on both targets to preserve its identity without a cycle.
 using System;
 using System.Collections;
 using System.Reflection;

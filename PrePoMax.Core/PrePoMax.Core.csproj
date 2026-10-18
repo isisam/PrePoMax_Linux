@@ -15,4 +15,5 @@
     <ProjectReference Include="../PrePoMax.ViewContracts/PrePoMax.ViewContracts.csproj" />
     <ProjectReference Include="../STL/STL.csproj" />
   </ItemGroup>
+  <ItemGroup><ProjectReference Include="../PrePoMax.PropertyMetadata/PrePoMax.PropertyMetadata.csproj" /></ItemGroup>
 </Project>

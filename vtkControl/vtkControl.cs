@@ -57,7 +57,7 @@ namespace vtkControl
     {
         int countError;
         // Variables                                                                                                                        
-        public const int MaxImageMagnification = 4;
+        public const int MaxImageMagnification = ViewportLimits.MaxImageMagnification;
         private bool _renderingOn;
         private bool _userPick;     // used to determine if the selection distance should be limited
         private vtkRenderer _renderer;

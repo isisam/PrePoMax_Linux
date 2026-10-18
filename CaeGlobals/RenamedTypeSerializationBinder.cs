@@ -86,7 +86,7 @@ namespace CaeGlobals
                 (assembly, name, ignoreCase) => {
                     Type found = assembly?.GetType(name, false, ignoreCase);
                     if (found != null) return found;
-                    foreach (string candidate in new[] { "PrePoMax.Core", "PrePoMax.ViewContracts" }) {
+                    foreach (string candidate in new[] { "PrePoMax.Core", "PrePoMax.ViewContracts", "PrePoMax.ViewModels", "PrePoMax.PropertyMetadata" }) {
                         found = TryLoad(candidate)?.GetType(name, false, ignoreCase);
                         if (found != null) return found;
                     }

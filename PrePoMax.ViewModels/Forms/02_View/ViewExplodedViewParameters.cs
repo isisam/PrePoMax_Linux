@@ -1,0 +1,199 @@
+// PrePoMax - Copyright (C) 2016-2026 Matej Borovinšek
+//
+// Licensed under the terms defined in the LICENSE file located in the root directory of this source code.
+//
+// Source code: https://gitlab.com/MatejB/PrePoMax
+//
+// Author: Matej Borovinšek
+// Contributors:
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using CaeMesh;
+using CaeGlobals;
+using System.ComponentModel;
+using DynamicTypeDescriptor;
+
+namespace PrePoMax.Forms
+{    
+    [Serializable]
+    [System.Runtime.CompilerServices.TypeForwardedFrom("PrePoMax, Version=3.0.0.0, Culture=neutral, PublicKeyToken=null")]
+    public class ViewExplodedViewParameters
+    {
+        // Variables                                                                                                                
+        private DynamicCustomTypeDescriptor _dctd = null;
+        private ExplodedViewParameters _explodedViewParameters;
+
+
+        // Properties                                                                                                               
+        [Browsable(false)]
+        public ExplodedViewParameters Parameters
+        {
+            get { return _explodedViewParameters; }
+            set { _explodedViewParameters = value; }
+        }
+        //
+        [Category("Method")]
+        [OrderedDisplayName(0, 10, "Exploded view method")]
+        [DescriptionAttribute("Select the exploded view method.")]
+        [Id(1, 1)]
+        public ExplodedViewMethodEnum Method
+        {
+            get { return _explodedViewParameters.Method; }
+            set
+            {
+                _explodedViewParameters.Method = value;
+                //
+                Magnification = _explodedViewParameters.Magnification;  // check the limits
+                //
+                UpdateVisibility();
+            }
+        }
+        //
+        [Category("Method")]
+        [OrderedDisplayName(1, 10, "X coordinate")]
+        [DescriptionAttribute("Enter the center point X coordinate.")]
+        [TypeConverter(typeof(StringLengthConverter))]
+        [Id(2, 1)]
+        public double CenterX
+        {
+            get { return _explodedViewParameters.CenterX; }
+            set { _explodedViewParameters.CenterX = value; }
+        }
+        //
+        [Category("Method")]
+        [OrderedDisplayName(2, 10, "Y coordinate")]
+        [DescriptionAttribute("Enter the center point Y coordinate.")]
+        [TypeConverter(typeof(StringLengthConverter))]
+        [Id(3, 1)]
+        public double CenterY
+        {
+            get { return _explodedViewParameters.CenterY; }
+            set { _explodedViewParameters.CenterY = value; }
+        }
+        //
+        [Category("Method")]
+        [OrderedDisplayName(3, 10, "Z coordinate")]
+        [DescriptionAttribute("Enter the center point Z coordinate.")]
+        [TypeConverter(typeof(StringLengthConverter))]
+        [Id(4, 1)]
+        public double CenterZ
+        {
+            get { return _explodedViewParameters.CenterZ; }
+            set { _explodedViewParameters.CenterZ = value; }
+        }
+        //
+        [Category("Method")]
+        [OrderedDisplayName(4, 10, "Contact tolerance")]
+        [DescriptionAttribute("Enter the distance below which two part faces are considered to be in contact. " +
+                              "Enter 0 to use one thousandth of the assembly bounding box diagonal.")]
+        [TypeConverter(typeof(StringLengthConverter))]
+        [Id(5, 1)]
+        public double Tolerance
+        {
+            get { return _explodedViewParameters.Tolerance; }
+            set
+            {
+                _explodedViewParameters.Tolerance = value;
+                if (_explodedViewParameters.Tolerance < 0) _explodedViewParameters.Tolerance = 0;
+            }
+        }
+        //
+        [Category("Direction and scaling")]
+        [OrderedDisplayName(0, 10, "Exploded view direction")]
+        [DescriptionAttribute("Select the exploded view direction.")]
+        [Id(1, 2)]
+        public ExplodedViewDirectionEnum Direction
+        {
+            get { return _explodedViewParameters.Direction; }
+            set { _explodedViewParameters.Direction = value; }
+        }
+        //
+        [Category("Direction and scaling")]
+        [OrderedDisplayName(1, 10, "Magnification")]
+        [DescriptionAttribute("Select the exploded view magnification (larger than 1).")]
+        [TypeConverter(typeof(StringDoubleConverter))]
+        [Id(2, 2)]
+        public double Magnification
+        {
+            get { return _explodedViewParameters.Magnification; }
+            set
+            {
+                _explodedViewParameters.Magnification = value;
+                int upperLimit = -1;
+                if (_explodedViewParameters.Magnification < 1) _explodedViewParameters.Magnification = 1;
+                else if (_explodedViewParameters.Method == ExplodedViewMethodEnum.AssemblyCenter &&
+                         _explodedViewParameters.Magnification > 25) upperLimit = 25;
+                else if (_explodedViewParameters.Method == ExplodedViewMethodEnum.CenterPoint &&
+                         _explodedViewParameters.Magnification > 1000) upperLimit = 1000;
+                else if (_explodedViewParameters.Method == ExplodedViewMethodEnum.Disassembly &&
+                         _explodedViewParameters.Magnification > 10) upperLimit = 10;
+                //
+                if (upperLimit != -1) _explodedViewParameters.Magnification = upperLimit;
+            }
+        }
+        //
+        [Category("Direction and scaling")]
+        [OrderedDisplayName(3, 10, "Step by step")]
+        [DescriptionAttribute("Move the parts one level of the assembly after the other. The scale factor range " +
+                              "up to the full separation is divided among the levels: the parts mounted on the " +
+                              "base come off first and carry what is mounted on them along, then those parts come " +
+                              "off, and so on.")]
+        [Id(4, 2)]
+        public bool Sequential
+        {
+            get { return _explodedViewParameters.Sequential; }
+            set { _explodedViewParameters.Sequential = value; }
+        }
+        //
+        [Category("Direction and scaling")]
+        [OrderedDisplayName(2, 10, "Scale factor")]
+        [DescriptionAttribute("Select the exploded view scale factor [0, 1].")]
+        [TypeConverter(typeof(StringDoubleConverter))]
+        [Id(3, 2)]
+        public double ScaleFactor
+        {
+            get { return _explodedViewParameters.ScaleFactor; }
+            set
+            {
+                _explodedViewParameters.ScaleFactor = value;
+                if (_explodedViewParameters.ScaleFactor < 0) _explodedViewParameters.ScaleFactor = 0;
+                else if (_explodedViewParameters.ScaleFactor > 1) _explodedViewParameters.ScaleFactor = 1;
+            }
+        }
+
+
+        // Constructors                                                                                                             
+        public ViewExplodedViewParameters()
+        {
+            _explodedViewParameters = new ExplodedViewParameters();
+            //
+            _dctd = ProviderInstaller.Install(this);
+            _dctd.CategorySortOrder = CustomSortOrder.AscendingById;
+            _dctd.PropertySortOrder = CustomSortOrder.AscendingById;
+            _dctd.RenameBooleanPropertyToYesNo(nameof(Sequential));
+            //
+            UpdateVisibility();
+        }
+
+
+        // Methods                                                                                                                  
+        public void UpdateVisibility()
+        {
+            bool visible = _explodedViewParameters.Method == ExplodedViewMethodEnum.CenterPoint;
+            _dctd.GetProperty(nameof(CenterX)).SetIsBrowsable(visible);
+            _dctd.GetProperty(nameof(CenterY)).SetIsBrowsable(visible);
+            _dctd.GetProperty(nameof(CenterZ)).SetIsBrowsable(visible);
+            //
+            visible = _explodedViewParameters.Method == ExplodedViewMethodEnum.Disassembly;
+            _dctd.GetProperty(nameof(Tolerance)).SetIsBrowsable(visible);
+            _dctd.GetProperty(nameof(Sequential)).SetIsBrowsable(visible);
+        }
+
+       
+
+    }
+}

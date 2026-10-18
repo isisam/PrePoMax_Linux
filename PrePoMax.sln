@@ -1,4 +1,4 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
 VisualStudioVersion = 18.5.11723.231
@@ -53,6 +53,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PrePoMax.Core", "PrePoMax.C
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PrePoMax.ViewContracts", "PrePoMax.ViewContracts\PrePoMax.ViewContracts.csproj", "{71D5471A-3B23-42BB-A10E-2C0551307C81}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PrePoMax.ViewModels", "PrePoMax.ViewModels\PrePoMax.ViewModels.csproj", "{2E60A193-0241-4363-B23C-614921C31902}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PrePoMax.PropertyMetadata", "PrePoMax.PropertyMetadata\PrePoMax.PropertyMetadata.csproj", "{AB854769-D1EB-4452-9C2E-FCF72189D752}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -63,6 +67,22 @@ Global
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{AB854769-D1EB-4452-9C2E-FCF72189D752}.Debug|x64.ActiveCfg = Debug|x64
+		{AB854769-D1EB-4452-9C2E-FCF72189D752}.Debug|x64.Build.0 = Debug|x64
+		{AB854769-D1EB-4452-9C2E-FCF72189D752}.Debug|x86.ActiveCfg = Debug|AnyCPU
+		{AB854769-D1EB-4452-9C2E-FCF72189D752}.Debug|x86.Build.0 = Debug|AnyCPU
+		{AB854769-D1EB-4452-9C2E-FCF72189D752}.Release|x64.ActiveCfg = Release|x64
+		{AB854769-D1EB-4452-9C2E-FCF72189D752}.Release|x64.Build.0 = Release|x64
+		{AB854769-D1EB-4452-9C2E-FCF72189D752}.Release|x86.ActiveCfg = Release|AnyCPU
+		{AB854769-D1EB-4452-9C2E-FCF72189D752}.Release|x86.Build.0 = Release|AnyCPU
+		{2E60A193-0241-4363-B23C-614921C31902}.Debug|x64.ActiveCfg = Debug|x64
+		{2E60A193-0241-4363-B23C-614921C31902}.Debug|x64.Build.0 = Debug|x64
+		{2E60A193-0241-4363-B23C-614921C31902}.Debug|x86.ActiveCfg = Debug|AnyCPU
+		{2E60A193-0241-4363-B23C-614921C31902}.Debug|x86.Build.0 = Debug|AnyCPU
+		{2E60A193-0241-4363-B23C-614921C31902}.Release|x64.ActiveCfg = Release|x64
+		{2E60A193-0241-4363-B23C-614921C31902}.Release|x64.Build.0 = Release|x64
+		{2E60A193-0241-4363-B23C-614921C31902}.Release|x86.ActiveCfg = Release|AnyCPU
+		{2E60A193-0241-4363-B23C-614921C31902}.Release|x86.Build.0 = Release|AnyCPU
 		{1BA289A1-1DEE-4EE3-80C6-0150A1BEAFD4}.Debug|x64.ActiveCfg = Debug|x64
 		{1BA289A1-1DEE-4EE3-80C6-0150A1BEAFD4}.Debug|x64.Build.0 = Debug|x64
 		{1BA289A1-1DEE-4EE3-80C6-0150A1BEAFD4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU

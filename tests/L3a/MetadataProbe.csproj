@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType><TargetFrameworks>net48;net8.0</TargetFrameworks>
+    <LangVersion>12</LangVersion><PlatformTarget>x64</PlatformTarget>
+    <UseSharedCompilation>false</UseSharedCompilation>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'net48'">
+    <Reference Include="System.Web.Extensions" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' != 'net48'">
+    <Compile Include="../../PrePoMax.Avalonia/PropertyEditorMap.cs" Link="PropertyEditorMap.cs" />
+  </ItemGroup>
+</Project>

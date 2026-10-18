@@ -1,0 +1,62 @@
+// PrePoMax - Copyright (C) 2016-2026 Matej Borovinšek
+//
+// Licensed under the terms defined in the LICENSE file located in the root directory of this source code.
+//
+// Source code: https://gitlab.com/MatejB/PrePoMax
+//
+// Author: Matej Borovinšek
+// Contributors:
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using CaeMesh;
+using CaeGlobals;
+using System.ComponentModel;
+using DynamicTypeDescriptor;
+using CaeResults;
+
+namespace PrePoMax.Forms
+{
+    [Serializable]
+    [System.Runtime.CompilerServices.TypeForwardedFrom("PrePoMax, Version=3.0.0.0, Culture=neutral, PublicKeyToken=null")]
+    public abstract class ViewTransformation
+    {
+        // Variables                                                                                                                
+        protected DynamicCustomTypeDescriptor _dctd = null;
+        protected ItemSetData _startPointItemSetData;
+        protected ItemSetData _endPointItemSetData;
+
+
+        // Properties                                                                                                               
+        //[Browsable(false)]
+        [Category("Data")]
+        [OrderedDisplayName(0, 10, "Name")]
+        [DescriptionAttribute("Enter the transformation name.")]
+        [Id(1, 1)]
+        public virtual string Name { get; set; }
+
+
+        // Constructors                                                                                                             
+
+
+        // Methods                                                                                                                  
+        protected static void SetPointSelectionMethod(ItemSetData itemSetData,
+                                                      PointSelectionMethodEnum selectionMethod)
+        {
+            if (itemSetData == null) return;
+            //
+            if (selectionMethod == PointSelectionMethodEnum.OnPoint)
+                itemSetData.ToStringType = ItemSetDataToStringType.SelectSinglePoint;
+            else if (selectionMethod == PointSelectionMethodEnum.BetweenTwoPoints)
+                itemSetData.ToStringType = ItemSetDataToStringType.SelectTwoPoints;
+            else if (selectionMethod == PointSelectionMethodEnum.CircleCenter)
+                itemSetData.ToStringType = ItemSetDataToStringType.SelectThreePoints;
+            else throw new NotSupportedException();
+        }
+        [Browsable(false)]
+        public abstract Transformation Base { get; }
+    }
+}

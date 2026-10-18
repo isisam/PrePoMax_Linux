@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="../build/SharedCore.props" />
+  <PropertyGroup><AssemblyName>PrePoMax.ViewModels</AssemblyName><ProjectGuid>{2E60A193-0241-4363-B23C-614921C31902}</ProjectGuid></PropertyGroup>
+  <ItemGroup><ProjectReference Include="../PrePoMax.Core/PrePoMax.Core.csproj" /></ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Update="Resources/Strings.resx" LogicalName="PrePoMax.Properties.Resources.resources" />
+  </ItemGroup>
+</Project>

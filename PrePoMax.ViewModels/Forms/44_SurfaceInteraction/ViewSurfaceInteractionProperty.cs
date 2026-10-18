@@ -1,0 +1,35 @@
+// PrePoMax - Copyright (C) 2016-2026 Matej Borovinšek
+//
+// Licensed under the terms defined in the LICENSE file located in the root directory of this source code.
+//
+// Source code: https://gitlab.com/MatejB/PrePoMax
+//
+// Author: Matej Borovinšek
+// Contributors:
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.ComponentModel;
+using DynamicTypeDescriptor;
+
+namespace PrePoMax
+{
+    [Serializable]
+    [System.Runtime.CompilerServices.TypeForwardedFrom("PrePoMax, Version=3.0.0.0, Culture=neutral, PublicKeyToken=null")]
+    public abstract class ViewSurfaceInteractionProperty
+    {
+        // Variables                                                                                                                
+        private DynamicCustomTypeDescriptor _dctd;
+
+
+        // Properties                                                                                                               
+        public abstract string Name { get; }
+        //
+        [Browsable(false)]
+        public DynamicCustomTypeDescriptor DynamicCustomTypeDescriptor { get { return _dctd; } set { _dctd = value; } }
+        public abstract CaeModel.SurfaceInteractionProperty Base { get; }
+    }
+}

@@ -1,0 +1,209 @@
+// PrePoMax - Copyright (C) 2016-2026 Matej Borovinšek
+//
+// Licensed under the terms defined in the LICENSE file located in the root directory of this source code.
+//
+// Source code: https://gitlab.com/MatejB/PrePoMax
+//
+// Author: Matej Borovinšek
+// Contributors:
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.ComponentModel;
+using CaeGlobals;
+using DynamicTypeDescriptor;
+using System.IO.Compression;
+
+namespace PrePoMax.Settings
+{
+    [Serializable]
+    [System.Runtime.CompilerServices.TypeForwardedFrom("PrePoMax, Version=3.0.0.0, Culture=neutral, PublicKeyToken=null")]
+    public enum CompressionEnum
+    {
+        [StandardValue("NoCompression", DisplayName = "No compression")]
+        NoCompression,
+        //
+        [StandardValue("Fastest", DisplayName = "Fastest")]
+        Fastest,
+        //
+        [StandardValue("Optimal", DisplayName = "Optimal")]
+        Optimal,
+    }
+    //
+    [Serializable]
+    [System.Runtime.CompilerServices.TypeForwardedFrom("PrePoMax, Version=3.0.0.0, Culture=neutral, PublicKeyToken=null")]
+    public class ViewGeneralSettings : IViewSettings, IReset
+    {
+        // Variables                                                                                                                
+        private GeneralSettings _generalSettings;
+        private DynamicCustomTypeDescriptor _dctd = null;
+        private bool _splitPeriodicFaces;
+
+
+        // Properties                                                                                                               
+        [Category("General")]
+        [OrderedDisplayName(0, 10, "Open last file")]
+        [Description("When the program starts open the last file Saved/Opened.")]
+        public bool OpenLastFile { get { return _generalSettings.OpenLastFile; } set { _generalSettings.OpenLastFile = value; } }
+        //
+        [Category("General")]
+        [OrderedDisplayName(1, 10, "Last file name")]
+        [Description("The name of the last file Saved/Opened.")]
+        [ReadOnly(true)]
+        public string LastFileName { get { return _generalSettings.LastFileName; } set { _generalSettings.LastFileName = value; } }
+        //
+        [Category("General")]
+        [OrderedDisplayName(2, 10, "Save results in .pmx files")]
+        [Description("Save the results in the PrePoMax .pmx file.")]
+        public bool SaveResultsInPmx
+        {
+            get { return _generalSettings.SaveResultsInPmx; }
+            set { _generalSettings.SaveResultsInPmx = value; }
+        }
+        //
+        [Category("General")]
+        [OrderedDisplayName(3, 10, "Compress .pmx files")]
+        [Description("Select the .pmx file compression level.")]
+        public CompressionEnum Compression
+        {
+            get
+            {
+                if (_generalSettings.CompressionLevel == CompressionLevel.NoCompression) return CompressionEnum.NoCompression;
+                else if (_generalSettings.CompressionLevel == CompressionLevel.Fastest) return CompressionEnum.Fastest;
+                else if (_generalSettings.CompressionLevel == CompressionLevel.Optimal) return CompressionEnum.Optimal;
+                else throw new NotSupportedException();
+            }
+            set
+            {
+                if (value == CompressionEnum.NoCompression) _generalSettings.CompressionLevel = CompressionLevel.NoCompression;
+                else if (value == CompressionEnum.Fastest) _generalSettings.CompressionLevel = CompressionLevel.Fastest;
+                else if (value == CompressionEnum.Optimal) _generalSettings.CompressionLevel = CompressionLevel.Optimal;
+                else throw new NotSupportedException();
+            }
+        }
+        //
+        [Category("General")]
+        [OrderedDisplayName(4, 10, "Default unit system")]
+        [Description("Select the default unit system for new models.")]
+        public string UnitSystemType
+        {
+            get
+            {
+                return _generalSettings.UnitSystemType.GetDescription();
+            }
+            set
+            {
+                foreach (UnitSystemType unitSystemType in Enum.GetValues(typeof(UnitSystemType)))
+                {
+                    if (unitSystemType.GetDescription() == value)
+                    {
+                        _generalSettings.UnitSystemType = unitSystemType;
+                        return;
+                    }
+                }
+                throw new NotSupportedException();
+            }
+        }
+        //
+        [Category("Regenerate older files")]
+        [OrderedDisplayName(0, 10, "Split periodic faces")]
+        [Description("Older files split the CAD periodic faces automatically during geometry import and after " +
+                     "every geometry operation. Select yes to regenerate their history the same way. New " +
+                     "models split them using Geometry -> CAD Part -> Split Periodic Faces.")]
+        public bool SplitPeriodicFaces
+        {
+            get { return _splitPeriodicFaces; }
+            set
+            {
+                _splitPeriodicFaces = value;
+                //
+                if (_splitPeriodicFaces == true)
+                {
+                    if (_generalSettings.NumOfSplitFaces < 2) _generalSettings.NumOfSplitFaces = 2;
+                }
+                else _generalSettings.NumOfSplitFaces = 1;
+                //
+                UpdateVisibility();
+            }
+        }
+        [Category("Regenerate older files")]
+        [OrderedDisplayName(1, 10, "Number of resulting faces")]
+        [Description("Select the number of faces the CAD periodic faces of older files are split into when " +
+                     "their history is regenerated.")]
+        public int NumOfSplitFaces
+        {
+            get { return _generalSettings.NumOfSplitFaces; }
+            set { _generalSettings.NumOfSplitFaces = value; }
+        }
+        //
+        [Category("Import mesh")]
+        [OrderedDisplayName(0, 10, "Edge angle")]
+        [Description("Select the edge angle for the detection of model edges. The angle will be used for future imports.")]
+        [TypeConverter(typeof(StringAngleDegConverter))]
+        public double EdgeAngle { get { return _generalSettings.EdgeAngle; } set { _generalSettings.EdgeAngle = value; } }
+        //
+        [Category("Open results")]
+        [OrderedDisplayName(0, 10, "Run history postprocessing")]
+        [Description("Select yes to run existing history postprocessing commands from the results with the same file name.")]
+        public RunPostProcessingEnum RunPostprocessingCommands
+        {
+            get { return _generalSettings.RunHistoryPostprocessing; }
+            set { _generalSettings.RunHistoryPostprocessing = value; }
+        }
+        //
+        [Category("Property editor")]
+        [OrderedDisplayName(0, 10, "Show all properties")]
+        [Description("Select yes to always show the amplitude, coordinate system and distribution selection properties.")]
+        public bool ShowAllProperties
+        {
+            get { return _generalSettings.ShowAllProperties; }
+            set { _generalSettings.ShowAllProperties = value; }
+        }
+
+
+        // Constructors                                                                                                             
+        public ViewGeneralSettings(GeneralSettings generalSettings)
+        {
+            _generalSettings = generalSettings;
+            //
+            if (_generalSettings.NumOfSplitFaces > 1) _splitPeriodicFaces = true;
+            else _splitPeriodicFaces = false;
+            //
+            _dctd = ProviderInstaller.Install(this);
+            // Now lets display Yes/No instead of True/False
+            _dctd.RenameBooleanPropertyToYesNo(nameof(OpenLastFile));
+            _dctd.RenameBooleanPropertyToYesNo(nameof(SaveResultsInPmx));
+            _dctd.RenameBooleanPropertyToYesNo(nameof(SplitPeriodicFaces));
+            _dctd.RenameBooleanPropertyToYesNo(nameof(ShowAllProperties));
+            // Add unit system types as description strings
+            List<string> descriptions = new List<string>();
+            foreach (UnitSystemType unitSystemType in Enum.GetValues(typeof(UnitSystemType)))
+                descriptions.Add(unitSystemType.GetDescription());
+            _dctd.PopulateProperty(nameof(UnitSystemType), descriptions.ToArray());
+            //
+            UpdateVisibility();
+        }
+
+
+        // Methods                                                                                                                  
+        public ISettings GetBase()
+        {
+            return _generalSettings;
+        }
+        public void Reset()
+        {
+            _generalSettings.Reset();
+            _splitPeriodicFaces = true;
+            //
+            UpdateVisibility();
+        }
+        private void UpdateVisibility()
+        {
+            _dctd.GetProperty(nameof(NumOfSplitFaces)).SetIsBrowsable(_splitPeriodicFaces);
+        }
+    }
+
+}

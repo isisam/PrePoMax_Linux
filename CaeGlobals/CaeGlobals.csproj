@@ -20,7 +20,4 @@
     <Compile Remove="DynamicTypeDescriptor/**/*.cs;Editors/**/*.cs;CenterWinDialog.cs;KeyboardHook.cs;MouseHook.cs;MessageBoxManager.cs;MessageBoxes.cs" />
     <EmbeddedResource Remove="DynamicTypeDescriptor/**/*.resx" />
   </ItemGroup>
-  <ItemGroup Condition="'$(TargetFramework)' == 'net48'">
-    <Compile Remove="StandardValueAttribute.cs" />
-  </ItemGroup>
 </Project>

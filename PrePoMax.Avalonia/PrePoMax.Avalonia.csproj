@@ -11,5 +11,6 @@
     <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.22" />
     <PackageReference Include="System.Runtime.Serialization.Formatters" Version="9.0.0" />
     <ProjectReference Include="../PrePoMax.Viewer/PrePoMax.Viewer.csproj" />
+    <ProjectReference Include="../PrePoMax.ViewModels/PrePoMax.ViewModels.csproj" />
   </ItemGroup>
 </Project>

@@ -17,7 +17,7 @@ namespace CaeGlobals
 {
     public class FilteredFileNameEditor : System.Windows.Forms.Design.FileNameEditor
     {
-        public static string Filter = "";
+        public static string Filter { get { return FileEditorFilter.Filter; } set { FileEditorFilter.Filter = value; } }
 
 
         public FilteredFileNameEditor()

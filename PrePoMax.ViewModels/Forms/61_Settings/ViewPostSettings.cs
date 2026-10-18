@@ -1,0 +1,159 @@
+// PrePoMax - Copyright (C) 2016-2026 Matej Borovinšek
+//
+// Licensed under the terms defined in the LICENSE file located in the root directory of this source code.
+//
+// Source code: https://gitlab.com/MatejB/PrePoMax
+//
+// Author: Matej Borovinšek
+// Contributors:
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.ComponentModel;
+using CaeGlobals;
+using CaeResults;
+using DynamicTypeDescriptor;
+
+namespace PrePoMax.Settings
+{
+    [Serializable]
+    [System.Runtime.CompilerServices.TypeForwardedFrom("PrePoMax, Version=3.0.0.0, Culture=neutral, PublicKeyToken=null")]
+    public class ViewPostSettings : IViewSettings, IReset
+    {
+        // Variables                                                                                                                
+        private PostSettings _postSettings;
+        private DynamicCustomTypeDescriptor _dctd = null;
+
+
+        // Undeformed model                                                     
+        [CategoryAttribute("Undeformed model")]
+        [OrderedDisplayName(0, 10, "Draw undeformed model")]
+        [DescriptionAttribute("Draw undeformed model.")]
+        [Id(1, 1)]
+        public UndeformedModelTypeEnum UndeformedModelType
+        {
+            get { return _postSettings.UndeformedModelType; }
+            set
+            {
+                _postSettings.UndeformedModelType = value;
+                //
+                _dctd.GetProperty(nameof(UndeformedModelColor)).SetIsBrowsable(value != UndeformedModelTypeEnum.None);
+            }
+        }
+        //
+        [CategoryAttribute("Undeformed model")]
+        [OrderedDisplayName(1, 10, "Undeformed model color")]
+        [DescriptionAttribute("Set the color of the undeformed model.")]
+        [Editor("UserControls.ColorEditorEx, UserControls", "System.Drawing.Design.UITypeEditor, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a")]
+        [Id(2, 1)]
+        public System.Drawing.Color UndeformedModelColor
+        {
+            get { return _postSettings.UndeformedModelColor; } 
+            set { _postSettings.UndeformedModelColor = value; }
+        }
+        // Vector plot
+        [CategoryAttribute("Vector plot")]
+        [OrderedDisplayName(0, 10, "Vector plot scale factor")]
+        [DescriptionAttribute("Set the overall scale factor for nodal point size, vector length, and arrowhead size.")]
+        [TypeConverter(typeof(StringDoubleConverter))]
+        [Id(1, 2)]
+        public double VectorPlotScaleFactor
+        {
+            get { return _postSettings.VectorPlotScaleFactor; }
+            set { _postSettings.VectorPlotScaleFactor = value; }
+        }
+        //
+        [CategoryAttribute("Vector plot")]
+        [OrderedDisplayName(1, 10, "Vector length scale factor")]
+        [DescriptionAttribute("Set an additional vector length scale factor without changing nodal point or arrowhead size.")]
+        [TypeConverter(typeof(StringDoubleConverter))]
+        [Id(2, 2)]
+        public double VectorPlotLengthScaleFactor
+        {
+            get { return _postSettings.VectorPlotLengthScaleFactor; }
+            set { _postSettings.VectorPlotLengthScaleFactor = value; }
+        }
+        //
+        [CategoryAttribute("Vector plot")]
+        [OrderedDisplayName(2, 10, "Vector plot density")]
+        [DescriptionAttribute("Set the percentage of spatially distributed surface nodes used by the vector plot.")]
+        [TypeConverter(typeof(StringIntegerPercentConverter))]
+        [Id(3, 2)]
+        public int VectorPlotDensity
+        {
+            get { return _postSettings.VectorPlotDensity; }
+            set { _postSettings.VectorPlotDensity = value; }
+        }
+
+        // Limit values                                                         
+        [CategoryAttribute("Limit values")]
+        [OrderedDisplayName(0, 10, "Show min value and location")]
+        [DescriptionAttribute("Show min value and location.")]
+        [Id(1, 4)]
+        public bool ShowMinValueLocation
+        {
+            get { return _postSettings.ShowMinValueLocation; }
+            set { _postSettings.ShowMinValueLocation = value; }
+        }
+        //
+        [CategoryAttribute("Limit values")]
+        [OrderedDisplayName(1, 10, "Show max value and location")]
+        [DescriptionAttribute("Show max value and location.")]
+        [Id(2, 4)]
+        public bool ShowMaxValueLocation
+        {
+            get { return _postSettings.ShowMaxValueLocation; }
+            set { _postSettings.ShowMaxValueLocation = value; }
+        }
+        // History output
+        [CategoryAttribute("History output")]
+        [OrderedDisplayName(0, 10, "Max history output entries")]
+        [DescriptionAttribute("Enter the maximum number of the history outputs entries to show.")]
+        [Id(1, 5)]
+        public int MaxHistoryEntriesToShow
+        {
+            get { return _postSettings.MaxHistoryEntriesToShow; }
+            set { _postSettings.MaxHistoryEntriesToShow = value; }
+        }
+        //
+        [CategoryAttribute("History output")]
+        [OrderedDisplayName(1, 10, "Max curves per plot")]
+        [DescriptionAttribute("Enter the maximum number of curves to show in a single XY plot.")]
+        [Id(2, 5)]
+        public int MaxCurvesPerPlot
+        {
+            get { return _postSettings.MaxCurvesPerPlot; }
+            set { _postSettings.MaxCurvesPerPlot = value; }
+        }
+
+
+        // Constructors                                                                                                             
+        public ViewPostSettings(PostSettings postSettings)
+        {
+            _postSettings = postSettings;
+            _dctd = ProviderInstaller.Install(this);
+            //
+            UndeformedModelType = _postSettings.UndeformedModelType;                // add this also to Reset()
+            // Now lets display Yes/No instead of True/False
+            _dctd.RenameBooleanPropertyToYesNo(nameof(ShowMinValueLocation));
+            _dctd.RenameBooleanPropertyToYesNo(nameof(ShowMaxValueLocation));
+        }
+
+
+        // Methods                                                                                                                  
+        public ISettings GetBase()
+        {
+            return _postSettings;
+        }
+        public void Reset()
+        {
+            _postSettings.Reset();
+            //
+            UndeformedModelType = _postSettings.UndeformedModelType;
+        }
+    }
+
+}

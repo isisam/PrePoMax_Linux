@@ -1,4 +1,4 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
@@ -31,6 +31,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PrePoMax.ViewContracts", "P
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PrePoMax.Headless", "PrePoMax.Headless\PrePoMax.Headless.csproj", "{42B716FD-F8AD-46F3-BB94-C3DC2191F23B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PrePoMax.ViewModels", "PrePoMax.ViewModels\PrePoMax.ViewModels.csproj", "{2E60A193-0241-4363-B23C-614921C31902}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PrePoMax.PropertyMetadata", "PrePoMax.PropertyMetadata\PrePoMax.PropertyMetadata.csproj", "{AB854769-D1EB-4452-9C2E-FCF72189D752}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -41,6 +45,22 @@ Global
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{AB854769-D1EB-4452-9C2E-FCF72189D752}.Debug|x64.ActiveCfg = Debug|x64
+		{AB854769-D1EB-4452-9C2E-FCF72189D752}.Debug|x64.Build.0 = Debug|x64
+		{AB854769-D1EB-4452-9C2E-FCF72189D752}.Debug|x86.ActiveCfg = Debug|AnyCPU
+		{AB854769-D1EB-4452-9C2E-FCF72189D752}.Debug|x86.Build.0 = Debug|AnyCPU
+		{AB854769-D1EB-4452-9C2E-FCF72189D752}.Release|x64.ActiveCfg = Release|x64
+		{AB854769-D1EB-4452-9C2E-FCF72189D752}.Release|x64.Build.0 = Release|x64
+		{AB854769-D1EB-4452-9C2E-FCF72189D752}.Release|x86.ActiveCfg = Release|AnyCPU
+		{AB854769-D1EB-4452-9C2E-FCF72189D752}.Release|x86.Build.0 = Release|AnyCPU
+		{2E60A193-0241-4363-B23C-614921C31902}.Debug|x64.ActiveCfg = Debug|x64
+		{2E60A193-0241-4363-B23C-614921C31902}.Debug|x64.Build.0 = Debug|x64
+		{2E60A193-0241-4363-B23C-614921C31902}.Debug|x86.ActiveCfg = Debug|AnyCPU
+		{2E60A193-0241-4363-B23C-614921C31902}.Debug|x86.Build.0 = Debug|AnyCPU
+		{2E60A193-0241-4363-B23C-614921C31902}.Release|x64.ActiveCfg = Release|x64
+		{2E60A193-0241-4363-B23C-614921C31902}.Release|x64.Build.0 = Release|x64
+		{2E60A193-0241-4363-B23C-614921C31902}.Release|x86.ActiveCfg = Release|AnyCPU
+		{2E60A193-0241-4363-B23C-614921C31902}.Release|x86.Build.0 = Release|AnyCPU
 		{104CAEBC-0761-4850-A97D-3FC59116C5B6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{104CAEBC-0761-4850-A97D-3FC59116C5B6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{104CAEBC-0761-4850-A97D-3FC59116C5B6}.Debug|x64.ActiveCfg = Debug|x64

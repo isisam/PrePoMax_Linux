@@ -18,7 +18,12 @@ namespace CaeGlobals
             }
 
             string simple = type.Assembly.GetName().Name;
-            if (simple == "PrePoMax.Core")
+            if (simple == "PrePoMax.PropertyMetadata")
+            {
+                assemblyName = "CaeGlobals, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null";
+                typeName = type.FullName;
+            }
+            else if (simple == "PrePoMax.Core" || simple == "PrePoMax.ViewModels")
             {
                 assemblyName = "PrePoMax, Version=3.0.0.0, Culture=neutral, PublicKeyToken=null";
                 typeName = LegacyName(type.FullName);
@@ -28,7 +33,7 @@ namespace CaeGlobals
                 assemblyName = (type.Namespace == "UserControls" ? "UserControls" : "vtkControl") + ", Version=1.0.0.0, Culture=neutral, PublicKeyToken=null";
                 typeName = LegacyName(type.FullName);
             }
-            else if (type.FullName != null && (type.FullName.Contains("PrePoMax.Core,") || type.FullName.Contains("PrePoMax.ViewContracts,")))
+            else if (type.FullName != null && (type.FullName.Contains("PrePoMax.Core,") || type.FullName.Contains("PrePoMax.ViewContracts,") || type.FullName.Contains("PrePoMax.ViewModels,") || type.FullName.Contains("PrePoMax.PropertyMetadata,")))
             {
                 typeName = LegacyName(type.FullName);
             }
@@ -37,13 +42,14 @@ namespace CaeGlobals
         private static string LegacyName(string name)
         {
             // Generic arguments carry their own assembly identity. ViewContracts DTOs retain their namespaces.
-            return System.Text.RegularExpressions.Regex.Replace(name, @"(PrePoMax\.Core|PrePoMax\.ViewContracts), Version=[0-9.]+, Culture=neutral, PublicKeyToken=null", match =>
+            return System.Text.RegularExpressions.Regex.Replace(name, @"(PrePoMax\.Core|PrePoMax\.ViewContracts|PrePoMax\.ViewModels|PrePoMax\.PropertyMetadata), Version=[0-9.]+, Culture=neutral, PublicKeyToken=null", match =>
             {
                 int index = match.Index;
                 string prefix = name.Substring(0, index);
                 int bracket = prefix.LastIndexOf('[');
                 string argument = prefix.Substring(bracket + 1);
-                string target = match.Groups[1].Value == "PrePoMax.Core" ? "PrePoMax" : argument.StartsWith("UserControls.", StringComparison.Ordinal) ? "UserControls" : "vtkControl";
+                string target = match.Groups[1].Value == "PrePoMax.PropertyMetadata" ? "CaeGlobals" :
+                    match.Groups[1].Value == "PrePoMax.Core" || match.Groups[1].Value == "PrePoMax.ViewModels" ? "PrePoMax" : argument.StartsWith("UserControls.", StringComparison.Ordinal) ? "UserControls" : "vtkControl";
                 return target + ", Version=" + (target == "PrePoMax" ? "3.0.0.0" : "1.0.0.0") + ", Culture=neutral, PublicKeyToken=null";
             });
         }

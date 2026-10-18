@@ -84,20 +84,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Forms\42_CompositeLayup\ViewCompositeLayup.cs" />
     <Compile Include="Forms\42_CompositeLayup\CompositeLayupEditorData.cs" />
     <Compile Include="Forms\42_CompositeLayup\FrmCompositeLayup.cs" />
-    <Compile Include="Forms\83_ResultHistoryOutput\ViewResultHistoryOutputFromExtractedEntry.cs" />
-    <Compile Include="Forms\83_ResultHistoryOutput\ViewResultHistoryOutputFromMergedHistories.cs" />
-    <Compile Include="Forms\83_ResultHistoryOutput\ViewResultHistoryOutputXY.cs" />
     <Compile Include="Forms\PythonStopWatchdog.cs" />
-    <Compile Include="Forms\61_Settings\ViewAutomationSettings.cs" />
-    <Compile Include="Forms\00_Common\ViewObjectTypeDescriptor.cs" />
     <Compile Include="Forms\00_Common\FrmViewObjectProperties.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Forms\00_Common\FileExporter\ViewExport3mfFileProperties.cs" />
-    <Compile Include="Forms\00_Common\FileExporter\ViewExportFileProperties.cs" />
     <Compile Include="Forms\00_Common\FileExporter\FrmExportFileWithProperties.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -116,9 +108,6 @@
     <Compile Include="Forms\00_Common\FrmNewModel.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Forms\00_Common\ViewColor.cs" />
-    <Compile Include="Forms\00_Common\ViewStringValue.cs" />
-    <Compile Include="Forms\00_Common\ViewUnitSystem.cs" />
     <Compile Include="Forms\00_Advisor\AdvisorCreator.cs" />
     <Compile Include="Forms\00_Parameters\FrmEquationParameters.cs">
       <SubType>Form</SubType>
@@ -126,7 +115,6 @@
     <Compile Include="Forms\00_Parameters\FrmEquationParameters.Designer.cs">
       <DependentUpon>FrmEquationParameters.cs</DependentUpon>
     </Compile>
-    <Compile Include="Forms\00_Parameters\ViewEquationParameter.cs" />
     <Compile Include="Forms\01_Edit\DataGridViewExtension.cs" />
     <Compile Include="Forms\01_Edit\FrmEditCommands.cs">
       <SubType>Form</SubType>
@@ -134,7 +122,6 @@
     <Compile Include="Forms\01_Edit\FrmEditCommands.Designer.cs">
       <DependentUpon>FrmEditCommands.cs</DependentUpon>
     </Compile>
-    <Compile Include="Forms\01_Edit\ViewCommand.cs" />
     <Compile Include="Forms\02_View\FrmUserVew.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -147,19 +134,9 @@
     <Compile Include="Forms\02_View\FrmFollowerView.Designer.cs">
       <DependentUpon>FrmFollowerView.cs</DependentUpon>
     </Compile>
-    <Compile Include="Forms\02_View\ViewUserViewParameters.cs" />
-    <Compile Include="Forms\02_View\ViewFollowerViewParameters.cs" />
     <Compile Include="Forms\11_MeshSetup\FrmMeshSetupItem.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Forms\11_MeshSetup\Gmsh\ViewSweepMesh.cs" />
-    <Compile Include="Forms\11_MeshSetup\Gmsh\ViewShellGmsh.cs" />
-    <Compile Include="Forms\11_MeshSetup\Gmsh\ViewTransfiniteMesh.cs" />
-    <Compile Include="Forms\11_MeshSetup\Gmsh\ViewTetrahedralGmsh.cs" />
-    <Compile Include="Forms\11_MeshSetup\Gmsh\ViewGmshSetupItem.cs" />
-    <Compile Include="Forms\11_MeshSetup\QuadWild\ViewShellQuadWild.cs" />
-    <Compile Include="Forms\11_MeshSetup\Mmg\ViewShellMmg.cs" />
-    <Compile Include="Forms\11_MeshSetup\Netgen\ViewNetgenMesh.cs" />
     <Compile Include="Forms\11_MeshSetup\Base\MeshSetupItemTypes.cs" />
     <Compile Include="Forms\04_GeometryFeature\FrmSplitSolid.cs">
       <SubType>Form</SubType>
@@ -180,17 +157,6 @@
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Forms\04_GeometryFeature\GeometryFeatureTypes.cs" />
-    <Compile Include="Forms\04_GeometryFeature\ViewSplitByLineTwoPoints.cs" />
-    <Compile Include="Forms\04_GeometryFeature\ViewSplitByExtendedFace.cs" />
-    <Compile Include="Forms\04_GeometryFeature\ViewSplitByExtrudedEdges.cs" />
-    <Compile Include="Forms\04_GeometryFeature\ViewSplitByPlaneThreePoints.cs" />
-    <Compile Include="Forms\04_GeometryFeature\ViewSplitByPointAndNormal.cs" />
-    <Compile Include="Forms\04_GeometryFeature\ViewFaceOffset.cs" />
-    <Compile Include="Forms\04_GeometryFeature\ViewSurfaceOperation.cs" />
-    <Compile Include="Forms\04_GeometryFeature\ViewGeometryRepair.cs" />
-    <Compile Include="Forms\04_GeometryFeature\ViewPeriodicFaceSplit.cs" />
-    <Compile Include="Forms\04_GeometryFeature\ViewGeometryFeature.cs" />
-    <Compile Include="Forms\11_MeshSetup\Base\ViewMeshSetupItem.cs" />
     <Compile Include="Forms\21_FEModel\KeywordAtNode.cs" />
     <Compile Include="Forms\21_FEModel\FrmSplitPartMeshUsingSurface.cs">
       <SubType>Form</SubType>
@@ -198,16 +164,12 @@
     <Compile Include="Forms\21_FEModel\FrmThickenShellMesh.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Forms\11_MeshSetup\Base\ViewThickenShellMesh.cs" />
-    <Compile Include="Forms\21_FEModel\ViewSplitPartMeshData.cs" />
     <Compile Include="Forms\22_Node\FrmMergeCoincidentNodes.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Forms\22_Node\ViewMergeCoincidentNodes.cs" />
     <Compile Include="Forms\23_Element\FrmElementQuality.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Forms\23_Element\ViewElementQuality.cs" />
     <Compile Include="Forms\24_Part\FrmPartProperties.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -227,24 +189,15 @@
     <Compile Include="Forms\24_Part\RotateParameters.cs" />
     <Compile Include="Forms\24_Part\ScaleParameters.cs" />
     <Compile Include="Forms\24_Part\TranslateParameters.cs" />
-    <Compile Include="Forms\24_Part\ViewPartProperties.cs" />
     <Compile Include="Forms\25_NodeSet\FrmNodeSet.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Forms\25_NodeSet\ViewNodeSet.cs" />
     <Compile Include="Forms\26_ElementSet\FrmElementSet.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Forms\26_ElementSet\ViewElementSet.cs" />
     <Compile Include="Forms\32_CoordinateSystems\FrmCoordinateSystem.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Forms\32_CoordinateSystems\ViewCoordinateSystem.cs" />
-    <Compile Include="Forms\41_Material\ViewSlipWear.cs" />
-    <Compile Include="Forms\42_Section\ViewPointMassSection.cs" />
-    <Compile Include="Forms\42_Section\ViewMembraneSection.cs" />
-    <Compile Include="Forms\42_Section\ViewDistributedMassSection.cs" />
-    <Compile Include="Forms\43_Constraint\ViewSurfaceSupport.cs" />
     <Compile Include="Forms\45_SearchContactPairs\FrmSearchContactPairs.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -263,7 +216,6 @@
     <Compile Include="Forms\02_View\FrmSectionView.Designer.cs">
       <DependentUpon>FrmSectionView.cs</DependentUpon>
     </Compile>
-    <Compile Include="Forms\02_View\ViewExplodedViewParameters.cs" />
     <Compile Include="Forms\02_View\SectionViewParameters.cs" />
     <Compile Include="Forms\03_AnalyzeGeometry\FrmAnalyzeGeometry.cs">
       <SubType>Form</SubType>
@@ -271,7 +223,6 @@
     <Compile Include="Forms\03_AnalyzeGeometry\FrmAnalyzeGeometry.Designer.cs">
       <DependentUpon>FrmAnalyzeGeometry.cs</DependentUpon>
     </Compile>
-    <Compile Include="Forms\11_MeshSetup\Base\ViewLocalMeshSize.cs" />
     <Compile Include="Forms\21_FEModel\FrmBoundaryLayer.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -281,18 +232,6 @@
     <Compile Include="Forms\21_FEModel\FrmRemeshingParameters.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Forms\21_FEModel\ViewBoundaryLayer.cs" />
-    <Compile Include="Forms\21_FEModel\ViewRemeshingParameters.cs" />
-    <Compile Include="Forms\21_FEModel\ViewModelProperties.cs" />
-    <Compile Include="Forms\41_Material\DataPoints\SpecificHeatDataPoint.cs" />
-    <Compile Include="Forms\41_Material\DataPoints\ThermalConductivityDataPoint.cs" />
-    <Compile Include="Forms\41_Material\DataPoints\ThermalExpansionDataPoint.cs" />
-    <Compile Include="Forms\41_Material\DataPoints\DensityDataPoint.cs" />
-    <Compile Include="Forms\41_Material\DataPoints\ElasticDataPoint.cs" />
-    <Compile Include="Forms\41_Material\DataPoints\ElasticEngineeringConstantsDataPoint.cs" />
-    <Compile Include="Forms\41_Material\DataPoints\ElasticLaminaDataPoint.cs" />
-    <Compile Include="Forms\41_Material\DataPoints\UserMaterialDataPoint.cs" />
-    <Compile Include="Forms\41_Material\DataPoints\TempDataPoint.cs" />
     <Compile Include="Forms\41_Material\MaterialLibraryItem.cs" />
     <Compile Include="Forms\41_Material\FrmMaterialLibrary.cs">
       <SubType>Form</SubType>
@@ -300,14 +239,6 @@
     <Compile Include="Forms\41_Material\FrmMaterialLibrary.Designer.cs">
       <DependentUpon>FrmMaterialLibrary.cs</DependentUpon>
     </Compile>
-    <Compile Include="Forms\41_Material\DataPoints\PlasticDataPoint.cs" />
-    <Compile Include="Forms\41_Material\ViewSpecificHeat.cs" />
-    <Compile Include="Forms\41_Material\ViewThermalConductivity.cs" />
-    <Compile Include="Forms\41_Material\ViewThermalExpansion.cs" />
-    <Compile Include="Forms\41_Material\ViewElasticWithDensity.cs" />
-    <Compile Include="Forms\42_Section\ViewShellSection.cs" />
-    <Compile Include="Forms\44_SurfaceInteraction\DataPoints\GapConductanceDataPoint.cs" />
-    <Compile Include="Forms\44_SurfaceInteraction\DataPoints\PressureOverclosureDataPoint.cs" />
     <Compile Include="Forms\44_SurfaceInteraction\ListViewItemComparer.cs" />
     <Compile Include="Forms\44_SurfaceInteraction\FrmSurfaceInteraction.cs">
       <SubType>Form</SubType>
@@ -315,135 +246,51 @@
     <Compile Include="Forms\44_SurfaceInteraction\FrmSurfaceInteraction.Designer.cs">
       <DependentUpon>FrmSurfaceInteraction.cs</DependentUpon>
     </Compile>
-    <Compile Include="Forms\44_SurfaceInteraction\ViewGapConductance.cs" />
     <Compile Include="Forms\45_ContactPair\FrmContactPair.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Forms\45_ContactPair\ViewContactPair.cs" />
     <Compile Include="Forms\46_Distribution\FrmDistribution.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Forms\46_Distribution\ViewMappedDistribution.cs" />
-    <Compile Include="Forms\46_Distribution\ViewDistributionFromFile.cs" />
-    <Compile Include="Forms\46_Distribution\ViewDistributionFromEquation.cs" />
-    <Compile Include="Forms\46_Distribution\ViewDistribution.cs" />
     <Compile Include="Forms\48_InitialConditions\FrmInitialCondition.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Forms\48_InitialConditions\ViewInitialCondition.cs" />
-    <Compile Include="Forms\48_InitialConditions\ViewInitialAngularVelocity.cs" />
-    <Compile Include="Forms\48_InitialConditions\ViewInitialTranslationalVelocity.cs" />
-    <Compile Include="Forms\48_InitialConditions\ViewInitialTemperature.cs" />
-    <Compile Include="Forms\47_Amplitude\AmplitudeDataPoint.cs" />
     <Compile Include="Forms\47_Amplitude\FrmAmplitude.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Forms\47_Amplitude\ViewAmplitude.cs" />
-    <Compile Include="Forms\47_Amplitude\ViewAmplitudeTabular.cs" />
     <Compile Include="Forms\51_Step\Controls\FrmStepControls.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Forms\51_Step\Controls\FrmStepControls.Designer.cs">
       <DependentUpon>FrmStepControls.cs</DependentUpon>
     </Compile>
-    <Compile Include="Forms\51_Step\Controls\ViewContactStepControlParameter.cs" />
-    <Compile Include="Forms\51_Step\Controls\ViewResetStepControlParameter.cs" />
-    <Compile Include="Forms\51_Step\Controls\ViewFieldStepControlParameter.cs" />
-    <Compile Include="Forms\51_Step\Controls\ViewTimeIncrementationStepControlParameter.cs" />
-    <Compile Include="Forms\51_Step\Controls\ViewStepControlParameter.cs" />
-    <Compile Include="Forms\51_Step\ViewComplexFrequencyStep.cs" />
-    <Compile Include="Forms\51_Step\ViewModalDynamics.cs" />
-    <Compile Include="Forms\51_Step\ViewSteadyStateDynamics.cs" />
-    <Compile Include="Forms\51_Step\ViewCoupledTempDispStep.cs" />
-    <Compile Include="Forms\51_Step\ViewDynamicStep.cs" />
-    <Compile Include="Forms\51_Step\ViewSlipWearStep.cs" />
-    <Compile Include="Forms\51_Step\ViewBoundaryDisplacementStep.cs" />
-    <Compile Include="Forms\51_Step\ViewUncoupledTempDispStep.cs" />
-    <Compile Include="Forms\51_Step\ViewHeatTransferStep.cs" />
-    <Compile Include="Forms\52_HistoryOutput\ViewContactHistoryOutput.cs" />
-    <Compile Include="Forms\52_HistoryOutput\ViewSectionHistoryOutput.cs" />
-    <Compile Include="Forms\53_FieldOutput\ViewContactFieldOutput.cs" />
-    <Compile Include="Forms\43_Constraint\ViewPointSpring.cs" />
-    <Compile Include="Forms\54_BoundaryConditions\ViewTemperatureBC.cs" />
-    <Compile Include="Forms\54_BoundaryConditions\ViewFixedBC.cs" />
-    <Compile Include="Forms\55_Load\Imported\ViewImportedSTLoad.cs" />
-    <Compile Include="Forms\55_Load\Imported\ViewImportedPressureLoad.cs" />
-    <Compile Include="Forms\55_Load\ViewHydrostaticPressureLoad.cs" />
-    <Compile Include="Forms\55_Load\ViewCFlux.cs" />
-    <Compile Include="Forms\55_Load\ViewFilmHeatTransfer.cs" />
-    <Compile Include="Forms\55_Load\ViewDFlux.cs" />
-    <Compile Include="Forms\55_Load\ViewBodyFlux.cs" />
-    <Compile Include="Forms\55_Load\ViewRadiationHeatTransfer.cs" />
-    <Compile Include="Forms\55_Load\ViewShellEdgeLoad.cs" />
     <Compile Include="Forms\56_DefinedField\FrmDefinedField.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Forms\56_DefinedField\ViewDefinedField.cs" />
-    <Compile Include="Forms\56_DefinedField\ViewDefinedTemperature.cs" />
-    <Compile Include="Forms\61_Settings\ViewSolverSettings.cs" />
-    <Compile Include="Forms\61_Settings\ViewColorSettings.cs" />
-    <Compile Include="Forms\61_Settings\ViewNumberFormatSettings.cs" />
-    <Compile Include="Forms\61_Settings\ViewAnnotationSettings.cs" />
-    <Compile Include="Forms\61_Settings\ViewMeshingSettings.cs" />
-    <Compile Include="Forms\61_Settings\ViewUnitSystemlSettings.cs" />
-    <Compile Include="Forms\61_Settings\ViewStatusBlockSettings.cs" />
-    <Compile Include="Forms\61_Settings\ViewLegendSettings.cs" />
     <Compile Include="Forms\63_Find\FrmFind.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Forms\63_Find\FrmFind.Designer.cs">
       <DependentUpon>FrmFind.cs</DependentUpon>
     </Compile>
-    <Compile Include="Forms\64_CaptureViewport\CaptureViewportProperties.cs" />
     <Compile Include="Forms\64_CaptureViewport\FrmCaptureViewport.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Forms\64_CaptureViewport\ViewCaptureViewportProperties.cs" />
-    <Compile Include="Forms\82_ResultFieldOutput\LimitPartDataPoint.cs" />
-    <Compile Include="Forms\82_ResultFieldOutput\LimitElementSetDataPoint.cs" />
     <Compile Include="Forms\82_ResultFieldOutput\FrmResultFieldOutput.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Forms\82_ResultFieldOutput\ViewResultFieldOutput.cs" />
-    <Compile Include="Forms\82_ResultFieldOutput\ViewResultFieldOutputCoordinateSystemTransform.cs" />
-    <Compile Include="Forms\82_ResultFieldOutput\ViewResultFieldOutputEnvelope.cs" />
-    <Compile Include="Forms\82_ResultFieldOutput\ViewResultFieldOutputLimit.cs" />
-    <Compile Include="Forms\82_ResultFieldOutput\ViewResultFieldOutputEquation.cs" />
     <Compile Include="Forms\83_ResultHistoryOutput\FrmResultHistoryOutput.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Forms\00_Common\FileExporter\ViewExportHistoryResultSetFileProperties.cs" />
-    <Compile Include="Forms\83_ResultHistoryOutput\ViewResultHistoryOutputFromIntegration.cs" />
-    <Compile Include="Forms\83_ResultHistoryOutput\ViewResultHistoryOutputFromAffineFit.cs" />
-    <Compile Include="Forms\83_ResultHistoryOutput\ViewResultHistoryOutputFromTable.cs" />
-    <Compile Include="Forms\83_ResultHistoryOutput\ViewResultHistoryOutputFromEquation.cs" />
-    <Compile Include="Forms\83_ResultHistoryOutput\ViewResultHistoryOutputFromField.cs" />
-    <Compile Include="Forms\83_ResultHistoryOutput\ViewResultHistoryOutput.cs" />
     <Compile Include="Forms\84_Transformation\FrmTransformation.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Forms\84_Transformation\FrmTransformation.Designer.cs">
       <DependentUpon>FrmTransformation.cs</DependentUpon>
     </Compile>
-    <Compile Include="Forms\84_Transformation\ViewCircularPattern.cs" />
-    <Compile Include="Forms\84_Transformation\ViewLinearPattern.cs" />
-    <Compile Include="Forms\84_Transformation\ViewTransformation.cs" />
-    <Compile Include="Forms\84_Transformation\ViewSymetry.cs" />
-    <Compile Include="Forms\44_SurfaceInteraction\ViewFriction.cs" />
-    <Compile Include="Forms\44_SurfaceInteraction\ViewSurfaceInteractionProperty.cs" />
-    <Compile Include="Forms\44_SurfaceInteraction\ViewSurfaceBehavior.cs" />
-    <Compile Include="Forms\51_Step\ViewBuckleStep.cs" />
-    <Compile Include="Forms\51_Step\ViewFrequencyStep.cs" />
     <Compile Include="Forms\52_HistoryOutput\FrmHistoryOutput.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Forms\52_HistoryOutput\ViewHistoryOutput.cs" />
-    <Compile Include="Forms\52_HistoryOutput\ViewElementHistoryOutput.cs" />
-    <Compile Include="Forms\52_HistoryOutput\ViewNodalHistoryOutput.cs" />
-    <Compile Include="Forms\54_BoundaryConditions\ViewSubmodelBC.cs" />
-    <Compile Include="Forms\55_Load\ViewCentrifLoad.cs" />
-    <Compile Include="Forms\55_Load\ViewGravityLoad.cs" />
-    <Compile Include="Forms\55_Load\ViewPreTensionLoad.cs" />
     <Compile Include="Forms\61_Settings\FrmGetEnvVars.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -491,65 +338,30 @@
     <Compile Include="Forms\IFormHighlight.cs" />
     <Compile Include="Forms\IFormItemSetDataParent.cs" />
     <Compile Include="Forms\IFormBase.cs" />
-    <Compile Include="Forms\00_Common\ViewDoubleValue.cs" />
     <Compile Include="Forms\21_FEModel\FrmCalculixKeywordEditor.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Forms\21_FEModel\FrmCalculixKeywordEditor.Designer.cs">
       <DependentUpon>FrmCalculixKeywordEditor.cs</DependentUpon>
     </Compile>
-    <Compile Include="Forms\11_MeshSetup\Base\ViewMeshingParameters.cs" />
-    <Compile Include="Forms\27_Surface\ViewFeSurface.cs" />
-    <Compile Include="Forms\31_ReferencePoint\ViewFeReferencePoint.cs" />
-    <Compile Include="Forms\41_Material\ViewPlastic.cs" />
-    <Compile Include="Forms\43_Constraint\ViewTie.cs" />
-    <Compile Include="Forms\43_Constraint\ViewCyclicSymmetry.cs" />
-    <Compile Include="Forms\43_Constraint\ViewJoint.cs" />
-    <Compile Include="Forms\43_Constraint\ViewRigidBody.cs" />
-    <Compile Include="Forms\43_Constraint\ViewCoupling.cs" />
-    <Compile Include="Forms\43_Constraint\ViewConstraint.cs" />
-    <Compile Include="Forms\54_BoundaryConditions\ViewBoundaryCondition.cs" />
-    <Compile Include="Forms\54_BoundaryConditions\ViewDisplacementRotation.cs" />
-    <Compile Include="Forms\53_FieldOutput\ViewFieldOutput.cs" />
-    <Compile Include="Forms\53_FieldOutput\ViewElementFieldOutput.cs" />
-    <Compile Include="Forms\53_FieldOutput\ViewNodalFieldOutput.cs" />
     <Compile Include="Forms\41_Material\FrmMaterial.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Forms\41_Material\FrmMaterial.Designer.cs">
       <DependentUpon>FrmMaterial.cs</DependentUpon>
     </Compile>
-    <Compile Include="Forms\41_Material\ViewElastic.cs" />
-    <Compile Include="Forms\41_Material\ViewElasticEngineeringConstants.cs" />
-    <Compile Include="Forms\41_Material\ViewElasticLamina.cs" />
-    <Compile Include="Forms\41_Material\ViewUserMaterial.cs" />
-    <Compile Include="Forms\41_Material\ViewMaterialProperty.cs" />
-    <Compile Include="Forms\41_Material\ViewDensity.cs" />
-    <Compile Include="Forms\42_Section\ViewSection.cs" />
-    <Compile Include="Forms\42_Section\ViewSolidSection.cs" />
     <Compile Include="Forms\00_Common\FrmSelectEntity.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Forms\00_Common\FrmSelectEntity.Designer.cs">
       <DependentUpon>FrmSelectEntity.cs</DependentUpon>
     </Compile>
-    <Compile Include="Forms\55_Load\ViewMomentLoad.cs" />
-    <Compile Include="Forms\55_Load\ViewSTLoad.cs" />
-    <Compile Include="Forms\55_Load\ViewCLoad.cs" />
-    <Compile Include="Forms\55_Load\ViewDLoad.cs" />
-    <Compile Include="Forms\55_Load\ViewLoad.cs" />
     <Compile Include="Forms\61_Settings\FrmSettings.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Forms\61_Settings\FrmSettings.Designer.cs">
       <DependentUpon>FrmSettings.cs</DependentUpon>
     </Compile>
-    <Compile Include="Forms\61_Settings\ViewGeneralSettings.cs" />
-    <Compile Include="Forms\61_Settings\ViewPreSettings.cs" />
-    <Compile Include="Forms\61_Settings\ViewGraphicsSettings.cs" />
-    <Compile Include="Forms\61_Settings\ViewNavigationSettings.cs" />
-    <Compile Include="Forms\61_Settings\ViewPostSettings.cs" />
-    <Compile Include="Forms\61_Settings\ViewSettings.cs" />
     <Compile Include="Forms\62_Query\FrmQuery.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -568,7 +380,6 @@
     <Compile Include="Forms\71_Analysis\FrmMonitor.Designer.cs">
       <DependentUpon>FrmMonitor.cs</DependentUpon>
     </Compile>
-    <Compile Include="Forms\71_Analysis\ViewAnalysisJob.cs" />
     <Compile Include="Forms\81_Animation\FrmAnimation.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -585,8 +396,6 @@
     <Compile Include="Forms\FrmMain.Designer.cs">
       <DependentUpon>FrmMain.cs</DependentUpon>
     </Compile>
-    <Compile Include="Forms\51_Step\ViewStaticStep.cs" />
-    <Compile Include="Forms\51_Step\ViewStep.cs" />
     <Compile Include="Forms\FrmSplash.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -599,9 +408,6 @@
     <Compile Include="Forms\FrmPythonStop.Designer.cs">
       <DependentUpon>FrmPythonStop.cs</DependentUpon>
     </Compile>
-    <Compile Include="Forms\ViewMasterSlaveMultiRegion.cs" />
-    <Compile Include="Forms\ViewMultiRegion.cs" />
-    <Compile Include="Forms\ViewError.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
@@ -609,10 +415,6 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
-    <Compile Include="Selection\ItemSet\ItemSetData.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Selection\ItemSet\PointSelectionMethodEnum.cs" />
     <Compile Include="Selection\ItemSet\SinglePointDataEditor.cs" />
     <Compile Include="Forms\00_Common\FrmSelectItemSet.cs">
       <SubType>Form</SubType>
@@ -1106,4 +908,10 @@ IF EXIST "$(TargetDir)PrePoMax.com.config" del "$(TargetDir)PrePoMax.com.config"
   </PropertyGroup>
   <ItemGroup><ProjectReference Include="..\PrePoMax.Core\PrePoMax.Core.csproj"><Project>{97D8970E-490F-4D9B-B497-B7BB5E418A12}</Project><Name>PrePoMax.Core</Name></ProjectReference></ItemGroup>
   <ItemGroup><ProjectReference Include="..\PrePoMax.ViewContracts\PrePoMax.ViewContracts.csproj"><Project>{71D5471A-3B23-42BB-A10E-2C0551307C81}</Project><Name>PrePoMax.ViewContracts</Name></ProjectReference></ItemGroup>
+  <ItemGroup>
+    <Compile Include="Forms\00_Common\FileExporter\CreateFileNameEditor.cs" />
+    <Compile Include="Properties\ForwardedViewModelTypes.cs" />
+    <ProjectReference Include="..\PrePoMax.ViewModels\PrePoMax.ViewModels.csproj"><Project>{2E60A193-0241-4363-B23C-614921C31902}</Project><Name>PrePoMax.ViewModels</Name></ProjectReference>
+  </ItemGroup>
+  <ItemGroup><ProjectReference Include="..\PrePoMax.PropertyMetadata\PrePoMax.PropertyMetadata.csproj"><Project>{AB854769-D1EB-4452-9C2E-FCF72189D752}</Project><Name>PrePoMax.PropertyMetadata</Name></ProjectReference></ItemGroup>
 </Project>

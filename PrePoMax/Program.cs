@@ -73,6 +73,8 @@ namespace PrePoMax
         [STAThread]
         static void Main(string[] args)
         {
+            ViewModelHost.ConfirmMissingWorkDirectory = () =>
+                CaeGlobals.MessageBoxes.ShowWarningQuestionOKCancel("The selected work directory does not exist.") != System.Windows.Forms.DialogResult.Cancel;
             // DPI
             //if (Environment.OSVersion.Version.Major >= 6) SetProcessDPIAware();
             AttachToParentConsole();

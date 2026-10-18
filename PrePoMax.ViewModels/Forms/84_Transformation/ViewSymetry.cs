@@ -1,0 +1,106 @@
+// PrePoMax - Copyright (C) 2016-2026 Matej Borovinšek
+//
+// Licensed under the terms defined in the LICENSE file located in the root directory of this source code.
+//
+// Source code: https://gitlab.com/MatejB/PrePoMax
+//
+// Author: Matej Borovinšek
+// Contributors:
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using CaeMesh;
+using CaeGlobals;
+using System.ComponentModel;
+using DynamicTypeDescriptor;
+using CaeResults;
+
+namespace PrePoMax.Forms
+{
+    [Serializable]
+    [System.Runtime.CompilerServices.TypeForwardedFrom("PrePoMax, Version=3.0.0.0, Culture=neutral, PublicKeyToken=null")]
+    public class ViewSymmetry : ViewTransformation
+    {
+        // Variables                                                                                                                      
+        private Symmetry _symmetry;
+        private PointSelectionMethodEnum _symmetryPointSelectionMethod;
+
+
+        // Properties                                                                                                               
+        public override string Name { get { return _symmetry.Name; } set { _symmetry.Name = value; } }
+        [Browsable(false)]
+        [Category("Data")]
+        [OrderedDisplayName(1, 10, "Symmetry plane")]
+        [DescriptionAttribute("Select the symmetry plane.")]
+        [Id(2, 1)]
+        public SymmetryPlaneEnum SymmetryPlane { get { return _symmetry.SymmetryPlane; } set { _symmetry.SymmetryPlane = value; } }
+        //
+        [Category("Symmetry point coordinates")]
+        [OrderedDisplayName(0, 10, "Selection method")]
+        [DescriptionAttribute("Choose the selection method.")]
+        [Id(1, 2)]
+        public PointSelectionMethodEnum SymmetryPointSelectionMethod
+        {
+            get { return _symmetryPointSelectionMethod; }
+            set
+            {
+                _symmetryPointSelectionMethod = value;
+                SetPointSelectionMethod(_startPointItemSetData, _symmetryPointSelectionMethod);
+            }
+        }
+        //
+        [Category("Symmetry point coordinates")]
+        [OrderedDisplayName(1, 10, "By selection")]
+        [DescriptionAttribute("Use selection for the definition of the symmetry point.")]
+        [Editor("PrePoMax.SinglePointDataEditor, PrePoMax", "System.Drawing.Design.UITypeEditor, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a")]
+        [Id(2, 2)]
+        public ItemSetData SymmetryPointItemSet
+        {
+            get { return _startPointItemSetData; }
+            set { _startPointItemSetData = value; }
+        }
+        //
+        [Category("Symmetry point coordinates")]
+        [OrderedDisplayName(2, 10, "X")]
+        [Description("X coordinate of the symmetry point.")]
+        [TypeConverter(typeof(StringLengthConverter))]
+        [Id(3, 2)]
+        public double SymmetryPointX { get { return _symmetry.PointCoor[0]; } set { _symmetry.PointCoor[0] = value; } }
+        //
+        [Category("Symmetry point coordinates")]
+        [OrderedDisplayName(3, 10, "Y")]
+        [Description("Y coordinate of the symmetry point.")]
+        [TypeConverter(typeof(StringLengthConverter))]
+        [Id(4, 2)]
+        public double SymmetryPointY { get { return _symmetry.PointCoor[1]; } set { _symmetry.PointCoor[1] = value; } }
+        //
+        [Category("Symmetry point coordinates")]
+        [OrderedDisplayName(4, 10, "Z")]
+        [Description("Z coordinate of the symmetry point.")]
+        [TypeConverter(typeof(StringLengthConverter))]
+        [Id(5, 2)]
+        public double SymmetryPointZ { get { return _symmetry.PointCoor[2]; } set { _symmetry.PointCoor[2] = value; } }
+        
+
+
+        // Constructors                                                                                                             
+        public ViewSymmetry(Symmetry symmetry)
+        {
+            _symmetry = symmetry;
+            //
+            _dctd = ProviderInstaller.Install(this);
+            _dctd.CategorySortOrder = CustomSortOrder.AscendingById;
+            _dctd.PropertySortOrder = CustomSortOrder.AscendingById;
+            //
+            _startPointItemSetData = new ItemSetData(); // needed to display ItemSetData.ToString()
+            _startPointItemSetData.ToStringType = ItemSetDataToStringType.SelectSinglePoint;
+        }
+
+
+        // Methods                                                                                                                  
+        public override Transformation Base { get { return _symmetry; } }
+    }
+}

@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="../build/SharedCore.props" />
+  <PropertyGroup><AssemblyName>PrePoMax.PropertyMetadata</AssemblyName><ProjectGuid>{AB854769-D1EB-4452-9C2E-FCF72189D752}</ProjectGuid></PropertyGroup>
+  <ItemGroup><ProjectReference Include="../CaeGlobals/CaeGlobals.csproj" /></ItemGroup>
+</Project>
