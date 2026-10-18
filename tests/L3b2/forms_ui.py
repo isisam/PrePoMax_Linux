@@ -29,9 +29,11 @@ def stamp():
 def command(**kw):
     (out/'command.tmp').write_text(json.dumps(kw)); (out/'command.tmp').replace(out/'command.json')
     wait(lambda: not (out/'command.json').exists()); time.sleep(.3)
+    if kw['op']=='close': return read_once()
     # Wait a subsequent evidence frame, after the control event and deferred descriptor refresh.
     old = wait(stamp)
     wait(lambda: (value if (value:=stamp()) and value != old else None))
+    if (out/'command-error.txt').exists(): raise RuntimeError((out/'command-error.txt').read_text())
     state = read(); records.append(dict(command=kw, form=state.get('form'), commandCount=state['tree']['commandCount']))
     (out/'events.json').write_text(json.dumps(records, indent=2))
     return state
@@ -54,54 +56,73 @@ def ids(value, action='Add IDs'):
     command(op='form-ids',value=value); return command(op='form-selection',button=action)
 
 with (out/'gui.log').open('w') as log:
-    p = sp.Popen([str(app/'PrePoMax.Avalonia'), str(fixture), '--evidence', str(out)], env=env, stdout=log, stderr=sp.STDOUT, start_new_session=True)
+    p = sp.Popen([str(app/'PrePoMax.Avalonia'), str(fixture), '--frd', str(out/'no-results.frd'), '--evidence', str(out)], env=env, stdout=log, stderr=sp.STDOUT, start_new_session=True)
     try:
         wait(lambda:(out/'ready').exists()); initial=read(); (out/'initial.json').write_text(json.dumps(initial,indent=2))
-        # Existing material elasticity, including the layup engineering-constant path.
-        elastic_done = False; fat_done = False
-        materials = [e for e in entries() if e['Kind']=='Material' and e['entity']]
-        for material in materials:
-            f = open_entity(material)
-            if not elastic_done:
-                for i, title in enumerate(f['pages']):
-                    if title in ('Elastic','Engineering Constants','Elastic with density'):
-                        command(op='form-page',index=i)
-                        prop=next(q['Name'] for q in read()['form']['properties'] if q['Name'].startswith('YoungsModulus'))
-                        setprop(prop,'12345'); assert not read()['form']['errors']; click('Apply'); assert not read()['form']['error']; elastic_done=True; break
-            for i,title in enumerate(f['pages']):
-                if title=='Fatigue CZM (FATCZM)':
-                    command(op='form-page',index=i); command(op='form-row',index=12); setprop('ValueEq','0.02',True)
-                    click('Apply'); assert not read()['form']['error']; fat_done=True
-            click('Cancel')
-        assert elastic_done, 'Fixture needs an elastic property'
-        if not fat_done:
-            new('Material','Material'); name('USERFATCZM_L3Forms')
-            command(op='form-material-type',value='Fatigue CZM (FATCZM)'); click('Add property'); command(op='form-row',index=12)
-            assert read()['form']['rows'][12].startswith('13. dDmax')
-            sp.run(['import','-window','root',str(out/'fatczm-form.png')],check=True)
-            setprop('ValueEq','0.02',True); close()
-        # Real ID panel operations, including rejection without changing prior selection.
-        new('NodeSet','Node set'); setprop('Name','L3FormsNodes')
-        ids('1 2 3 4'); ids('4','Remove IDs'); command(op='form-selection',button='Undo last')
-        prior=read()['form']['selection']; ids('999999999'); assert read()['form']['selection']==prior
-        command(op='form-selection',button='Clear'); ids('1 2 3 4'); command(op='form-selection',button='OK selection')
-        assert read()['form']['selection']==[1,2,3,4]; close(); find('NodeSet','L3FormsNodes')
-        new('ElementSet','Element set'); setprop('Name','L3FormsElements'); ids('1'); close(); find('ElementSet','L3FormsElements')
-        new('Surface','Surface'); setprop('Name','L3FormsSurface'); setprop('CreateSurfaceFrom','NodeSet'); setprop('NodeSetName','L3FormsNodes'); close(); find('Surface','L3FormsSurface')
-        new('Section','Solid Section'); setprop('Name','L3FormsSection'); setprop('RegionType','Element set name'); setprop('ElementSetName','L3FormsElements'); close(); find('Section','L3FormsSection')
-        command(op='save',path=str(out/'checkpoint-pre-steps.pmx'))
-        new('Step','Static step'); setprop('Name','L3FormsRamp'); setprop('SolverType','Spooles'); close(); find('Step','L3FormsRamp')
-        new('Step','Static step'); setprop('Name','L3FormsFatigue'); click('FATCZM fatigue step')
-        f=read()['form']; assert next(q['value'] for q in f['properties'] if q['Name']=='MaxIncrements')=='310'
-        assert next(q['value'] for q in f['properties'] if q['Name']=='IncrementationType')=='Direct'; close()
-        new('BoundaryCondition','Fixed',step='L3FormsRamp'); setprop('Name','L3FormsFixed'); setprop('RegionType','Node set name'); setprop('NodeSetName','L3FormsNodes'); close()
-        new('Load','Concentrated force',step='L3FormsRamp'); setprop('Name','L3FormsForce'); setprop('RegionType','Node set name'); setprop('NodeSetName','L3FormsNodes'); setprop('F2','1'); close()
+        command(op='form-export',path=str(out/'initial.inp'))
+        lines=(out/'initial.inp').read_text().splitlines()
+        card=next(i for i,line in enumerate(lines) if line.upper().startswith('*ELEMENT,'))
+        assert 'TYPE=C3D8' in lines[card].upper(),lines[card]
+        first_element=[int(v.strip()) for v in lines[card+1].split(',') if v.strip()]
+        face_nodes=first_element[1:5]; assert len(face_nodes)==4
+        if '--repair-node-face' in sys.argv:
+            open_entity(find('NodeSet','L3FormsNodes')); command(op='form-selection',button='Clear'); ids(' '.join(map(str,face_nodes))); close()
+            open_entity(find('Surface','L3FormsSurface')); setprop('Name','L3FormsSurface_review'); setprop('Name','L3FormsSurface'); close()
+            if '--deactivate-layups' in sys.argv:
+                for e in [e for e in entries() if e['Kind']=='CompositeLayup' and e['entity'] and e['Active']]:
+                    command(op='tree-action',key=e['Key'],action='Deactivate')
+        else:
+            if '--resume-after-section' not in sys.argv:
+                # Existing material elasticity, including the layup engineering-constant path.
+                elastic_done = False; fat_done = False
+                materials = [e for e in entries() if e['Kind']=='Material' and e['entity']]
+                for material in materials:
+                    f = open_entity(material)
+                    if not elastic_done:
+                        for i, title in enumerate(f['pages']):
+                            if title in ('Elastic','Engineering Constants','Elastic with density'):
+                                command(op='form-page',index=i)
+                                prop=next(q['Name'] for q in read()['form']['properties'] if q['Name'].startswith('YoungsModulus'))
+                                setprop(prop,'12345'); assert not read()['form']['errors']; click('Apply'); assert not read()['form']['error']; elastic_done=True; break
+                    for i,title in enumerate(f['pages']):
+                        if title=='Fatigue CZM (FATCZM)':
+                            command(op='form-page',index=i); command(op='form-row',index=12); setprop('ValueEq','0.02',True)
+                            click('Apply'); assert not read()['form']['error']; fat_done=True
+                    click('Cancel')
+                assert elastic_done, 'Fixture needs an elastic property'
+                if not fat_done:
+                    new('Material','Material'); name('USERFATCZM_L3Forms')
+                    command(op='form-material-type',value='Fatigue CZM (FATCZM)'); click('Add property'); command(op='form-row',index=12)
+                    assert read()['form']['rows'][12].startswith('13. dDmax')
+                    sp.run(['import','-window','root',str(out/'fatczm-form.png')],check=True)
+                    setprop('ValueEq','0.02',True); close()
+                # Real ID panel operations, including rejection without changing prior selection.
+                new('NodeSet','Node set'); setprop('Name','L3FormsNodes')
+                ids(' '.join(map(str,face_nodes))); ids(str(face_nodes[-1]),'Remove IDs'); command(op='form-selection',button='Undo last')
+                prior=read()['form']['selection']; ids('999999999'); assert read()['form']['selection']==prior
+                command(op='form-selection',button='Clear'); ids(' '.join(map(str,face_nodes))); command(op='form-selection',button='OK selection')
+                assert sorted(read()['form']['selection'])==sorted(face_nodes); close(); find('NodeSet','L3FormsNodes')
+                new('ElementSet','Element set'); setprop('Name','L3FormsElements'); ids('1'); close(); find('ElementSet','L3FormsElements')
+                new('Surface','Surface'); setprop('Name','L3FormsSurface'); setprop('CreateSurfaceFrom','NodeSet'); setprop('NodeSetName','L3FormsNodes'); close(); find('Surface','L3FormsSurface')
+                if '--deactivate-layups' in sys.argv:
+                    for e in [e for e in entries() if e['Kind']=='CompositeLayup' and e['entity'] and e['Active']]:
+                        command(op='tree-action',key=e['Key'],action='Deactivate')
+                new('Section','Solid Section'); setprop('Name','L3FormsSection'); setprop('RegionType','Element set name'); setprop('ElementSetName','L3FormsElements'); close(); find('Section','L3FormsSection')
+                command(op='save',path=str(out/'checkpoint-pre-steps.pmx'))
+            else:
+                open_entity(find('NodeSet','L3FormsNodes')); command(op='form-selection',button='Clear'); ids(' '.join(map(str,face_nodes))); close()
+            new('Step','Static step'); setprop('Name','L3FormsRamp'); setprop('SolverType','Spooles'); close(); find('Step','L3FormsRamp')
+            new('Step','Static step'); setprop('Name','L3FormsFatigue'); click('FATCZM fatigue step')
+            f=read()['form']; assert next(q['value'] for q in f['properties'] if q['Name']=='MaxIncrements')=='310'
+            assert next(q['value'] for q in f['properties'] if q['Name']=='IncrementationType')=='Direct'; close()
+            new('BoundaryCondition','Fixed',step='L3FormsRamp'); setprop('Name','L3FormsFixed'); setprop('RegionType','Node set name'); setprop('NodeSetName','L3FormsNodes'); close()
+            new('Load','Concentrated force',step='L3FormsRamp'); setprop('Name','L3FormsForce'); setprop('RegionType','Node set name'); setprop('NodeSetName','L3FormsNodes'); setprop('F2','1'); close()
         command(op='save',path=str(out/'edited.pmx')); wait(lambda:(out/'edited.pmx').exists())
         command(op='form-export',path=str(out/'linux.inp')); assert (out/'linux.inp').exists()
         sp.run(['import','-window','root',str(out/'tree.png')],check=True)
         assert not read()['tree']['errors']; final=read(); (out/'final.json').write_text(json.dumps(final,indent=2))
         command(op='close'); p.wait(timeout=25); assert p.returncode==0,p.returncode
-        (out/'acceptance.json').write_text(json.dumps(dict(passed=True,exit=p.returncode,forced=False,fixture=str(fixture),checks=['elastic edit','FATCZM dDmax','ID node/element sets','node-set surface','solid section','static ramp','typed fatigue preset 300','Fixed BC','force','save PMX','export INP','tree after commands']),indent=2))
+        (out/'acceptance.json').write_text(json.dumps(dict(passed=True,strict_P3_complete=False,exit=p.returncode,forced=False,fixture=str(fixture),resumed='--resume-after-section' in sys.argv,repair_only='--repair-node-face' in sys.argv,deactivated_layups='--deactivate-layups' in sys.argv,checks=(['node-set face membership correction'] if '--repair-node-face' in sys.argv else ['static ramp','typed fatigue preset 300','Fixed BC','force'] if '--resume-after-section' in sys.argv else ['elastic edit','FATCZM dDmax','ID node/element sets','node-set surface','solid section','static ramp','typed fatigue preset 300','Fixed BC','force'])+['save PMX','export INP','tree after commands']),indent=2))
         print('PASS Linux real form host: '+str(fixture),flush=True)
     finally:
         if p.poll() is None: os.killpg(p.pid,signal.SIGTERM); p.wait(timeout=15)

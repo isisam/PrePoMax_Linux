@@ -20,6 +20,17 @@ for pair in DCB M2a; do
     fixture="$repo/../logs/L2b/dcb/dcb.pmx"
     [[ "$pair" != M2a ]] || fixture="$repo/../logs/M2b_acceptance/M2b_layup.pmx"
     nice -n 19 "$out/app/PrePoMax.Avalonia" --tree-check "$fixture" "$logs/tree-$pair.json"
-    xvfb-run -a -s '-screen 0 1600x1100x24' nice -n 19 python3 "$repo/tests/L3b2/forms_ui.py" "$out/app" "$fixture" "$logs/ui-$pair"
+    extra=()
+    # The original M2a layup covers all elements. This documented operation case
+    # keeps its definition but deactivates it before adding an ordinary section.
+    if [[ "$pair" == M2a ]]; then extra+=(--deactivate-layups); fi
+    if [[ "$pair" == DCB && -n ${PPM_FORMS_DCB_CHECKPOINT:-} ]]; then
+        fixture="$PPM_FORMS_DCB_CHECKPOINT"
+        if [[ ${PPM_FORMS_DCB_REPAIR:-0} == 1 ]]; then extra+=(--repair-node-face); else extra+=(--resume-after-section); fi
+    fi
+    if [[ "$pair" == M2a && -n ${PPM_FORMS_M2A_CHECKPOINT:-} ]]; then
+        fixture="$PPM_FORMS_M2A_CHECKPOINT"; extra+=(--repair-node-face --deactivate-layups)
+    fi
+    xvfb-run -a -s '-screen 0 1600x1100x24' nice -n 19 python3 "$repo/tests/L3b2/forms_ui.py" "$out/app" "$fixture" "$logs/ui-$pair" "${extra[@]}"
 done
 xvfb-run -a -s '-screen 0 1600x1100x24' nice -n 19 python3 "$repo/tests/L3b/tree_ui.py" "$out/app" "$repo/../logs/L2b/dcb/dcb.pmx" "$logs/tree-ui"

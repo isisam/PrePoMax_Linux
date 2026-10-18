@@ -21,10 +21,19 @@ def wait(fn, seconds=60):
     raise TimeoutError('tree UI wait')
 
 def read(): return wait(read_once)
+def stamp():
+    try: return (out/'state.json').stat().st_mtime_ns
+    except OSError: return None
 
 def command(**kw):
     (out/'command.tmp').write_text(json.dumps(kw));(out/'command.tmp').replace(out/'command.json')
     wait(lambda:not(out/'command.json').exists());time.sleep(.2)
+    # The shell deletes the command before executing it, and writes state before
+    # dispatching commands. Wait for a later frame instead of asserting on stale
+    # model state when a command or validity update takes more than 200 ms.
+    if kw['op']!='close':
+        previous=wait(stamp)
+        wait(lambda:(value if (value:=stamp()) and value!=previous else None))
 
 with (out/'gui.log').open('w') as log:
     launch=[]
