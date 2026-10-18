@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
@@ -7,135 +8,177 @@ using PrePoMax.Viewer;
 using Vtkmax.Interop;
 using System.Text.Json;
 using Avalonia.Input;
+using CaeGlobals;
+using CaeResults;
+using vtkControl;
 
 namespace PrePoMax.Avalonia;
-public sealed class MainWindow : Window
+public sealed partial class MainWindow : Window, IMainView
 {
     private readonly VtkMaxView viewport = new();
     private readonly TreeView tree = new() { Margin = new Thickness(8) };
-    private readonly TextBlock status = new() { Text = "Open an INP or PMX model", Margin = new Thickness(12, 8) };
-    private ViewerModel? model;
+    private readonly TextBlock status = new() { Text = "Open a PMX, INP or FRD file", Margin = new Thickness(12, 8) };
+    private readonly TextBlock units = new() { Text = "Units: undefined", Margin = new Thickness(12,8) };
+    private readonly TextBox messages = new() { IsReadOnly=true, AcceptsReturn=true, TextWrapping=global::Avalonia.Media.TextWrapping.Wrap, FontFamily=global::Avalonia.Media.FontFamily.Parse("monospace") };
     private readonly ProgressBar progressBar = new() { IsIndeterminate = true, IsVisible = false, Height = 4 };
-    private bool loading;
+    private readonly Menu menu=new();
+    private readonly ShellMainView mainView;
+    private ViewerModel? model;
+    private bool loading,closing;
     private double deformationScale;
-    private DispatcherTimer? cameraAnimation;
+    private string? modelPath;
     private PickResult lastPick = new() { NodeId = -1, ElementId = -1, FaceId = -1 };
     public MainWindow()
     {
-        Title = "PrePoMax • Linux viewer prototype"; Width = 1200; Height = 820; MinWidth = 800; MinHeight = 500;
+        Title = "PrePoMax RCM ? Linux shell (L2)"; Width = 1200; Height = 900; MinWidth = 850; MinHeight = 600;
+        mainView=new ShellMainView(this,viewport){Loading=true};
+        SettingsContainer.IsSaveDisabled=true;
+        _=new Controller(this);mainView.Loading=false;
         KeyDown += (_, e) => { if (e.Key == Key.Q && e.KeyModifiers.HasFlag(KeyModifiers.Control)) { e.Handled = true; Close(); } };
-        Closed += (_, _) => cameraAnimation?.Stop();
+        Closed += (_, _) => {closing=true;};
+        viewport.OperationFailed+=e=>Log("Viewport error: "+e.Message);
         var root = new DockPanel();
-        var menu = new Menu { ItemsSource = new[]
-        {
-            new MenuItem { Header = "_File", ItemsSource = new[] { Item("_Open model…", async () => await ChooseFile()), Item("Save view PNG…", async () => await SavePng()), Item("E_xit", Close) } },
-            new MenuItem { Header = "_View", ItemsSource = new[] { Item("Fit", () => Change(v => v.Fit())), Item("Isometric", () => Change(v => v.StandardView())), Item("Front", () => Change(v => v.StandardView(1))), Item("Top", () => Change(v => v.StandardView(3))), Item("Rotate 15°", () => Change(v => v.Rotate(15, 5))) } }
-        }};
-        DockPanel.SetDock(menu, Dock.Top); root.Children.Add(menu);
+        BuildMenu();DockPanel.SetDock(menu, Dock.Top); root.Children.Add(menu);
         var toolbar = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Margin = new Thickness(10, 6) };
-        AddButton(toolbar, "Open model", async () => await ChooseFile()); AddButton(toolbar, "Fit", () => Change(v => v.Fit()));
-        AddButton(toolbar, "Rotate", () => Change(v => v.Rotate(15, 5))); AddButton(toolbar, "+", () => Change(v => v.Zoom(1.2)));
-        AddButton(toolbar, "−", () => Change(v => v.Zoom(1 / 1.2))); AddButton(toolbar, "Surface", () => Change(v => v.Display(true, false)));
-        AddButton(toolbar, "Edges", () => Change(v => v.Display(true, true))); AddButton(toolbar, "Wire", () => Change(v => v.Display(false, true)));
-        AddButton(toolbar, "Highlight first ply", Highlight); AddButton(toolbar, "Clear", () => Change(v => v.Highlight([])));
+        AddButton(toolbar, "Open", async () => await ChooseFile());AddButton(toolbar,"Save PMX",async()=>await SavePmx());
+        AddButton(toolbar, "Fit", () => viewport.SetZoomToFit(false));AddButton(toolbar, "Front", () => viewport.SetFrontBackView(false,true));
+        AddButton(toolbar, "Rotate", () => viewport.Rotate(15, 5,0)); AddButton(toolbar, "+", () => viewport.SetZoomFactor(1.2));
+        AddButton(toolbar, "?", () => viewport.SetZoomFactor(1 / 1.2));AddButton(toolbar, "Edges", ToggleEdges);
+        AddButton(toolbar, "Clear selection", () => viewport.ClearSelection());
+        var pickMode=new ComboBox {ItemsSource=new[]{"Pick element","Pick node"},SelectedIndex=0,Width=140};
+        pickMode.SelectionChanged+=(_,_)=>viewport.SelectItem=pickMode.SelectedIndex==1?vtkSelectItem.Node:vtkSelectItem.Element;toolbar.Children.Add(pickMode);
         DockPanel.SetDock(toolbar, Dock.Top); root.Children.Add(toolbar);
         var resultsBar = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Margin = new Thickness(10, 4) };
-        AddButton(resultsBar, "Open FRD", async () => await ChooseResults());
-        AddButton(resultsBar, "S (Mises)", () => Contour("S (Mises)"));
-        AddButton(resultsBar, "U (magnitude)", () => Contour("U (magnitude)"));
-        AddButton(resultsBar, "Undeformed", () => { deformationScale = 0; Change(v => { v.Deformation(model?.Displacement, 0); v.Fit(); }); });
-        var scaleBox = new NumericUpDown { Minimum = -1000, Maximum = 1000, Value = 1, Width = 95, Increment = 1 };
+        AddButton(resultsBar, "S (Mises)", () => Contour("S (Mises)"));AddButton(resultsBar, "U (magnitude)", () => Contour("U (magnitude)"));
+        AddButton(resultsBar,"Undeformed",()=>{deformationScale=0;if(model!=null)ViewportModelBridge.Deform(viewport,model,0);});
+        var scaleBox = new NumericUpDown { Minimum = -1000, Maximum = 1000, Value = 1, Width = 85, Increment = 1 };
         resultsBar.Children.Add(new TextBlock { Text = "Deformation scale", VerticalAlignment = VerticalAlignment.Center }); resultsBar.Children.Add(scaleBox);
-        AddButton(resultsBar, "Apply scale", () => { deformationScale = (double)(scaleBox.Value ?? 0); Change(v => { v.Deformation(model?.Displacement, deformationScale); v.Fit(); }); });
-        AddButton(resultsBar, "Animate front", () => Animate(1));
-        DockPanel.SetDock(resultsBar, Dock.Top); root.Children.Add(resultsBar);
-        DockPanel.SetDock(progressBar, Dock.Top); root.Children.Add(progressBar);
-        var help = new TextBlock { Text = "Left drag: rotate   •   Middle drag: pan   •   Wheel: zoom   •   Click: element / face / node", Margin = new Thickness(12, 6) };
-        DockPanel.SetDock(help, Dock.Bottom); root.Children.Add(help);
-        DockPanel.SetDock(status, Dock.Bottom); root.Children.Add(status);
-        var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("285,5,*") };
-        var sidebar = new DockPanel();
-        var heading = new TextBlock { Text = "MODEL", Margin = new Thickness(12), FontWeight = global::Avalonia.Media.FontWeight.Bold };
-        DockPanel.SetDock(heading, Dock.Top); sidebar.Children.Add(heading); sidebar.Children.Add(tree);
-        grid.Children.Add(sidebar); var splitter = new GridSplitter { ResizeDirection = GridResizeDirection.Columns };
-        Grid.SetColumn(splitter, 1); grid.Children.Add(splitter); Grid.SetColumn(viewport.Control, 2);
-        ToolTip.SetTip(viewport.Control, "VTK viewport tooltip");
-        viewport.Control.ContextMenu = new ContextMenu { ItemsSource = new[] { Item("Fit model", () => Change(v => v.Fit())), Item("Front view", () => Change(v => v.StandardView(1))) } };
-        grid.Children.Add(viewport.Control);
-        root.Children.Add(grid); Content = root;
-        viewport.Ready += async () => { if (Program.Arguments.Length > 0 && !Program.Arguments[0].StartsWith("--")) await Open(Program.Arguments[0]); };
-        viewport.Picked += Picked;
+        AddButton(resultsBar,"Apply",()=>{deformationScale=(double)(scaleBox.Value??0);if(model!=null)ViewportModelBridge.Deform(viewport,model,deformationScale);});
+        AddButton(resultsBar, "Animate front", () => viewport.SetFrontBackView(true,true));
+        DockPanel.SetDock(resultsBar,Dock.Top);root.Children.Add(resultsBar);
+        DockPanel.SetDock(progressBar,Dock.Top);root.Children.Add(progressBar);
+        var statusPanel=new DockPanel();DockPanel.SetDock(units,Dock.Right);statusPanel.Children.Add(units);statusPanel.Children.Add(status);
+        DockPanel.SetDock(statusPanel,Dock.Bottom);root.Children.Add(statusPanel);
+        var layout = new Grid { RowDefinitions=new RowDefinitions("*,5,170"),ColumnDefinitions = new ColumnDefinitions("270,5,*") };
+        var sidebar = new DockPanel();var heading=new TextBlock{Text="MODEL ? controller tree",Margin=new Thickness(10)};
+        DockPanel.SetDock(heading,Dock.Top);sidebar.Children.Add(heading);sidebar.Children.Add(tree);layout.Children.Add(sidebar);
+        var vertical=new GridSplitter{ResizeDirection=GridResizeDirection.Columns};Grid.SetColumn(vertical,1);layout.Children.Add(vertical);
+        Grid.SetColumn(viewport,2);layout.Children.Add(viewport);
+        var horizontal=new GridSplitter{ResizeDirection=GridResizeDirection.Rows};Grid.SetRow(horizontal,1);Grid.SetColumnSpan(horizontal,3);layout.Children.Add(horizontal);
+        var logPanel=new DockPanel();var label=new TextBlock{Text="MESSAGES / SOLVER LOG",Margin=new Thickness(8,3)};
+        DockPanel.SetDock(label,Dock.Top);logPanel.Children.Add(label);logPanel.Children.Add(messages);Grid.SetRow(logPanel,2);Grid.SetColumnSpan(logPanel,3);layout.Children.Add(logPanel);
+        ToolTip.SetTip(viewport,"VTK viewport tooltip");viewport.ContextMenu=new ContextMenu{ItemsSource=new[]{Item("Fit",()=>viewport.SetZoomToFit(false)),Item("Front",()=>viewport.SetFrontBackView(false,true))}};
+        root.Children.Add(layout);Content=root;
+        viewport.Ready+=async()=>{if(Program.Arguments.Length>0&&!Program.Arguments[0].StartsWith("--"))await Open(Program.Arguments[0]);};
+        viewport.Picked+=Picked;
+        Log("L2 shell ready. Model tree and file persistence use the L1b Controller.");
+    }
+    private void BuildMenu()
+    {
+        MenuItem L(string title,Action action)=>Item(ShellLocale.Text(title),action);
+        menu.ItemsSource=new[]{
+            new MenuItem{Header=ShellLocale.Text("File"),ItemsSource=new[]{L("Open",async()=>await ChooseFile()),L("Save",async()=>await SavePmx()),L("Export",async()=>await SavePng()),L("Exit",Close)}},
+            new MenuItem{Header=ShellLocale.Text("View"),ItemsSource=new[]{L("Front",()=>viewport.SetFrontBackView(false,true)),L("Back",()=>viewport.SetFrontBackView(false,false)),L("Top",()=>viewport.SetTopBottomView(false,true)),L("Bottom",()=>viewport.SetTopBottomView(false,false)),L("Left",()=>viewport.SetLeftRightView(false,true)),L("Right",()=>viewport.SetLeftRightView(false,false)),Item("Isometric",()=>viewport.SetIsometricView(false,true)),L("Zoom to fit",()=>viewport.SetZoomToFit(false)),Item("Show / hide edges",ToggleEdges)}},
+            new MenuItem{Header=ShellLocale.Text("Language"),ItemsSource=new[]{Item("English",()=>{ShellLocale.Chinese=false;BuildMenu();}),Item("????",()=>{ShellLocale.Chinese=true;BuildMenu();})}}
+        };
     }
     private static MenuItem Item(string title, Action action) { var item = new MenuItem { Header = title }; item.Click += (_, _) => action(); return item; }
-    private static void AddButton(StackPanel panel, string text, Action action) { var b = new Button { Content = text }; b.Click += (_, _) => action(); panel.Children.Add(b); }
-    private void Change(Action<Viewport> action)
+    private static void AddButton(StackPanel panel,string text,Action action){var b=new Button{Content=text};b.Click+=(_,_)=>action();panel.Children.Add(b);}
+    private void ToggleEdges()=>viewport.EdgesVisibility=viewport.EdgesVisibility==vtkEdgesVisibility.NoEdges?vtkEdgesVisibility.ElementEdges:vtkEdgesVisibility.NoEdges;
+    private void Change(Action<Viewport> action)=>viewport.Execute(v=>{try{action(v);v.Render();}catch(Exception e){Log(e.ToString());}});
+    internal void Log(string text)
     {
-        try { viewport.Execute(view => { try { action(view); view.Render(); } catch (Exception e) { status.Text=e.Message;Console.Error.WriteLine(e); } }); }
-        catch (Exception e) { status.Text = e.Message; Console.Error.WriteLine(e); }
+        if(closing)return;
+        Console.WriteLine(text);messages.Text=(messages.Text+text+Environment.NewLine);
+        if(messages.Text.Length>250000)messages.Text=messages.Text[^200000..];
+        messages.CaretIndex=messages.Text.Length;
+    }
+    internal void SetStatus(string text)=>status.Text=text;
+    internal void UpdateUnits(UnitSystem unitSystem)=>units.Text="Units: "+unitSystem.UnitSystemType+" "+unitSystem.LengthUnitAbbreviation;
+    internal void RefreshTree()
+    {
+        var controller=mainView.Controller;if(controller?.Model?.Mesh==null)return;
+        var mesh=controller.Model.Mesh;
+        var parts=mesh.Parts.Values.Select(part=>{
+            var row=new StackPanel{Orientation=Orientation.Horizontal,Spacing=4};
+            var visible=new CheckBox{IsChecked=true,Content=part.Name};visible.IsCheckedChanged+=(_,_)=>{if(viewport.ContainsActor(part.Name)){if(visible.IsChecked==true)viewport.ShowActors([part.Name],true);else viewport.HideActors([part.Name],true);}};row.Children.Add(visible);
+            var alpha=new NumericUpDown{Minimum=0,Maximum=1,Increment=.1m,Value=(decimal)(part.Color.A/255d),Width=75};
+            alpha.ValueChanged+=(_,_)=>{if(viewport.ContainsActor(part.Name))viewport.UpdateActor(part.Name,part.Name,System.Drawing.Color.FromArgb((int)((alpha.Value??1)*255),part.Color));};
+            row.Children.Add(alpha);return new TreeViewItem{Header=row};
+        }).ToArray();
+        tree.ItemsSource=new[]{new TreeViewItem{Header=$"Parts ({parts.Length})",IsExpanded=true,ItemsSource=parts},
+            new TreeViewItem{Header="Materials",IsExpanded=true,ItemsSource=controller.Model.Materials.Keys.Select(n=>new TreeViewItem{Header=n}).ToArray()},
+            new TreeViewItem{Header="Sections",ItemsSource=controller.Model.Sections.Keys.Select(n=>new TreeViewItem{Header=n}).ToArray()},
+            new TreeViewItem{Header="Composite layups",ItemsSource=controller.Model.CompositeLayups.Keys.Select(n=>new TreeViewItem{Header=n}).ToArray()}};
+        UpdateUnits(controller.Model.UnitSystem);
     }
     private async Task Open(string path)
     {
-        if (loading) return;
-        loading = true; progressBar.IsVisible = true;
+        if(loading)return;loading=true;mainView.Loading=true;progressBar.IsVisible=true;
         try
         {
-            var progress = new Progress<string>(s => status.Text = s);
-            var loaded = await ViewerModel.OpenAsync(path, progress); model = loaded;
-            Change(v => loaded.Show(v));
-            tree.ItemsSource = loaded.TreeGroups().Select(g => new TreeViewItem { Header = $"{g.Name} ({g.Items.Count()})",
-                IsExpanded = g.Name is "Materials" or "Composite layups" or "Ply / layer display",
-                ItemsSource = g.Items.Select(n => new TreeViewItem { Header = n }).ToArray() }).ToArray();
-            status.Text = $"{Path.GetFileName(path)}  |  {loaded.NodeIds.Length:N0} nodes • {loaded.ElementIds.Length:N0} elements  |  {loaded.PlySource}";
-            Console.WriteLine($"OPEN path={path} nodes={loaded.NodeIds.Length} elements={loaded.ElementIds.Length} plies={loaded.Plies.Count}");
-            int frdFlag=Array.IndexOf(Program.Arguments,"--frd");
-            string frd=frdFlag>=0&&frdFlag+1<Program.Arguments.Length?Program.Arguments[frdFlag+1]:Path.ChangeExtension(path,".frd");
-            if(File.Exists(frd))
+            IProgress<string> progress=new Progress<string>(s=>{status.Text=s;Log(s);});
+            string extension=Path.GetExtension(path).ToLowerInvariant();
+            if(extension==".frd"&&model!=null)
+            {await model.LoadResultsAsync(path,progress);Contour("S (Mises)");}
+            else
             {
-                try { await loaded.LoadResultsAsync(frd,progress); }
-                catch(Exception e){status.Text="Mesh loaded; "+e.Message;Console.Error.WriteLine(e);}
+                var loaded=await Task.Run(()=>{
+                    var controller=new Controller(this);controller.RegenerationWorkDirectory=Path.GetDirectoryName(Path.GetFullPath(path));
+                    Exception? error=null;var previous=CoreHost.FileReadError;CoreHost.FileReadError=e=>error=e;
+                    try
+                    {
+                        if(extension==".pmx")controller.Open(Path.GetFullPath(path));
+                        else if(extension==".inp")
+                        {
+                            var errors=controller.Model.ImportModelFromInpFileForViewing(Path.GetFullPath(path),s=>progress.Report(s),out _);
+                            if(errors?.Count>0)throw new InvalidDataException(string.Join(Environment.NewLine,errors));
+                            controller.ModelChanged=true;
+                        }
+                        else if(extension==".frd")
+                        {var result=FrdFileReader.Read(Path.GetFullPath(path))??throw new InvalidDataException("FRD read failed");controller.Model.SetMesh(result.Mesh);}
+                        else throw new ArgumentException("Expected .pmx, .inp or .frd");
+                        if(error!=null)throw new InvalidDataException("PMX read failed",error);
+                        return new ViewerModel(controller.Model);
+                    }
+                    finally{CoreHost.FileReadError=previous;}
+                });
+                model=loaded;modelPath=path;ViewportModelBridge.Load(viewport,loaded);RefreshTree();
+                Log($"OPEN path={path} nodes={loaded.NodeIds.Length} elements={loaded.ElementIds.Length} controllerCommands={mainView.Controller.GetActiveCommandCount()}");
+                int flag=Array.IndexOf(Program.Arguments,"--frd");
+                string frd=extension==".frd"?path:flag>=0&&flag+1<Program.Arguments.Length?Program.Arguments[flag+1]:Path.ChangeExtension(path,".frd");
+                if(File.Exists(frd))try{await loaded.LoadResultsAsync(frd,progress);}catch(Exception e){Log("Mesh loaded; "+e.Message);}
             }
-            if (Environment.GetEnvironmentVariable("PPM_L2B_EVIDENCE") == "1" && Program.Arguments.Contains("--evidence")) Evidence();
+            status.Text=$"{Path.GetFileName(path)} | {model!.NodeIds.Length:N0} nodes | {model.ElementIds.Length:N0} elements";
+            if((Environment.GetEnvironmentVariable("PPM_L2C_EVIDENCE")=="1"||Environment.GetEnvironmentVariable("PPM_L2B_EVIDENCE")=="1")&&Program.Arguments.Contains("--evidence"))Evidence();
         }
-        catch (Exception e) { status.Text = "Open failed: " + e.Message; Console.Error.WriteLine(e); }
-        finally { loading = false; progressBar.IsVisible = false; }
+        catch(Exception e){Log(e.ToString());status.Text="Open failed: "+e.Message;}
+        finally{loading=false;mainView.Loading=false;progressBar.IsVisible=false;}
     }
     private async Task ChooseFile()
     {
-        var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions { Title = "Open model", AllowMultiple = false,
-            FileTypeFilter = [new FilePickerFileType("PrePoMax / CalculiX") { Patterns = ["*.inp", "*.pmx"] }] });
-        if (files.Count > 0 && files[0].TryGetLocalPath() is { } path) await Open(path);
+        var files=await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions{Title="Open model / results",FileTypeFilter=[new FilePickerFileType("PrePoMax / CalculiX"){Patterns=["*.pmx","*.inp","*.frd"]}]});
+        if(files.Count>0&&files[0].TryGetLocalPath() is {} path)await Open(path);
     }
-    private async Task ChooseResults()
+    private async Task SavePmx()
     {
-        if (model == null || loading) return;
-        var files=await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions {Title="Open FRD results", FileTypeFilter=[new FilePickerFileType("CalculiX results") { Patterns=["*.frd"] }]});
-        if(files.Count==0 || files[0].TryGetLocalPath() is not { } path) return;
-        loading=true;progressBar.IsVisible=true;
-        try { await model.LoadResultsAsync(path,new Progress<string>(s=>status.Text=s)); Contour("S (Mises)"); }
-        catch(Exception e){status.Text=e.Message;Console.Error.WriteLine(e);}
-        finally{loading=false;progressBar.IsVisible=false;}
+        if(model==null||loading)return;
+        var file=await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions{Title="Save full PMX",SuggestedFileName=Path.GetFileNameWithoutExtension(modelPath)+".pmx",DefaultExtension="pmx"});
+        if(file?.TryGetLocalPath() is {} path)await SavePmxTo(path);
     }
-    private void Contour(string field) { if(model?.Contours.ContainsKey(field)==true)Change(v=>model.ShowContour(v,field,deformationScale)); }
-    private void Animate(int standard)
+    private async Task SavePmxTo(string path)
     {
-        if(cameraAnimation?.IsEnabled==true)return;
-        Change(v=>v.AnimateStandardBegin(standard));var start=System.Diagnostics.Stopwatch.StartNew();
-        cameraAnimation=new DispatcherTimer { Interval=TimeSpan.FromMilliseconds(16) };
-        cameraAnimation.Tick+=(_,_)=>{double t=Math.Min(1,start.Elapsed.TotalMilliseconds/500);Change(v=>v.AnimateStandardStep(t));if(t==1)cameraAnimation.Stop();};cameraAnimation.Start();
+        if(model==null||loading)return;loading=true;mainView.Loading=true;progressBar.IsVisible=true;
+        try{await Task.Run(()=>mainView.Controller.SaveToPmx(path));Log("SAVE PMX "+path);status.Text="Saved "+path;}
+        catch(Exception e){Log(e.ToString());status.Text="Save failed: "+e.Message;}
+        finally{loading=false;mainView.Loading=false;progressBar.IsVisible=false;}
     }
+    private void Contour(string field)
+    {if(model?.Contours.ContainsKey(field)==true){ViewportModelBridge.Contour(viewport,model,field,deformationScale);status.Text=$"{field} | step {model.ResultsStep}, increment {model.ResultsIncrement} | range {model.Contours[field].Min():G6}..{model.Contours[field].Max():G6}";}else Log("No "+field+" at a common S/U increment.");}
     private async Task SavePng()
-    {
-        var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions { SuggestedFileName = "view.png", DefaultExtension = "png" });
-        if (file?.TryGetLocalPath() is { } path) Change(v => v.WritePng(path));
-    }
-    private void Highlight() { if (model?.Plies.Count > 0) Change(v => v.Highlight(model.Plies[0].ElementIds)); }
+    {var file=await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions{SuggestedFileName="view.png",DefaultExtension="png"});if(file?.TryGetLocalPath() is {} path)viewport.RenderToPNG(path);}
     private void Picked(PickResult r)
-    {
-        lastPick = r;
-        status.Text = r.Hit != 0 ? $"Element {r.ElementId}  |  VTK local face {r.FaceId}  |  Node {r.NodeId}  |  ({r.X:G5}, {r.Y:G5}, {r.Z:G5})" : "No element at pointer";
-        Console.WriteLine($"PICK hit={r.Hit} element={r.ElementId} face={r.FaceId} node={r.NodeId}");
-        if (r.Hit != 0) Change(v => v.Highlight([r.ElementId]));
-    }
+    {lastPick=r;status.Text=r.Hit!=0?$"Element {r.ElementId} | Node {r.NodeId} | Face {r.FaceId} | ({r.X:G5}, {r.Y:G5}, {r.Z:G5})":"No element at pointer";Log($"PICK hit={r.Hit} element={r.ElementId} face={r.FaceId} node={r.NodeId}");}
     // Optional deterministic setup for the external X11 interaction harness.
     private void Evidence()
     {
@@ -151,7 +194,8 @@ public sealed class MainWindow : Window
             var nodes = element.NodeIds.Select(id => mesh.Nodes[id]).Where(n => Math.Abs(n.Z - z) < 1e-8).ToArray();
             double x = nodes.Average(n => n.X), y = nodes.Average(n => n.Y);
             var monitor = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(20) };
-            monitor.Tick += (_, _) =>
+            Closed+=(_,_)=>monitor.Stop();
+            monitor.Tick += async (_, _) =>
             {
                 if (viewport.View is not { } view) { monitor.Stop(); return; }
                 var screen = view.Project(x, y, z);
@@ -160,8 +204,11 @@ public sealed class MainWindow : Window
                     expectedElement = element.Id, world = new[] { x, y, z }, screen, width = viewport.Bounds.Width,
                     height = viewport.Bounds.Height, scale=RenderScaling, lastPick, runtime = Environment.Version.ToString(),
                     origin=viewport.Control.TranslatePoint(new Point(0,0),this),
-                    pumpCount=viewport is VtkMaxView native ? native.PumpCount : 0,
-                    focus=viewport.HasViewportFocus
+                    pumpCount=viewport.PumpCount,
+                    focus=viewport.HasViewportFocus, status=status.Text, log=messages.Text, actors=viewport.GetVtkMaxActorData().Length,
+                    step=model.ResultsStep,increment=model.ResultsIncrement,time=model.ResultsTime,
+                    fields=model.Contours.ToDictionary(p=>p.Key,p=>new{min=p.Value.Min(),max=p.Value.Max()}),
+                    language=ShellLocale.Chinese?"zh-TW":"en", units=units.Text
                 }, new JsonSerializerOptions { IncludeFields = true }));
                 File.Move(Path.Combine(output,"state.tmp"),Path.Combine(output,"state.json"),true);
                 if (File.Exists(Path.Combine(output, "capture")))
@@ -173,8 +220,12 @@ public sealed class MainWindow : Window
                 {
                     using var command=JsonDocument.Parse(File.ReadAllText(commandPath));File.Delete(commandPath);
                     var c=command.RootElement;string op=c.GetProperty("op").GetString()!;
-                    if(op=="front")Change(v=>v.StandardView(1));
+                    if(op=="front")viewport.SetFrontBackView(false,true);
                     if(op=="contour")Contour(c.GetProperty("field").GetString()!);
+                    if(op=="deform"){deformationScale=c.GetProperty("scale").GetDouble();ViewportModelBridge.Deform(viewport,model,deformationScale);}
+                    if(op=="png")viewport.RenderToPNG(c.GetProperty("path").GetString()!);
+                    if(op=="save"){await SavePmxTo(c.GetProperty("path").GetString()!);File.WriteAllText(Path.Combine(output,"save-done"),"done");}
+                    if(op=="language"){ShellLocale.Chinese=c.GetProperty("chinese").GetBoolean();BuildMenu();}
                     if(op=="tooltip")ToolTip.SetIsOpen(viewport.Control,c.GetProperty("open").GetBoolean());
                     if(op=="menu") {if(c.GetProperty("open").GetBoolean())viewport.Control.ContextMenu!.Open(viewport.Control);else viewport.Control.ContextMenu!.Close();}
                     if(op=="close"){monitor.Stop();Close();}
