@@ -27,10 +27,14 @@ internal static class LinuxAnalysis
         foreach(var arg in new[]{"-n","19",Check(solver),"-i",Path.GetFileNameWithoutExtension(input)})start.ArgumentList.Add(arg);
         foreach(var key in new[]{"OMP_NUM_THREADS","CCX_NPROC_EQUATION_SOLVER","OPENBLAS_NUM_THREADS"})start.Environment[key]=threads.ToString(System.Globalization.CultureInfo.InvariantCulture);
         using var process=Process.Start(start)??throw new IOException("Could not launch ccx_fat.");
+        using var fileLog=new StreamWriter(Path.Combine(start.WorkingDirectory,"solver.log")){AutoFlush=true};
+        fileLog.Write(BuildProvenance.Header);fileLog.WriteLine("solver sha256: "+Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(solver))));
+        fileLog.WriteLine($"command: nice -n 19 {solver} -i {Path.GetFileNameWithoutExtension(input)}; threads={threads}");
+        var writeLock=new object();
         using var registration=cancellation.Register(()=>{try{if(!process.HasExited)process.Kill(entireProcessTree:true);}catch(InvalidOperationException){}});
         log.Report($"SOLVER pid={process.Id} nice=19 threads={threads} path={solver}");
-        async Task Pump(StreamReader reader){while(await reader.ReadLineAsync() is {} line)log.Report(line);}
+        async Task Pump(StreamReader reader){while(await reader.ReadLineAsync() is {} line){lock(writeLock)fileLog.WriteLine(line);log.Report(line);}}
         await Task.WhenAll(Pump(process.StandardOutput),Pump(process.StandardError),process.WaitForExitAsync(cancellation));
-        log.Report("SOLVER exit="+process.ExitCode);return process.ExitCode;
+        fileLog.WriteLine("exit="+process.ExitCode);log.Report("SOLVER exit="+process.ExitCode);return process.ExitCode;
     }
 }
