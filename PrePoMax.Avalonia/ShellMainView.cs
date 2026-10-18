@@ -41,6 +41,23 @@ internal sealed class ShellMainView(MainWindow window,VtkMaxView viewport) : Nul
     public override void SetSelectItem(vtkSelectItem selectItem)=>UI(()=>viewport.SelectItem=selectItem);
     public override void SetQuerySelection(bool querySelection)=>UI(()=>viewport.QuerySelectionInProgress=querySelection);
     public override bool GetQuerySelection()=>viewport.QuerySelectionInProgress;
+    public override double GetSelectionPrecision()=>InvokeIfRequired(viewport.GetSelectionPrecision);
+    public override void GetGeometryPickProperties(double[] point,out int elementId,out int[] edgeNodeIds,out int[] cellFaceNodeIds,string[] selectionPartNames=null!)
+    {
+        var result=InvokeIfRequired(()=>{
+            try {if(selectionPartNames!=null)viewport.SetSelectableActorsFilter(selectionPartNames);
+                viewport.GetGeometryPickProperties(point,out var element,out var edge,out var face);return (element,edge,face);}
+            finally {if(selectionPartNames!=null)viewport.SetSelectableActorsFilter(null);}
+        });elementId=result.element;edgeNodeIds=result.edge;cellFaceNodeIds=result.face;
+    }
+    public override void GetPointAndCellIdsInsideFrustum(double[][] planes,string[] selectionPartNames,out int[] pointIds,out int[] cellIds)
+    {
+        var result=InvokeIfRequired(()=>{
+            try {if(selectionPartNames!=null)viewport.SetSelectableActorsFilter(selectionPartNames);
+                viewport.GetPointAndCellIdsInsideFrustum(planes,out var points,out var cells);return (points,cells);}
+            finally {if(selectionPartNames!=null)viewport.SetSelectableActorsFilter(null);}
+        });pointIds=result.points;cellIds=result.cells;
+    }
     public override void SaveAutomationScreenshot(string fileName,bool transparentBackground,int magnification)=>UI(()=>viewport.RenderToPNG(fileName,transparentBackground,magnification));
     public override void RequestAutomationExit()=>UI(window.Close);
     public override void Clear3D(){if(!Loading)UI(viewport.Clear);}

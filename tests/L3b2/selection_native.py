@@ -7,6 +7,7 @@ vm.vm_destroy.argtypes=[ptr]; vm.vm_render.argtypes=[ptr]
 vm.vm_last_error.restype=c.c_char_p
 vm.vm_add_actor.argtypes=[ptr,i64,i32,c.POINTER(i64),c.POINTER(dbl),i32,c.POINTER(i64),c.POINTER(i32),c.POINTER(i32),i32,c.POINTER(i64)]
 vm.vm_actor_style.argtypes=[ptr,i64,i32,dbl,dbl,dbl,dbl,i32]
+vm.vm_actor_pick_geometry.argtypes=vm.vm_add_actor.argtypes
 vm.vm_frustum_select.argtypes=[ptr,c.POINTER(dbl)]
 vm.vm_selected_ids.argtypes=[ptr,i32,c.POINTER(c.POINTER(i64)),c.POINTER(i32)]
 vm.vm_area_pick.argtypes=[ptr,i32,i32,i32,i32,c.POINTER(dbl)]
@@ -27,6 +28,10 @@ for name in ['DCB','M2a']:
             for cell in cells:off.append(off[-1]+len(cell))
             check(vm.vm_add_actor(view,p['actor'],len(p['nodes']),array(i64,p['nodes']),array(dbl,[x for xyz in p['xyz'] for x in xyz]),len(cells),array(i64,p['elements']),array(i32,p['types']),array(i32,off),off[-1],array(i64,[i for cell in cells for i in cell])))
             check(vm.vm_actor_style(view,p['actor'],int(p['visible']),.65,.78,.89,1,1))
+            if 'visual' in p:
+                g=p['visual'];off=[0]
+                for cell in g['cells']:off.append(off[-1]+len(cell))
+                check(vm.vm_actor_pick_geometry(view,p['actor'],len(g['nodes']),array(i64,g['nodes']),array(dbl,[x for xyz in g['xyz'] for x in xyz]),len(g['cells']),array(i64,g['elements']),array(i32,g['types']),array(i32,off),off[-1],array(i64,[i for cell in g['cells'] for i in cell])))
         check(vm.vm_perspective(view,0));check(vm.vm_set_camera(view,array(dbl,cam['position']),array(dbl,cam['focal']),array(dbl,cam['up']),cam['scale']));check(vm.vm_render(view))
         cases=[]
         for case in data['cases']:
@@ -38,16 +43,19 @@ for name in ['DCB','M2a']:
             check(vm.vm_frustum_select(view,native));ownpoints,owncells=selected(view,1),selected(view,0)
             # Coordinate components at zero use a common scale, so roundoff does not produce an artificial infinite relative error.
             errors=[max(abs(a-b) for a,b in zip(w,n))/max(1,max(map(abs,w)),max(map(abs,n))) for w,n in zip(case['planes'],ownplanes)]
+            def equation(plane):
+                normal=plane[3:];return normal+[-sum(a*b for a,b in zip(plane[:3],normal))]
+            equations=[max(abs(a-b) for a,b in zip(equation(w),equation(n)))/max(1,max(map(abs,equation(w))),max(map(abs,equation(n)))) for w,n in zip(case['planes'],ownplanes)]
             cases.append(dict(name=case['name'],same_planes_ids_equal=exact,points=points,cells=cells,
                 display_ids_equal=ownpoints==case['points'] and owncells==case['cells'],display_points=ownpoints,display_cells=owncells,
-                plane_relative_error=errors,native_planes=ownplanes,windows_planes=case['planes']))
+                plane_relative_error=errors,equation_relative_error=equations,native_planes=ownplanes,windows_planes=case['planes']))
         geometry=data['geometry'];element=i64()
         check(vm.vm_geometry_pick(view,array(dbl,geometry['point']),c.byref(element),1))
         geom=dict(element=element.value,edge=selected(view,3),face=selected(view,4))
         geom['membership_equal']=geom['element']==geometry['element'] and sorted(geom['edge'])==sorted(geometry['edge']) and sorted(geom['face'])==sorted(geometry['face'])
         receipts[name]=dict(cases=cases,geometry=geom,semantic_passed=all(x['same_planes_ids_equal'] for x in cases),display_passed=all(x['display_ids_equal'] for x in cases))
     finally: vm.vm_destroy(view)
-result=dict(passed=all(r['semantic_passed'] for r in receipts.values()),fixtures=receipts,abi=vm.vm_abi_version())
+result=dict(passed=all(r['semantic_passed'] and r['geometry']['membership_equal'] for r in receipts.values()),fixtures=receipts,abi=vm.vm_abi_version())
 (logs/'native-windows-comparison.json').write_text(json.dumps(result,indent=2),encoding='utf-8')
 print(json.dumps({n:dict(semantic=r['semantic_passed'],display=r['display_passed'],geometry=r['geometry']['membership_equal'],counts=[(len(x['points']),len(x['cells'])) for x in r['cases']]) for n,r in receipts.items()}))
 raise SystemExit(0 if result['passed'] else 1)

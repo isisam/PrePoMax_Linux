@@ -21,7 +21,7 @@ internal static class ViewportModelBridge
             for(int i=0;i<cells.Length;i++)offsets[i+1]=offsets[i]+cells[i].Length;
             viewport.Execute(v=>{v.Load(allNodes.Select(id=>(long)id).ToArray(),allNodes.SelectMany(id=>mesh.Nodes[id].Coor).ToArray(),
                 allElements.Select(e=>(long)e.Id).ToArray(),allElements.Select(e=>e.GetVtkCellType()).ToArray(),offsets,cells.SelectMany(c=>c.Select(id=>index[id])).ToArray());
-                v.ActorStyle(0,false,0,0,0);});
+                v.ActorStyle(0,false,0,0,0);v.ActorSelectable(0,false);});
         }
         foreach(var part in mesh.Parts.Values)
         {
@@ -33,6 +33,11 @@ internal static class ViewportModelBridge
             data.Geometry.Cells=new(){Ids=elements.Select(e=>e.Id).ToArray(),Types=elements.Select(e=>e.GetVtkCellType()).ToArray(),
                 CellNodeIds=elements.Select(e=>e.GetVtkNodeIds().Select(id=>map[id]).ToArray()).ToArray()};
             viewport.AddCells(data);
+            if(part.Visualization?.Cells is { Length: >0 })
+            {
+                var pick=new PartExchangeData();mesh.GetVisualizationNodesAndCells(part,out pick.Nodes.Ids,out pick.Nodes.Coor,out pick.Cells.Ids,out pick.Cells.CellNodeIds,out pick.Cells.Types);
+                viewport.SetPickGeometry(part.Name,pick);
+            }
             if(!part.Visible)viewport.HideActors([part.Name],true);
         }
         if(fit)viewport.Standard(0);

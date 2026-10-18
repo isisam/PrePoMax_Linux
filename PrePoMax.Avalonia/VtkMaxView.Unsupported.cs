@@ -8,17 +8,10 @@ public sealed partial class VtkMaxView
 {
     double[][][] IViewport3D.GetStlTriangles(vtkMaxActorData data) => throw Unsupported("GetStlTriangles");
     void IViewport3D.SetAnimationAcceleration(bool animationAcceleration) => throw Unsupported("SetAnimationAcceleration");
-    void IViewport3D.SetSelectableActorsFilter(string[] selectableActors) => throw Unsupported("SetSelectableActorsFilter");
     void IViewport3D.SetNavigationSensitivity(double rotateSensitivity, double zoomSensitivity, bool invertZoom, bool smoothZoom) => throw Unsupported("SetNavigationSensitivity");
     void IViewport3D.SetTrackpadNavigation(bool enabled, bool useWheelFallback, bool twoFingerDragPans, double panSensitivity, bool invertX, bool invertY) => throw Unsupported("SetTrackpadNavigation");
     void IViewport3D.StartBoxZoom() => throw Unsupported("StartBoxZoom");
-    bool IViewport3D.IsBoxSelectionActive { get => throw Unsupported("IsBoxSelectionActive"); }
-    int[][] IViewport3D.GetVisualizationCellEdges(int numOfNodes) => throw Unsupported("GetVisualizationCellEdges");
     void IViewport3D.GetClosestCellsOnActors(double[] point, string[] actorNames, out double[] distances, out double[][] normals) => throw Unsupported("GetClosestCellsOnActors");
-    void IViewport3D.GetGeometryPickProperties(double[] point, out int elementId, out int[] edgeNodeIds, out int[] cellFaceNodeIds) => throw Unsupported("GetGeometryPickProperties");
-    double IViewport3D.GetSelectionPrecision() => throw Unsupported("GetSelectionPrecision");
-    void IViewport3D.SetSelectionDistance(int distanceInPixels) => throw Unsupported("SetSelectionDistance");
-    void IViewport3D.GetPointAndCellIdsInsideFrustum(double[][] planeParameters, out int[] pointIds, out int[] cellIds) => throw Unsupported("GetPointAndCellIdsInsideFrustum");
     void IViewport3D.SetAxisView(bool animate, double[] axis, bool zoomToFit = true) => throw Unsupported("SetAxisView");
     void IViewport3D.SetNormalView(bool animate) => throw Unsupported("SetNormalView");
     void IViewport3D.SetVerticalAxisView(bool animate, double[] axis, bool zoomToFit = true) => throw Unsupported("SetVerticalAxisView");

@@ -32,7 +32,7 @@ public sealed partial class VtkMaxView : UserControl, IViewport3D, IViewportHost
     internal VtkMaxView(IViewportHost host)
     {
         this.host = host; Content = host.Control;
-        host.Ready += () => Ready?.Invoke();
+        host.Ready += () => { Execute(v => v.SelectionMode(SelectBy is not (vtkSelectBy.Off or vtkSelectBy.Widget))); Ready?.Invoke(); };
         host.Picked += ReceivePick;
         DetachedFromVisualTree += (_,_) => animation?.Stop();
     }
@@ -86,6 +86,7 @@ public sealed partial class VtkMaxView : UserControl, IViewport3D, IViewportHost
         var actor=new Actor(this,++nextId,copy); actors.Add(copy.Name,actor);
         Change(v=>{v.AddActor(actor.Id,nodes,coords.SelectMany(p=>p).ToArray(),ids,types,offsets,cells.SelectMany(c=>c.Select(i=>(long)i)).ToArray());
             v.ActorStyle(actor.Id,true,actor.Color.R/255d,actor.Color.G/255d,actor.Color.B/255d,actor.Color.A/255d,edges!=vtkEdgesVisibility.NoEdges);
+            v.ActorSelectable(actor.Id,copy.Pickable && copy.Layer==vtkRendererLayer.Base);
             if(copy.ColorContours && g.Nodes.Values is { } values) ApplyScalars(v,actor,values);});
         return actor;
     }
@@ -120,21 +121,33 @@ public sealed partial class VtkMaxView : UserControl, IViewport3D, IViewportHost
     public bool UserPick {get;set;}=true;
     public bool QuerySelectionInProgress {get;set;}
     public bool ViewAnimationEnabled {get;set;}=true;
-    public vtkSelectBy SelectBy {get;set;}
+    private vtkSelectBy selectBy=vtkSelectBy.Default;
+    public vtkSelectBy SelectBy {get=>selectBy;set {selectBy=value;Execute(v=>v.SelectionMode(value is not (vtkSelectBy.Off or vtkSelectBy.Widget)));}}
     public vtkSelectItem SelectItem {get;set;}=vtkSelectItem.Element;
     public void SetSelectBy(vtkSelectBy selectBy)=>SelectBy=selectBy;
     public vtkEdgesVisibility EdgesVisibility
     {get=>edges;set {if(value==vtkEdgesVisibility.ModelEdges||value==vtkEdgesVisibility.Wireframe)throw Unsupported("EdgesVisibility "+value);edges=value;foreach(var a in actors.Values)Style(a);}}
+    private bool suppressPick;
     public void Pick(int x1,int y1,bool boxSelection,int x2,int y2)
-    {if(boxSelection)throw Unsupported("Box picking");Change(v=>ReceivePick(v.Pick(x1,y1)));}
-    private void ReceivePick(PickResult r)
     {
-        if(!UserPick)return;
-        Picked?.Invoke(r);
+        if(boxSelection){Execute(v=>SendArea(x1,y1,x2,y2,vtkSelectOperation.None));return;}
+        Execute(v=>{suppressPick=true;PickResult result;try {result=v.Pick(x1,y1);}finally {suppressPick=false;}
+            ReceivePick(result,[0,x1,y1,x1,y1,0,0]);});
+    }
+    private void ReceivePick(PickResult r)
+        => ReceivePick(r,null);
+    private void ReceivePick(PickResult r,int[]? gesture)
+    {
+        if(!UserPick||suppressPick||SelectBy==vtkSelectBy.Off)return;
+        var input=gesture??Native.LastGesture;
+        var operation=input[5]!=0?(input[6]!=0?vtkSelectOperation.Intersect:vtkSelectOperation.Subtract):input[6]!=0?vtkSelectOperation.Add:vtkSelectOperation.None;
+        if(input[0]!=0){SendArea(input[1],input[2],input[3],input[4],operation);return;}
+        if(SelectBy==vtkSelectBy.Default)Picked?.Invoke(r);
         var actor=actors.Values.FirstOrDefault(a=>a.Id==r.ActorId);
-        OnMouseLeftButtonUpSelection?.Invoke([r.X,r.Y,r.Z],GetViewPlaneNormal(),[],false,vtkSelectOperation.None,actor==null?[]:[actor.Data.Name]);
+        // vtkControl passes DirectionOfProjection, the negative of ViewPlaneNormal.
+        OnMouseLeftButtonUpSelection?.Invoke(r.Hit==0?null!:[r.X,r.Y,r.Z],GetViewPlaneNormal().Select(x=>-x).ToArray(),null!,false,operation,actor==null?[]:[actor.Data.Name]);
         long id=SelectItem==vtkSelectItem.Node?r.NodeId:r.ElementId;
-        if(r.Hit!=0&&id>=0)Change(v=>v.ActorHighlight(r.ActorId,[id],SelectItem==vtkSelectItem.Node));
+        if(SelectBy==vtkSelectBy.Default&&r.Hit!=0&&id>=0)Change(v=>v.ActorHighlight(r.ActorId,[id],SelectItem==vtkSelectItem.Node));
     }
     public void HighlightActor(string actorName) {var a=actors[actorName];Change(v=>v.ActorHighlight(a.Id,a.Data.Geometry.Cells.Ids.Select(i=>(long)i).ToArray()));}
     public void ClearSelection(bool clearAllMouseSelection=true)=>Change(v=>v.Highlight([]));

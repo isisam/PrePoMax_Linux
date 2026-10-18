@@ -66,6 +66,11 @@ public sealed class Viewport : IDisposable
     }
     public void RemoveActor(long id) => Check(Native.vm_remove_actor(Handle, id));
     public void ActorSelectable(long id, bool selectable) => Check(Native.vm_actor_selectable(Handle, id, selectable ? 1 : 0));
+    public void ActorPickGeometry(long actor,long[] nodes,double[] xyz,long[] elements,int[] types,int[] offsets,long[] conn)
+    {
+        if(xyz.Length!=nodes.Length*3||types.Length!=elements.Length||offsets.Length!=elements.Length+1)throw new ArgumentException("Pick geometry lengths disagree.");
+        Check(Native.vm_actor_pick_geometry(Handle,actor,nodes.Length,nodes,xyz,elements.Length,elements,types,offsets,conn.Length,conn));
+    }
     public void SelectableFilter(long[]? ids)
     {
         // A non-null sentinel distinguishes the empty filter from no filter at the C boundary.
@@ -144,6 +149,7 @@ public sealed class Viewport : IDisposable
 
 internal static class Native
 {
+    [DllImport("vtkmax", CallingConvention=CallingConvention.Cdecl)] internal static extern int vm_actor_pick_geometry(IntPtr view,long actor,int np,long[] nodes,double[] xyz,int nc,long[] elements,int[] types,int[] offsets,int nconn,long[] conn);
     [DllImport("vtkmax", CallingConvention=CallingConvention.Cdecl)] internal static extern int vm_actor_selectable(IntPtr view,long actor,int selectable);
     [DllImport("vtkmax", CallingConvention=CallingConvention.Cdecl)] internal static extern int vm_selectable_filter(IntPtr view,long[]? actors,int count);
     [DllImport("vtkmax", CallingConvention=CallingConvention.Cdecl)] internal static extern int vm_area_pick(IntPtr view,int x1,int y1,int x2,int y2,[Out]double[] planes);

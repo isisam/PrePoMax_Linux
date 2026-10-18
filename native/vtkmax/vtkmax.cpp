@@ -77,6 +77,8 @@ struct actor_state {
     vtkNew<vtkActor> actor;
     vtkNew<vtkStaticCellLocator> locator;
     vtkNew<vtkUnstructuredGrid> surface;
+    vtkNew<vtkUnstructuredGrid> pick_faces;
+    std::vector<vtkIdType> surface_parent;
     vtkNew<vtkCellLocator> surface_locator;
     bool selectable=true;
     std::vector<int64_t> nodes, elements;
@@ -114,9 +116,29 @@ actor_state* find_actor(vm_view* v,int64_t id) {
     require(v,"null view");if(id==0)return v;
     auto it=v->actors.find(id);require(it!=v->actors.end(),"unknown actor ID");return it->second.get();
 }
+void triangulate_surface(actor_state* a) {
+    // Exact AddCellDataToPoly convention from vtkMaxActor, including the
+    // quadratic quad diagonal. Keep original faces separately for edge picking.
+    a->surface->Initialize();a->surface->Allocate(a->pick_faces->GetNumberOfCells()*6);a->surface->SetPoints(a->pick_faces->GetPoints());
+    a->surface->GetPointData()->SetGlobalIds(a->pick_faces->GetPointData()->GetGlobalIds());
+    vtkNew<vtkIdTypeArray> ids;ids->SetName("GlobalElementIds");a->surface_parent.clear();
+    for(vtkIdType i=0;i<a->pick_faces->GetNumberOfCells();++i){auto cell=a->pick_faces->GetCell(i);std::vector<std::vector<int>> triangles;
+        switch(cell->GetCellType()) {
+        case 5:triangles={{0,1,2}};break;
+        case 9:triangles={{0,1,2},{0,2,3}};break;
+        case 22:triangles={{0,3,5},{3,4,5},{3,1,4},{5,4,2}};break;
+        case 23:{double p[3],q[3];cell->GetPoints()->GetPoint(4,p);cell->GetPoints()->GetPoint(6,q);double d1=vtkMath::Distance2BetweenPoints(p,q);
+            cell->GetPoints()->GetPoint(5,p);cell->GetPoints()->GetPoint(7,q);double d2=vtkMath::Distance2BetweenPoints(p,q);
+            triangles=d1<d2?std::vector<std::vector<int>>{{7,0,4},{7,4,6},{7,6,3},{5,4,1},{5,6,4},{5,2,6}}:
+                                          std::vector<std::vector<int>>{{4,7,0},{4,5,7},{4,1,5},{6,5,2},{6,7,5},{6,3,7}};break;}
+        default:break;
+        }
+        for(auto& t:triangles){vtkIdType nodes[3];for(int j=0;j<3;++j)nodes[j]=cell->GetPointId(t[j]);
+            a->surface->InsertNextCell(5,3,nodes);ids->InsertNextValue(static_cast<vtkIdType>(a->pick_faces->GetCellData()->GetGlobalIds()->GetTuple1(i)));a->surface_parent.push_back(i);}
+    }
+    a->surface->GetCellData()->SetGlobalIds(ids);a->surface_locator->SetDataSet(a->surface);a->surface_locator->BuildLocator();
+}
 void build_surface(actor_state* a) {
-    // Keep quadratic faces intact, as vtkControl's visualization grid does;
-    // vtkDataSetSurfaceFilter would tessellate them into linear triangles.
     struct face {std::vector<vtkIdType> ids;int type;int64_t element;int count=1;};
     std::vector<face> faces;std::unordered_map<std::string,size_t> seen;
     for(vtkIdType i=0;i<a->grid->GetNumberOfCells();++i){auto cell=a->grid->GetCell(i);
@@ -130,12 +152,11 @@ void build_surface(actor_state* a) {
             else ++faces[it->second].count;
         }
     }
-    a->surface->Initialize();a->surface->SetPoints(a->grid->GetPoints());
-    a->surface->GetPointData()->SetGlobalIds(a->grid->GetPointData()->GetGlobalIds());
+    a->pick_faces->Initialize();a->pick_faces->Allocate(faces.size());a->pick_faces->SetPoints(a->grid->GetPoints());
+    a->pick_faces->GetPointData()->SetGlobalIds(a->grid->GetPointData()->GetGlobalIds());
     vtkNew<vtkIdTypeArray> ids;ids->SetName("GlobalElementIds");
-    for(auto& f:faces)if(f.count==1){a->surface->InsertNextCell(f.type,f.ids.size(),f.ids.data());ids->InsertNextValue(f.element);}
-    a->surface->GetCellData()->SetGlobalIds(ids);
-    a->surface_locator->SetDataSet(a->surface);a->surface_locator->BuildLocator();
+    for(auto& f:faces)if(f.count==1){a->pick_faces->InsertNextCell(f.type,f.ids.size(),f.ids.data());ids->InsertNextValue(f.element);}
+    a->pick_faces->GetCellData()->SetGlobalIds(ids);triangulate_surface(a);
 }
 int publish_pick(vm_view* v,vm_pick_result* r) {
     r->sequence=v->last.sequence+1;v->last=*r;
@@ -337,7 +358,10 @@ int32_t vm_deformation(vm_view* v,int64_t id,const double* u,int32_t count,doubl
         for(size_t i=0;i<m->original.size();i+=3) {double p[3];
             for(int j=0;j<3;++j){double d=u?u[i+j]:0;require(std::isfinite(d),"nonfinite displacement");p[j]=m->original[i+j]+scale*d;require(std::isfinite(p[j]),"deformation overflow");}
             points->InsertNextPoint(p);}
-        m->grid->SetPoints(points);m->grid->Modified();m->surface->SetPoints(points);m->surface->Modified();return 0;} CATCH
+        m->grid->SetPoints(points);m->grid->Modified();
+        vtkNew<vtkPoints> surface_points;auto ids=m->pick_faces->GetPointData()->GetGlobalIds();
+        for(vtkIdType i=0;ids&&i<ids->GetNumberOfTuples();++i){double p[3];points->GetPoint(m->node_map.at(static_cast<int64_t>(ids->GetTuple1(i))),p);surface_points->InsertNextPoint(p);}
+        m->pick_faces->SetPoints(surface_points);m->surface->SetPoints(surface_points);m->surface->Modified();return 0;} CATCH
 }
 int32_t vm_selection_handler(vm_view* v,vm_selection_callback cb,void* user) {TRY {VIEW;v->callback=cb;v->callback_user=user;return 0;} CATCH}
 int32_t vm_contour_bands(vm_view* v,int32_t bands) {
@@ -544,6 +568,21 @@ int32_t vm_last_pick(vm_view* v,vm_pick_result* r) {TRY {VIEW;require(r,"null pi
 int32_t vm_actor_selectable(vm_view* v,int64_t id,int32_t enabled) {
     TRY {find_actor(v,id)->selectable=enabled!=0;return 0;} CATCH
 }
+int32_t vm_actor_pick_geometry(vm_view* v,int64_t id,int32_t np,const int64_t* nodes,const double* xyz,
+    int32_t nc,const int64_t* elements,const int32_t* types,const int32_t* offsets,int32_t nconn,const int64_t* conn) {
+    TRY {auto a=find_actor(v,id);require(np>0&&nc>0&&nconn>0&&nodes&&xyz&&elements&&types&&offsets&&conn,"invalid pick geometry arrays");
+        require(offsets[0]==0&&offsets[nc]==nconn,"invalid pick geometry offsets");
+        vtkNew<vtkPoints> points;vtkNew<vtkUnstructuredGrid> faces;
+        vtkNew<vtkIdTypeArray> nids;vtkNew<vtkIdTypeArray> eids;
+        for(int i=0;i<np;++i){require(a->node_map.count(nodes[i])&&finite3(xyz+3*i),"invalid pick geometry node");
+            points->InsertNextPoint(xyz+3*i);nids->InsertNextValue(nodes[i]);}
+        faces->SetPoints(points);faces->GetPointData()->SetGlobalIds(nids);
+        for(int i=0;i<nc;++i){int type=types[i];require(type==5||type==9||type==22||type==23,"unsupported pick face type");
+            int count=nodes_per_cell(type);require(a->element_map.count(elements[i])&&offsets[i]>=0&&offsets[i+1]<=nconn&&offsets[i+1]-offsets[i]==count,"invalid pick face");
+            std::vector<vtkIdType> ids(count);for(int j=0;j<count;++j){auto p=conn[offsets[i]+j];require(p>=0&&p<np,"pick geometry connectivity out of range");ids[j]=p;}
+            faces->InsertNextCell(type,count,ids.data());eids->InsertNextValue(elements[i]);}
+        faces->GetCellData()->SetGlobalIds(eids);a->pick_faces->ShallowCopy(faces);triangulate_surface(a);return 0;} CATCH
+}
 int32_t vm_selectable_filter(vm_view* v,const int64_t* ids,int32_t count) {
     TRY {VIEW;require(count>=0 && (count==0||ids),"invalid filter");
         std::unordered_set<int64_t> filter;
@@ -588,7 +627,8 @@ int32_t vm_frustum_select(vm_view* v,const double* data) {
         };
         extract(0,v);for(auto& pair:v->actors)extract(pair.first,pair.second.get());
         v->selected[0].assign(cell_ids.begin(),cell_ids.end());v->selected[1].assign(point_ids.begin(),point_ids.end());
-        for(int a=0;a<2;++a)std::sort(v->selected[a].begin(),v->selected[a].end());return 0;} CATCH
+        for(int a=0;a<2;++a)std::sort(v->selected[a].begin(),v->selected[a].end());
+        return 0;} CATCH
 }
 int32_t vm_selected_ids(vm_view* v,int32_t association,const int64_t** ids,int32_t* count) {
     TRY {VIEW;require(association>=0&&association<5&&ids&&count,"invalid selected IDs output");
@@ -606,12 +646,13 @@ int32_t vm_box_selection_active(vm_view* v) {TRY {VIEW;return v->box_active?1:0;
 int32_t vm_last_gesture(vm_view* v,int32_t* values) {TRY {VIEW;require(values,"null gesture output");std::copy_n(v->gesture,7,values);return 0;} CATCH}
 int32_t vm_geometry_pick(vm_view* v,const double* point,int64_t* element,int32_t unlimited) {
     TRY {VIEW;require(point&&element&&finite3(point),"invalid geometry pick");*element=-1;v->selected[3].clear();v->selected[4].clear();
-        double best=VTK_DOUBLE_MAX,closest[3]={};vtkCell* chosen=nullptr;vtkDataSet* dataset=nullptr;
+        double best=VTK_DOUBLE_MAX,closest[3]={};vtkCell* chosen=nullptr;vtkCell* original_face=nullptr;vtkDataSet* dataset=nullptr;
         auto find=[&](int64_t id,actor_state* a){if(!selectable(v,id,a)||a->elements.empty())return;
             a->surface_locator->BuildLocator();
             double hit[3],d;vtkIdType cell_id;int sub;
             a->surface_locator->FindClosestPoint(point,hit,cell_id,sub,d);
             if(d>=0&&d<best){best=d;std::copy_n(hit,3,closest);dataset=a->surface;chosen=dataset->GetCell(cell_id);
+                original_face=a->pick_faces->GetCell(a->surface_parent[cell_id]);
                 *element=static_cast<int64_t>(dataset->GetCellData()->GetGlobalIds()->GetTuple1(cell_id));}
         };
         find(0,v);for(auto& pair:v->actors){find(pair.first,pair.second.get());if(best==0)break;}
@@ -623,10 +664,10 @@ int32_t vm_geometry_pick(vm_view* v,const double* point,int64_t* element,int32_t
         double edge_best=VTK_DOUBLE_MAX;std::vector<vtkIdType> edge_ids;
         auto segment=[](const double* p,const double* a,const double* b){double ab[3],ap[3];vtkMath::Subtract(b,a,ab);vtkMath::Subtract(p,a,ap);
             double n=vtkMath::Dot(ab,ab),t=n>0?std::clamp(vtkMath::Dot(ap,ab)/n,0.0,1.0):0;double q[3];for(int k=0;k<3;++k)q[k]=a[k]+t*ab[k];return vtkMath::Distance2BetweenPoints(p,q);};
-        for(int e=0;e<chosen->GetNumberOfEdges();++e){auto edge=chosen->GetEdge(e);std::vector<vtkIdType> ids;
+        for(int e=0;e<original_face->GetNumberOfEdges();++e){auto edge=original_face->GetEdge(e);std::vector<vtkIdType> ids;
             if(edge->GetNumberOfPoints()==3)ids={edge->GetPointId(0),edge->GetPointId(2),edge->GetPointId(1)};
             else ids={edge->GetPointId(0),edge->GetPointId(1)};
-            double d=VTK_DOUBLE_MAX;for(size_t j=1;j<ids.size();++j)d=std::min(d,segment(closest,dataset->GetPoint(ids[j-1]),dataset->GetPoint(ids[j])));
+            double d=VTK_DOUBLE_MAX;for(size_t j=1;j<ids.size();++j){double p[3],q[3];dataset->GetPoint(ids[j-1],p);dataset->GetPoint(ids[j],q);d=std::min(d,segment(closest,p,q));}
             if(d<edge_best){edge_best=d;edge_ids=ids;}
         }
         if(!edge_ids.empty()&&vtkMath::Distance2BetweenPoints(closest,dataset->GetPoint(edge_ids.back()))<vtkMath::Distance2BetweenPoints(closest,dataset->GetPoint(edge_ids.front())))std::reverse(edge_ids.begin(),edge_ids.end());

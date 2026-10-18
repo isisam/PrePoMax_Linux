@@ -33,9 +33,10 @@ static class SelectionWindows
                 var parts = new List<object>(); long actor = 0;
                 foreach(var p in c.Model.Mesh.Parts.Values)
                 {
-                    view.AddCells(c.GetModelPartActorData(c.Model.Mesh,p,vtkRendererLayer.Base));
+                    var visual=c.GetModelPartActorData(c.Model.Mesh,p,vtkRendererLayer.Base);view.AddCells(visual);
                     var g = c.GetVolumeGridData(p.Name,-1);
-                    parts.Add(new { actor = ++actor, name=p.Name, visible=p.Visible, nodes=g.Nodes.Ids, xyz=g.Nodes.Coor, elements=g.Cells.Ids, types=g.Cells.Types, cells=g.Cells.CellNodeIds });
+                    parts.Add(new { actor = ++actor, name=p.Name, visible=p.Visible, nodes=g.Nodes.Ids, xyz=g.Nodes.Coor, elements=g.Cells.Ids, types=g.Cells.Types, cells=g.Cells.CellNodeIds,
+                        visual=new {nodes=visual.Geometry.Nodes.Ids,xyz=visual.Geometry.Nodes.Coor,elements=visual.Geometry.Cells.Ids,types=visual.Geometry.Cells.Types,cells=visual.Geometry.Cells.CellNodeIds} });
                     if(!p.Visible)view.HideActors(new[]{p.Name},true);
                 }
                 var bounds=view.GetBoundingBox();

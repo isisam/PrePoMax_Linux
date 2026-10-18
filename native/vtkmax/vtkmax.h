@@ -107,6 +107,11 @@ VM_API int32_t vm_last_pick(vm_view* v, vm_pick_result* result);
  * unselectable are always excluded (overlays/backing grids).
  */
 VM_API int32_t vm_actor_selectable(vm_view* v, int64_t actor_id, int32_t selectable);
+/* Windows visualization faces, before vtkMaxActor's triangle decomposition.
+ * Element IDs may repeat per face; volume connectivity remains unchanged. */
+VM_API int32_t vm_actor_pick_geometry(vm_view* v, int64_t actor_id, int32_t np, const int64_t* node_ids,
+    const double* xyz, int32_t nc, const int64_t* element_ids, const int32_t* types,
+    const int32_t* offsets, int32_t nconn, const int64_t* connectivity);
 VM_API int32_t vm_selectable_filter(vm_view* v, const int64_t* actors, int32_t count);
 VM_API int32_t vm_area_pick(vm_view* v, int32_t x1, int32_t y1, int32_t x2, int32_t y2, double* planes36);
 VM_API int32_t vm_frustum_select(vm_view* v, const double* planes36);
