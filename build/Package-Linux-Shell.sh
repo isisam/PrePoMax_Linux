@@ -4,6 +4,7 @@ set -euo pipefail
 repo=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 out=${1:-"$HOME/ppm-l2c"}
 delivery=${2:-"$repo/../logs/L2c/packages"}
+version=${PPM_PACKAGE_VERSION:-0.2.1}
 vtk=${VTKMAX_PRIVATE_ROOT:-"$HOME/ppm-l2b-vtk"}
 sysroot=${VTKMAX_SYSROOT:-"$HOME/ppm-l2b-jammy"}
 release=${PPM_CCX_RELEASE_SOURCE:-"$repo/../ccx_fat_win64_v1.1_source.zip"}
@@ -25,15 +26,15 @@ tar -czf "$delivery/prepomax-rcm-source.tar.gz" -C "$source_stage" .
 app=$(readlink -f "$out/app")
 tar -czf "$delivery/prepomax-rcm-linux-x64.tar.gz" -C "$(dirname "$app")" app
 rsync -a "$out/app/" "$deb_stage/opt/prepomax-rcm/"
-cat > "$deb_stage/DEBIAN/control" <<'EOF'
+cat > "$deb_stage/DEBIAN/control" <<EOF
 Package: prepomax-rcm
-Version: 0.2.1
+Version: $version
 Architecture: amd64
 Maintainer: PrePoMax-RCM contributors (RCM Lab, NCKU)
 Section: science
 Priority: optional
 Depends: libc6 (>= 2.35), libstdc++6, libgcc-s1, libx11-6, libxext6, libxrender1, libxi6, libice6, libsm6, libxcb1, libfontconfig1, libgl1, libegl1, libglx0, libxrandr2, libxcursor1, libxfixes3, libicu70 | libicu72 | libicu74, libssl3 | libssl3t64, zlib1g, libgfortran5, fonts-noto-cjk
-Description: PrePoMax Linux L2 Avalonia shell
+Description: PrePoMax Linux Avalonia shell
  Controller-backed PMX/INP/FRD shell and release-source Linux ccx_fat.
  ABI 0.2 is unstable; native GPU acceptance pending.
 EOF
@@ -44,7 +45,7 @@ EOF
 chmod 755 "$deb_stage/usr/bin/prepomax-rcm"
 cp "$out/app/prepomax-rcm.desktop" "$deb_stage/usr/share/applications/"
 cp "$out/app/CORRESPONDING-SOURCE.txt" "$deb_stage/usr/share/doc/prepomax-rcm/"
-nice -n 19 dpkg-deb -Zgzip --root-owner-group --build "$deb_stage" "$delivery/prepomax-rcm_0.2.1_amd64.deb"
+nice -n 19 dpkg-deb -Zgzip --root-owner-group --build "$deb_stage" "$delivery/prepomax-rcm_${version}_amd64.deb"
 ldd "$out/app/libvtkmax.so.0.2.0" > "$out/ldd.txt"
 if grep -Ei 'libvtk|libmpi|open-rte|open-pal|libtbb|libpython|libQt' "$out/ldd.txt"; then echo 'Forbidden private VTK dependency'; exit 1; fi
 nm -D --defined-only "$out/app/libvtkmax.so.0.2.0" > "$out/exports.txt"
