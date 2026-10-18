@@ -1,8 +1,11 @@
+#PrePoMax Python Script
+# PrePoMax.com --script Test_Model_Composite_Layup_CommandPersistence.py -g No -x Yes
+#Expected process exit code 0.
 # Regression: command targets must survive the same serialization used by PMX/history.
 import clr
 from System import Array, Object, String
 from System.IO import MemoryStream
-from System.Runtime.Serialization.Formatters.Binary import BinaryFormatter
+from CaeGlobals import LegacyFormatter
 from PrePoMax import Controller
 from PrePoMax.Python.Journal import PythonJournalWriter
 
@@ -14,7 +17,9 @@ expected = writer.GetText()
 assert "remove('EditedCopy')" in expected
 for iteration in range(3):
     stream = MemoryStream()
-    formatter = BinaryFormatter()
+    # Match the actual L1b PMX formatter: its binder resolves legacy command
+    # identities after implementation types moved to PrePoMax.Core.
+    formatter = LegacyFormatter.Create()
     formatter.Serialize(stream, command)
     stream.Position = 0
     command = formatter.Deserialize(stream)
@@ -26,3 +31,4 @@ for iteration in range(3):
     assert command.Name == 'Remove composite layup'
     assert command.GetCommandString().endswith('Remove composite layup: EditedCopy')
 print('PASS remove-composite-layup target survives three PMX-style serialization round trips')
+print('TEST PASSED')
