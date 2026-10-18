@@ -47,10 +47,11 @@ public sealed class EntityEditorWindow : Window
             MaterialDescription.Text = ((CaeModel.Material)material.Draft).Description;
             MaterialTemperature.IsChecked = material.TemperatureDependent;
             MaterialName.TextChanged += (_, _) => { if (!preparing) dirty = true; };
-            MaterialDescription.TextChanged += (_, _) => { if (!preparing) { dirty = true; Session.MarkChanged(); } };
+            string descriptionText = MaterialDescription.Text ?? "";
+            MaterialDescription.TextChanged += (_, _) => { var value = MaterialDescription.Text ?? ""; if (!preparing && value != descriptionText) { dirty = true; Session.MarkChanged(); } descriptionText = value; };
             MaterialTemperature.IsCheckedChanged += (_, _) =>
             {
-                if (preparing) return;
+                if (preparing || material.TemperatureDependent == (MaterialTemperature.IsChecked == true)) return;
                 if (!Flush()) { preparing = true; MaterialTemperature.IsChecked = material.TemperatureDependent; preparing = false; return; }
                 material.TemperatureDependent = MaterialTemperature.IsChecked == true; dirty = true; Session.MarkChanged(); ShowPage();
             };

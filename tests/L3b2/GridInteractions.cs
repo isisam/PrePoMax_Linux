@@ -156,6 +156,33 @@ public sealed class GridTestApp : Application
                 Check(controller.GetStep("ControlsStep").StepControls.Parameters.OfType<TimeIncrementationStepControlParameter>().Single().I0 == 8, "edited step-control value persisted");
                 stepEditor.PageSelector.SelectedIndex = 4; stepEditor.Buttons["Remove step control"].RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                 Check(stepSession.Pages.Count == 4, "remove step control through real control"); stepEditor.Close();
+                // Regression gates requested by Lota: no-op commands, step apply rules and model properties.
+                var unchanged = new EntityEditorWindow(new StepFormSession(controller, controller.GetStep("ControlsStep"))); unchanged.Show();
+                commands = controller.GetActiveCommandCount(); unchanged.Buttons["OK"].RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                await Task.Delay(30); Check(controller.GetActiveCommandCount() == commands, "unchanged step OK adds no command");
+                var unitController = new Controller(new NullMainView()); unitController.New();
+                Check(ModelPropertiesWindow.NeedsSelection(unitController), "undefined model needs properties selection");
+                var dialog = new ModelPropertiesWindow(unitController); dialog.Show();
+                commands = unitController.GetActiveCommandCount();
+                Check(ModelPropertiesWindow.NeedsSelection(unitController) && unitController.GetActiveCommandCount() == commands, "interactive properties opening assigns no defaults");
+                dialog.ModelSpace.SelectedItem = ModelSpaceEnum.ThreeD; dialog.UnitSystem.SelectedItem = UnitSystemType.MM_TON_S_C;
+                dialog.Accept.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                Check(!ModelPropertiesWindow.NeedsSelection(unitController) && unitController.Model.UnitSystem.UnitSystemType == UnitSystemType.MM_TON_S_C, "interactive properties routed OK publishes selection");
+                unitController.New(); ModelPropertiesWindow.SetNonInteractive(unitController);
+                Check(unitController.Model.Properties.ModelSpace == ModelSpaceEnum.ThreeD && unitController.Model.UnitSystem.UnitSystemType == UnitSystemType.UNIT_LESS, "noninteractive undefined defaults exactly 3D and UNIT_LESS");
+                unitController.SetNewModelPropertiesCommand(ModelSpaceEnum.PlaneStress, UnitSystemType.MM_TON_S_C);
+                commands = unitController.GetActiveCommandCount(); ModelPropertiesWindow.SetNonInteractive(unitController);
+                Check(unitController.GetActiveCommandCount() == commands && unitController.Model.Properties.ModelSpace == ModelSpaceEnum.PlaneStress, "noninteractive defined properties are preserved without command");
+                var buckle = new BuckleStep("InvalidBuckle") { Accuracy = double.NaN };
+                var bad = StepFormSession.Create(unitController, buckle); var badEditor = new EntityEditorWindow(bad); badEditor.Show();
+                commands = unitController.GetActiveCommandCount(); badEditor.Buttons["Apply"].RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                Check(badEditor.Error.Text == "The accuracy of the buckle step must be a positive finite number." && unitController.GetActiveCommandCount() == commands, "buckle create validates before command"); badEditor.Close();
+                unitController.AddStepCommand(buckle, false);
+                var badEdit = new EntityEditorWindow(new StepFormSession(unitController, unitController.GetStep(buckle.Name))); badEdit.Show();
+                commands = unitController.GetActiveCommandCount(); badEdit.Buttons["OK"].RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                Check(unitController.GetActiveCommandCount() == commands, "unchanged legacy buckle skips value validation");
+                bad = new StepFormSession(unitController, unitController.GetStep(buckle.Name)); bad.MarkChanged();
+                try { bad.Apply(); Check(false, "changed invalid buckle rejected"); } catch (CaeException e) { Check(e.Message.Contains("positive finite"), "changed step validates values"); }
                 File.WriteAllText(GridInteractions.Output, JsonSerializer.Serialize(new { passed = true, checks, real_controls = true, entity_acceptance = false }, new JsonSerializerOptions { WriteIndented = true }));
             }
             catch (Exception error) { File.WriteAllText(GridInteractions.Output, JsonSerializer.Serialize(new { passed = false, checks, error = error.ToString() })); Environment.ExitCode = 1; }

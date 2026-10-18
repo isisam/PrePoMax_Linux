@@ -18,7 +18,9 @@ public sealed class StepFormSession : EntityFormSession
         " They should only be used by those users who know what they are doing and are expert in the field.";
     public override IReadOnlyList<FormPage> Pages => new[] { new FormPage(step.GetType().Name, View) }.Concat(controls.Select(v => new FormPage(v.Name, v))).ToArray();
     public static readonly string[] ControlTypes = ["Reset", "Time Incrementation", "Field", "Contact"];
-    public StepFormSession(Controller c, Step? source = null) : base(c, source?.Name)
+    public StepFormSession(Controller c, Step? source = null) : this(c, source, false) { }
+    public static StepFormSession Create(Controller c, Step template) => new(c, template, true);
+    private StepFormSession(Controller c, Step? source, bool create) : base(c, create ? null : source?.Name)
     {
         step = source?.DeepClone() ?? new StaticStep(c.GetStepNames().GetNextNumberedKey("Step"));
         View = step switch {

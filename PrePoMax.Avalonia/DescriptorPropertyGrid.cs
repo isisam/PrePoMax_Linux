@@ -84,6 +84,7 @@ public sealed class DescriptorPropertyGrid : UserControl
                 object? previous = p.GetValue(owner);
                 try
                 {
+                    if (Equals(previous, newValue)) { errors.Remove(key); error.Text = ""; return true; }
                     p.SetValue(owner, newValue);
                     errors.Remove(key); error.Text = "";
                     PropertyChanged?.Invoke(p.Name);
