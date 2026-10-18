@@ -78,7 +78,7 @@ public sealed partial class MainWindow : Window, IMainView
     {
         MenuItem L(string title,Action action)=>Item(ShellLocale.Text(title),action);
         menu.ItemsSource=new[]{
-            new MenuItem{Header=ShellLocale.Text("File"),ItemsSource=new[]{L("Open",async()=>await ChooseFile()),L("Save",async()=>await SavePmx()),L("Export",async()=>await SavePng()),L("Exit",Close)}},
+            new MenuItem{Header=ShellLocale.Text("File"),ItemsSource=new[]{L("Open",async()=>await ChooseFile()),L("Save",async()=>await SavePmx()),Item("Export INP",async()=>await ExportInp()),L("Export",async()=>await SavePng()),L("Exit",Close)}},
             new MenuItem{Header=ShellLocale.Text("View"),ItemsSource=new[]{L("Front",()=>viewport.SetFrontBackView(false,true)),L("Back",()=>viewport.SetFrontBackView(false,false)),L("Top",()=>viewport.SetTopBottomView(false,true)),L("Bottom",()=>viewport.SetTopBottomView(false,false)),L("Left",()=>viewport.SetLeftRightView(false,true)),L("Right",()=>viewport.SetLeftRightView(false,false)),Item("Isometric",()=>viewport.SetIsometricView(false,true)),L("Zoom to fit",()=>viewport.SetZoomToFit(false)),Item("Show / hide edges",ToggleEdges)}},
             new MenuItem{Header=ShellLocale.Text("Language"),ItemsSource=new[]{Item("English",()=>{ShellLocale.Chinese=false;BuildMenu();}),Item("\u7e41\u9ad4\u4e2d\u6587",()=>{ShellLocale.Chinese=true;BuildMenu();})}}
         };
@@ -164,6 +164,16 @@ public sealed partial class MainWindow : Window, IMainView
         catch(Exception e){Log(e.ToString());status.Text="Save failed: "+e.Message;}
         finally{loading=false;mainView.Loading=false;progressBar.IsVisible=false;}
     }
+    private async Task ExportInp()
+    {
+        if (model == null || loading) return;
+        var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions { Title = "Export CalculiX input", SuggestedFileName = Path.GetFileNameWithoutExtension(modelPath) + ".inp", DefaultExtension = "inp" });
+        if (file?.TryGetLocalPath() is { } path) ExportInpTo(path);
+    }
+    private void ExportInpTo(string path)
+    {
+        mainView.Controller.ExportToCalculix(path); Log("EXPORT INP " + path); SetStatus("Exported " + path);
+    }
     private void Contour(string field)
     {if(model?.Contours.ContainsKey(field)==true){ViewportModelBridge.Contour(viewport,model,field,deformationScale);status.Text=$"{field} | step {model.ResultsStep}, increment {model.ResultsIncrement} | range {model.Contours[field].Min():G6}..{model.Contours[field].Max():G6}";}else Log("No "+field+" at a common S/U increment.");}
     private async Task SavePng()
@@ -204,7 +214,7 @@ public sealed partial class MainWindow : Window, IMainView
                     focus=viewport.HasViewportFocus, status=status.Text, log=messages.Text, actors=viewport.GetVtkMaxActorData().Length,
                     nodes=model.NodeIds.Length,elements=model.ElementIds.Length,controllerNodes=mainView.Controller.Model.Mesh?.Nodes.Count??0,step=model.ResultsStep,increment=model.ResultsIncrement,time=model.ResultsTime,
                     fields=model.Contours.ToDictionary(p=>p.Key,p=>new{min=p.Value.Min(),max=p.Value.Max()}),
-                    language=ShellLocale.Chinese?"zh-TW":"en", units=units.Text, tree=TreeEvidenceState()
+                    language=ShellLocale.Chinese?"zh-TW":"en", units=units.Text, tree=TreeEvidenceState(), form=FormsEvidenceState()
                 }, new JsonSerializerOptions { IncludeFields = true }));
                 File.Move(Path.Combine(output,"state.tmp"),Path.Combine(output,"state.json"),true);
                 if (File.Exists(Path.Combine(output, "capture")))
@@ -217,6 +227,7 @@ public sealed partial class MainWindow : Window, IMainView
                     using var command=JsonDocument.Parse(File.ReadAllText(commandPath));File.Delete(commandPath);
                     var c=command.RootElement;string op=c.GetProperty("op").GetString()!;
                     if(op.StartsWith("tree-"))TreeEvidenceCommand(op,c);
+                    if(op.StartsWith("form-"))FormsEvidenceCommand(op,c);
                     if(op=="front")viewport.SetFrontBackView(false,true);
                     if(op=="contour")Contour(c.GetProperty("field").GetString()!);
                     if(op=="deform"){deformationScale=c.GetProperty("scale").GetDouble();ViewportModelBridge.Deform(viewport,model,deformationScale);}

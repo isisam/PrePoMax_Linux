@@ -37,10 +37,12 @@ public sealed class DescriptorPropertyGrid : UserControl
 
     public static PropertyDescriptor[] Properties(object value) => Ordered(TypeDescriptor.GetProperties(value).Cast<PropertyDescriptor>());
     private static PropertyDescriptor[] Ordered(IEnumerable<PropertyDescriptor> properties) => properties.Where(p => p.IsBrowsable)
-        // Windows sorts the raw category/display strings (including the upstream ordering tabs).
-        // Ordinal tabs first is essential: linguistic collation ignores control characters.
-        .OrderBy(p => p.Category, StringComparer.Ordinal).ThenBy(p => p.DisplayName, StringComparer.Ordinal).ToArray();
-    public static string Display(string value) => value.Replace("\t", "");
+        // Upstream uses both tabs and zero-width spaces as ordering prefixes.
+        // Windows' grid puts the longer prefix first; ordinal sorting reverses it.
+        .OrderByDescending(p => PrefixLength(p.Category)).ThenBy(p => Display(p.Category), StringComparer.CurrentCulture)
+        .ThenByDescending(p => PrefixLength(p.DisplayName)).ThenBy(p => Display(p.DisplayName), StringComparer.CurrentCulture).ToArray();
+    private static int PrefixLength(string value) => value.TakeWhile(c => c is '\t' or '\u200b').Count();
+    public static string Display(string value) => value.Replace("\t", "").Replace("\u200b", "");
     public bool CommitPending()
     {
         foreach (var commit in commits.Values.ToArray()) if (!commit()) return false;
@@ -106,6 +108,21 @@ public sealed class DescriptorPropertyGrid : UserControl
                 button.Click += async (_, _) => { var result = await RegionEditor(owner, p); if (result != null) Set(result); };
                 editor = button;
             }
+            else if (kind == PropertyEditorKind.Color && !p.IsReadOnly && p.Converter.CanConvertFrom(ctx, typeof(string)))
+                editor = MakeText();
+            else if (kind == PropertyEditorKind.Flags && p.PropertyType.IsEnum && !p.IsReadOnly)
+            {
+                var choices = new StackPanel();
+                long bits = Convert.ToInt64(value);
+                foreach (object option in p.Converter.GetStandardValues(ctx)?.Cast<object>() ?? Enum.GetValues(p.PropertyType).Cast<object>())
+                {
+                    long mask = Convert.ToInt64(option);
+                    var check = new CheckBox { Content = Format(option), IsChecked = mask == 0 ? bits == 0 : (bits & mask) == mask };
+                    check.IsCheckedChanged += (_, _) => { if (!rebuilding) { long current = Convert.ToInt64(p.GetValue(owner)); Set(Enum.ToObject(p.PropertyType, check.IsChecked == true ? current | mask : current & ~mask)); } };
+                    choices.Children.Add(check);
+                }
+                editor = new Expander { Header = Format(value), Content = choices };
+            }
             else if (kind != PropertyEditorKind.Default)
                 editor = new TextBox { Text = "unsupported (" + kind + "): " + Format(value), IsReadOnly = true };
             else if (p.IsReadOnly)
@@ -148,7 +165,7 @@ public sealed class DescriptorPropertyGrid : UserControl
                 }
                 commits[key] = Commit;
                 text.LostFocus += (_, _) => { if (!rebuilding) Commit(); };
-                text.KeyDown += (_, e) => { if (e.Key == Key.Enter) { Commit(); e.Handled = true; } };
+                text.KeyDown += (_, e) => { if (e.Key == Key.Enter) { if (text.Text == accepted) { errors.Remove(key); error.Text = ""; } Commit(); e.Handled = true; } };
                 text.TextChanged += (_, _) => { if (!restoring && text.Text != accepted) { errors.Remove(key); error.Text = ""; } };
                 return text;
             }

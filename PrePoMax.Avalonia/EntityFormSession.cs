@@ -64,8 +64,8 @@ public sealed class MaterialFormSession : EntityFormSession
         {
             "Density" => new Density(new double[][] { [0, 0] }),
             "Elastic" => new Elastic(new double[][] { [0, 0, 0] }),
-            "Engineering Constants" => new ElasticEngineeringConstants(new double[][] { [1, 1, 1, .3, .3, .3, 1, 1, 1, 0] }),
-            "Lamina" => new ElasticLamina(new double[][] { [1, 1, .3, 1, 1, 1, 0] }),
+            "Engineering Constants" => new ElasticEngineeringConstants(new double[][] { new double[ElasticEngineeringConstants.NumberOfValues] }),
+            "Lamina" => new ElasticLamina(new double[][] { new double[ElasticLamina.NumberOfValues] }),
             "Elastic with density" => new ElasticWithDensity(0, 0, 0),
             "Plastic" => new Plastic(new double[][] { [0, 0, 0] }),
             "Thermal expansion" => new ThermalExpansion(new double[][] { [0, 0] }),
@@ -77,6 +77,7 @@ public sealed class MaterialFormSession : EntityFormSession
             "Fatigue CZM pre-crack" => UserMaterial.CreateFatczm(true),
             _ => throw new NotSupportedException(type)
         };
+        if (type != "Fatigue CZM pre-crack" && properties.Any(v => v.Name == Wrap(p).Name)) return;
         // FrmMaterial replaces the previous elasticity choice when adding another one.
         bool Elasticity(MaterialProperty x) => x is Elastic or ElasticEngineeringConstants or ElasticLamina or UserMaterial or ElasticWithDensity;
         if (Elasticity(p)) properties.RemoveAll(v => Elasticity(v.GetBase()));

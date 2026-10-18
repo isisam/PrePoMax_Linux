@@ -18,6 +18,15 @@ internal sealed class ShellMainView(MainWindow window,VtkMaxView viewport) : Nul
     public override void WriteErrorToOutput(string data)=>UI(()=>window.Log("ERROR: "+data));
     public override void ShowTimedError(string message,int milliseconds)=>WriteErrorToOutput(message);
     public override void SetTitle(string title)=>UI(()=>window.Title=title);
+    // FrmStep adds the default analysis after its first AddStepCommand. The
+    // NullMainView placeholder returns null; prepare the same typed job here.
+    public override CaeJob.AnalysisJob GetDefaultJob()
+    {
+        string name = Controller.GetJobNames().GetNextNumberedKey("Analysis");
+        return new CaeJob.AnalysisJob(name, Controller.Settings.Solver.CalculixExe, name, Controller.Settings.GetWorkDirectory());
+    }
+    public override string GetDefaultJobName() => Controller.OpenedFileName == null ? null! :
+        NamedClass.GetErrorFreeName(Path.GetFileNameWithoutExtension(Controller.OpenedFileName), "Analysis", null);
     public override void SetStateReady(string currentText)=>UI(()=>window.SetStatus(currentText));
     public override bool SetStateWorking(string text,bool showCancelButton=false){SetStateReady(text);return true;}
     public override bool IsStateOpening()=>Loading;
