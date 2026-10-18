@@ -2,7 +2,7 @@
 # Copyright (c) 2026 PrePoMax-RCM contributors (RCM Lab, NCKU)
 # Copyright (c) Matej Borovinšek (ported vtkControl conventions/code)
 cmake_minimum_required(VERSION 3.16)
-project(vtkmax VERSION 0.2.0 LANGUAGES C CXX)
+project(vtkmax VERSION 0.3.0 LANGUAGES C CXX)
 option(VTKMAX_X11 "Build optional NativeControlHost X11 backend" ON)
 find_package(VTK 9.4 REQUIRED COMPONENTS CommonCore CommonDataModel FiltersExtraction
   RenderingCore RenderingOpenGL2 RenderingUI RenderingFreeType RenderingAnnotation InteractionStyle IOImage)

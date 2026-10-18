@@ -21,7 +21,7 @@ typedef struct vm_pick_result {
     int64_t actor_id; /* default actor=0; miss=-1 */
 } vm_pick_result;
 typedef void (*vm_selection_callback)(const vm_pick_result* result, void* user);
-/* ABI 0.2, UNSTABLE: vm_abi_version()==2; .so.0. No compatibility promise until 1.x.
+/* ABI 0.3, UNSTABLE: vm_abi_version()==3; .so.0. No compatibility promise until 1.x.
  * All calls on the creating thread. Arrays copied, UTF-8 strings borrowed
  * for the call. Display coordinates are physical pixels, origin bottom-left.
  * Status: 0 success, -1 error; vm_pick returns 1 hit, 0 miss, -1 error.
@@ -98,6 +98,27 @@ VM_API int32_t vm_write_png(vm_view* v, const char* path);
 VM_API int32_t vm_process_events(vm_view* v);
 VM_API int32_t vm_x11_connection(vm_view* v); /* borrowed fd; never close it */
 VM_API int32_t vm_last_pick(vm_view* v, vm_pick_result* result);
+/* Selection, physical display pixels, bottom-left. Six planes in VTK order,
+ * each [origin x,y,z, outward normal x,y,z]. Selected IDs are sorted, unique.
+ * vm_selected_ids borrows storage until the next selection/geometry query.
+ * association: 0 cells, 1 points, 2 actors, 3 closest edge nodes, 4 face nodes.
+ * A NULL filter disables the filter; non-NULL + count 0 permits no actors.
+ * Filter overrides visibility for regeneration, as in vtkControl. Actors marked
+ * unselectable are always excluded (overlays/backing grids).
+ */
+VM_API int32_t vm_actor_selectable(vm_view* v, int64_t actor_id, int32_t selectable);
+VM_API int32_t vm_selectable_filter(vm_view* v, const int64_t* actors, int32_t count);
+VM_API int32_t vm_area_pick(vm_view* v, int32_t x1, int32_t y1, int32_t x2, int32_t y2, double* planes36);
+VM_API int32_t vm_frustum_select(vm_view* v, const double* planes36);
+VM_API int32_t vm_selected_ids(vm_view* v, int32_t association, const int64_t** ids, int32_t* count);
+VM_API int32_t vm_geometry_pick(vm_view* v, const double* point, int64_t* element_id, int32_t unlimited_distance);
+VM_API int32_t vm_selection_precision(vm_view* v, double* distance);
+VM_API int32_t vm_selection_distance(vm_view* v, int32_t pixels);
+VM_API int32_t vm_selection_mode(vm_view* v, int32_t enabled);
+VM_API int32_t vm_box_selection_active(vm_view* v);
+/* Last native gesture: [box, release x,y, press x,y, ctrl,shift]. Published
+ * through the selection callback; a box has hit=0 and a fresh sequence. */
+VM_API int32_t vm_last_gesture(vm_view* v, int32_t* values7);
 #ifdef __cplusplus
 }
 #endif

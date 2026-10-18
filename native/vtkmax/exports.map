@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: GPL-3.0-or-later
  * Copyright (c) 2026 PrePoMax-RCM contributors (RCM Lab, NCKU)
  * Copyright (c) Matej Borovinšek (ported vtkControl code) */
-VTKMAX_0.2 {
+VTKMAX_0.3 {
   global: vm_*;
   local: *;
 };

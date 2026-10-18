@@ -40,7 +40,7 @@ public sealed class Viewport : IDisposable
     private static void Check(int status) { if (status < 0) throw new InvalidOperationException(Error); }
     public Viewport(bool offscreen = true, int width = 1000, int height = 700, int backend = -1)
     {
-        if (Native.vm_abi_version() != 2) throw new NotSupportedException("vtkmax unstable 0.2 ABI mismatch");
+        if (Native.vm_abi_version() != 3) throw new NotSupportedException("vtkmax unstable 0.3 ABI mismatch");
         generic = backend == 2;
         handle = backend < 0 ? Native.vm_create(offscreen ? 1 : 0, width, height) : Native.vm_create_backend(backend, width, height);
         if (handle == IntPtr.Zero) throw new InvalidOperationException(Error);
@@ -65,6 +65,37 @@ public sealed class Viewport : IDisposable
         Check(Native.vm_add_actor(Handle, id, nodeIds.Length, nodeIds, xyz, elementIds.Length, elementIds, types, offsets, connectivity.Length, connectivity));
     }
     public void RemoveActor(long id) => Check(Native.vm_remove_actor(Handle, id));
+    public void ActorSelectable(long id, bool selectable) => Check(Native.vm_actor_selectable(Handle, id, selectable ? 1 : 0));
+    public void SelectableFilter(long[]? ids)
+    {
+        // A non-null sentinel distinguishes the empty filter from no filter at the C boundary.
+        Check(Native.vm_selectable_filter(Handle, ids is { Length: 0 } ? [-1] : ids, ids?.Length ?? 0));
+    }
+    public long[] SelectedIds(int association)
+    {
+        Check(Native.vm_selected_ids(Handle, association, out var pointer, out var count));
+        var ids = new long[count]; if (count > 0) Marshal.Copy(pointer, ids, 0, count); return ids;
+    }
+    public (double[][] Planes, long[] Actors) AreaPick(int x1, int y1, int x2, int y2)
+    {
+        var planes = new double[36]; Check(Native.vm_area_pick(Handle, x1, y1, x2, y2, planes));
+        return (Enumerable.Range(0, 6).Select(i => planes.Skip(i * 6).Take(6).ToArray()).ToArray(), SelectedIds(2));
+    }
+    public (long[] Points, long[] Cells) FrustumSelect(double[][] planes)
+    {
+        if (planes.Length != 6 || planes.Any(p => p.Length != 6)) throw new ArgumentException("Six planes of six components required.");
+        Check(Native.vm_frustum_select(Handle, planes.SelectMany(p => p).ToArray())); return (SelectedIds(1), SelectedIds(0));
+    }
+    public (long Element, long[] Edge, long[] Face) GeometryPick(double[] point, bool unlimited = false)
+    {
+        if (point.Length != 3) throw new ArgumentException("Three coordinates required.");
+        Check(Native.vm_geometry_pick(Handle, point, out var element, unlimited ? 1 : 0)); return (element, SelectedIds(3), SelectedIds(4));
+    }
+    public double SelectionPrecision { get { Check(Native.vm_selection_precision(Handle, out double value)); return value; } }
+    public void SelectionDistance(int pixels) => Check(Native.vm_selection_distance(Handle, pixels));
+    public void SelectionMode(bool enabled) => Check(Native.vm_selection_mode(Handle, enabled ? 1 : 0));
+    public bool BoxSelectionActive { get { int value = Native.vm_box_selection_active(Handle); Check(value); return value != 0; } }
+    public int[] LastGesture { get { var values = new int[7]; Check(Native.vm_last_gesture(Handle, values)); return values; } }
     public void ActorStyle(long id, bool visible, double r, double g, double b, double opacity = 1, bool edges = true) =>
         Check(Native.vm_actor_style(Handle, id, visible ? 1 : 0, r, g, b, opacity, edges ? 1 : 0));
     public void ActorScalars(long id, double[]? values, double min, double max, string title, bool nodes = true) =>
@@ -113,6 +144,17 @@ public sealed class Viewport : IDisposable
 
 internal static class Native
 {
+    [DllImport("vtkmax", CallingConvention=CallingConvention.Cdecl)] internal static extern int vm_actor_selectable(IntPtr view,long actor,int selectable);
+    [DllImport("vtkmax", CallingConvention=CallingConvention.Cdecl)] internal static extern int vm_selectable_filter(IntPtr view,long[]? actors,int count);
+    [DllImport("vtkmax", CallingConvention=CallingConvention.Cdecl)] internal static extern int vm_area_pick(IntPtr view,int x1,int y1,int x2,int y2,[Out]double[] planes);
+    [DllImport("vtkmax", CallingConvention=CallingConvention.Cdecl)] internal static extern int vm_frustum_select(IntPtr view,double[] planes);
+    [DllImport("vtkmax", CallingConvention=CallingConvention.Cdecl)] internal static extern int vm_selected_ids(IntPtr view,int association,out IntPtr ids,out int count);
+    [DllImport("vtkmax", CallingConvention=CallingConvention.Cdecl)] internal static extern int vm_geometry_pick(IntPtr view,double[] point,out long element,int unlimited);
+    [DllImport("vtkmax", CallingConvention=CallingConvention.Cdecl)] internal static extern int vm_selection_precision(IntPtr view,out double distance);
+    [DllImport("vtkmax", CallingConvention=CallingConvention.Cdecl)] internal static extern int vm_selection_distance(IntPtr view,int pixels);
+    [DllImport("vtkmax", CallingConvention=CallingConvention.Cdecl)] internal static extern int vm_selection_mode(IntPtr view,int enabled);
+    [DllImport("vtkmax", CallingConvention=CallingConvention.Cdecl)] internal static extern int vm_box_selection_active(IntPtr view);
+    [DllImport("vtkmax", CallingConvention=CallingConvention.Cdecl)] internal static extern int vm_last_gesture(IntPtr view,[Out]int[] values);
     [DllImport("vtkmax", CallingConvention=CallingConvention.Cdecl)] internal static extern int vm_camera_scale(IntPtr view,out double scale);
     [DllImport("vtkmax", CallingConvention=CallingConvention.Cdecl)] internal static extern int vm_set_camera(IntPtr view,double[] position,double[] focal,double[] up,double scale);
     [DllImport("vtkmax", CallingConvention=CallingConvention.Cdecl)] internal static extern int vm_scalar_bar(IntPtr view,int visible,[MarshalAs(UnmanagedType.LPUTF8Str)]string? title);
