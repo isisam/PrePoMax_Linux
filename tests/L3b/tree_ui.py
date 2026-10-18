@@ -4,10 +4,10 @@ import json, os, signal, subprocess as sp, sys, time
 from PIL import Image
 
 app, fixture, out = map(Path, sys.argv[1:4]); out.mkdir(parents=True, exist_ok=True)
-env = dict(os.environ, PPM_L2C_EVIDENCE='1', DOTNET_PROCESSOR_COUNT='4', LP_NUM_THREADS='2', OMP_NUM_THREADS='1')
+env = dict(os.environ, PPM_L2C_EVIDENCE='1', DOTNET_PROCESSOR_COUNT='2', LP_NUM_THREADS='1', OMP_NUM_THREADS='1')
 for name in ('ready','state.json','command.json'): (out/name).unlink(missing_ok=True)
 
-def read():
+def read_once():
     try: return json.loads((out/'state.json').read_text())
     except (OSError, json.JSONDecodeError): return None
 
@@ -20,12 +20,33 @@ def wait(fn, seconds=60):
         time.sleep(.05)
     raise TimeoutError('tree UI wait')
 
+def read(): return wait(read_once)
+
 def command(**kw):
     (out/'command.tmp').write_text(json.dumps(kw));(out/'command.tmp').replace(out/'command.json')
     wait(lambda:not(out/'command.json').exists());time.sleep(.2)
 
 with (out/'gui.log').open('w') as log:
-    p=sp.Popen([str(app/'PrePoMax.Avalonia'),str(fixture),'--evidence',str(out)],env=env,stdout=log,stderr=sp.STDOUT,start_new_session=True)
+    launch=[]
+    if '--gdb' in sys.argv:
+        capture=out/'capture.gdb'
+        capture.write_text('''set pagination off
+set confirm off
+set print thread-events off
+handle SIG34 nostop noprint pass
+handle SIG35 nostop noprint pass
+handle SIGPWR nostop noprint pass
+handle SIGSEGV stop print pass
+python
+import gdb
+gdb.execute("run")
+while gdb.selected_inferior().pid:
+    gdb.execute("thread apply all bt 20")
+    gdb.execute("continue")
+end
+''')
+        launch=['gdb','--batch','--return-child-result','-x',str(capture),'--args']
+    p=sp.Popen(launch+[str(app/'PrePoMax.Avalonia'),str(fixture),'--evidence',str(out)],env=env,stdout=log,stderr=sp.STDOUT,start_new_session=True)
     try:
         wait(lambda:(out/'ready').exists()); initial=wait(read)
         (out/'initial.json').write_text(json.dumps(initial,indent=2))

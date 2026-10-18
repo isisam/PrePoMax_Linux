@@ -14,6 +14,7 @@ internal static class Program
     [STAThread] public static void Main(string[] args)
     {
         Arguments = args;
+        WslRenderer.Configure();
         Console.Write(BuildProvenance.Header);
         if(args.Length==3 && args[0]=="--tree-check")
         {try{TreeContractChecks.Run(args[1],args[2]);}catch(Exception e){Console.Error.WriteLine(e);Environment.ExitCode=1;}return;}
