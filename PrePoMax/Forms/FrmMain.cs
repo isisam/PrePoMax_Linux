@@ -1078,7 +1078,7 @@ namespace PrePoMax
                     throw new CaeException(error);
                 }
                 // Saving in progress
-                if (tsslState.Text != Globals.ReadyText)
+                if (_stateText != Globals.ReadyText)
                 {
                     if (!isUnattended)
                         response = MessageBoxes.ShowWarningQuestionOKCancel("There is a task running. Close anyway?");
@@ -3216,7 +3216,7 @@ namespace PrePoMax
         // state only after the 300 ms it is delayed by
         private string GetPythonConsoleRefusal(string whatHappened)
         {
-            bool isAutomationCall = tsslState.Text == Globals.AutomationText;
+            bool isAutomationCall = _stateText == Globals.AutomationText;
             if (!isAutomationCall && !PythonEngineManager.IsExecuting) return null;
             //
             if (isAutomationCall)
@@ -8521,7 +8521,7 @@ namespace PrePoMax
             // BatchRegenerationMode is not asked: it says this process was started for unattended work,
             // not that anything is running right now - a running regeneration shows in the state text
             // The state texts already end in an ellipsis, so nothing is added to them
-            if (tsslState.Text != Globals.ReadyText) return "PrePoMax is busy: " + tsslState.Text;
+            if (_stateText != Globals.ReadyText) return "PrePoMax is busy: " + _stateText;
             //
             Form openForm = GetOpenAutomationBlockingForm();
             string name = null;
@@ -9286,7 +9286,7 @@ namespace PrePoMax
                 try
                 {                    
                     // Disable the form during regenerate - check that the state is ready
-                    if (tsslState.Text != Globals.RegeneratingText)
+                    if (_stateText != Globals.RegeneratingText)
                     {
                         // A session without a user cannot answer the model properties dialog, so what is
                         // undefined is set to the 3D model space and to no units
@@ -9354,7 +9354,7 @@ namespace PrePoMax
                 try
                 {
                     // Disable unit system selection during regenerate - check that the state is ready
-                    if (tsslState.Text != Globals.RegeneratingText)
+                    if (_stateText != Globals.RegeneratingText)
                     {
                         UnitSystemType unitSystemType = _controller.CurrentResult.UnitSystem.UnitSystemType;
                         //
@@ -9399,6 +9399,7 @@ namespace PrePoMax
         public void UpdateUnitSystem(UnitSystem unitSystem)
         {
             tsslUnitSystem.Text = "Unit system: " + unitSystem.UnitSystemType.GetDescription();
+            PrePoMax.L10n.UiTranslator.Translate(tsslUnitSystem);
             //
             SetScaleWidgetUnit(unitSystem);
         }
@@ -11745,11 +11746,14 @@ namespace PrePoMax
         #endregion  ################################################################################################################
 
         #region Status strip  ######################################################################################################
+        private string _stateText = Globals.ReadyText;
         public void SetState(string text, bool working)
         {
             InvokeIfRequired(() =>
             {
+                _stateText = text;
                 tsslState.Text = text;
+                PrePoMax.L10n.UiTranslator.Translate(tsslState);
                 // Progress
                 if (working) tspbProgress.Style = ProgressBarStyle.Marquee;
                 else tspbProgress.Style = ProgressBarStyle.Blocks;
@@ -11769,7 +11773,7 @@ namespace PrePoMax
         }
         public void SetStateReady(string currentText)
         {
-            if (tsslState.Text == currentText) // check that the same command is being canceled
+            if (_stateText == currentText) // check that the same command is being canceled
             {
                 SetState(Globals.ReadyText, false);
                 tsslCancel.Visible = false;
@@ -11777,7 +11781,7 @@ namespace PrePoMax
         }
         public bool SetStateWorking(string text, bool showCancelButton = false)
         {
-            if (tsslState.Text == Globals.ReadyText) // check that the state is ready
+            if (_stateText == Globals.ReadyText) // check that the state is ready
             {
                 SetState(text, true);
                 tsslCancel.Visible = showCancelButton;
@@ -11787,7 +11791,7 @@ namespace PrePoMax
         }
         private bool IsStateWorking()
         {
-            return tsslState.Text != Globals.ReadyText;
+            return _stateText != Globals.ReadyText;
         }
         // A long operation, or Python running anywhere - an agent call before its busy state shows, or a script of
         // the Python panel that let the window pump messages
@@ -11810,17 +11814,17 @@ namespace PrePoMax
         }
         public bool IsStateOpening()
         {
-            return tsslState.Text == Globals.OpeningText;
+            return _stateText == Globals.OpeningText;
         }
         public bool IsStateRegeneratingOrUndoing()
         {
-            return tsslState.Text == Globals.RegeneratingText || tsslState.Text == Globals.UndoingText;
+            return _stateText == Globals.RegeneratingText || _stateText == Globals.UndoingText;
         }
         // A script of the Python panel or an automation call holds the state for everything it does, so an
         // operation it starts itself is not another task
         private bool IsStateHeldByPython()
         {
-            return tsslState.Text == Globals.PythonScriptText || tsslState.Text == Globals.AutomationText;
+            return _stateText == Globals.PythonScriptText || _stateText == Globals.AutomationText;
         }
         //
         private void tsslCancel_MouseDown(object sender, MouseEventArgs e)

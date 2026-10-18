@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <Import Project="../build/SharedCore.props" />
   <PropertyGroup>
     <ProjectGuid>{104CAEBC-0761-4850-A97D-3FC59116C5B6}</ProjectGuid>

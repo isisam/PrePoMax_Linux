@@ -513,10 +513,11 @@ namespace DynamicTypeDescriptor
                 {
                     if (Value != null)
                     {
-                        return Value.ToString();
+                        return Value is bool || Value.GetType().IsEnum
+                            ? CaeGlobals.UiLocalization.Text(Value.ToString()) : Value.ToString();
                     }
                 }
-                return m_DisplayName;
+                return CaeGlobals.UiLocalization.Text(m_DisplayName);
             }
             set
             {
@@ -555,7 +556,7 @@ namespace DynamicTypeDescriptor
         {
             get
             {
-                return m_Description;
+                return CaeGlobals.UiLocalization.Text(m_Description);
             }
             set
             {
@@ -822,6 +823,14 @@ namespace DynamicTypeDescriptor
         {
             //WriteContext("ConvertFrom", context, value, Type.Missing.GetType( ));
 
+            // RegionType is a fixed UI choice expressed as a string by ViewMultiRegion. Its
+            // setter still receives the original English key; entity-name dropdowns stay untouched.
+            if (context != null && context.PropertyDescriptor.Name == "RegionType" && value is string &&
+                context.PropertyDescriptor is CustomPropertyDescriptor regionDescriptor)
+                foreach (StandardValueAttribute choice in regionDescriptor.StatandardValues)
+                    if (CaeGlobals.UiLocalization.Text(choice.Value.ToString()) == (string)value)
+                    { value = choice.Value.ToString(); break; }
+
             ICollection<StandardValueAttribute> col = null;
             Type propType = Type.Missing.GetType();
             if (context != null && context.PropertyDescriptor is CustomPropertyDescriptor)
@@ -921,7 +930,8 @@ namespace DynamicTypeDescriptor
             {
                 if (destinationType == typeof(string))
                 {
-                    return value;
+                    return context != null && context.PropertyDescriptor.Name == "RegionType"
+                        ? CaeGlobals.UiLocalization.Text((string)value) : value;
                 }
                 else if (destinationType == propType)
                 {
@@ -1013,7 +1023,9 @@ namespace DynamicTypeDescriptor
             {
                 if (destinationType == typeof(string))
                 {
-                    return (value as StandardValueAttribute).DisplayName;
+                    string display = (value as StandardValueAttribute).DisplayName;
+                    return context != null && context.PropertyDescriptor.Name == "RegionType"
+                        ? CaeGlobals.UiLocalization.Text(display) : display;
                 }
                 else if (destinationType == typeof(StandardValueAttribute))
                 {
@@ -1963,9 +1975,9 @@ namespace DynamicTypeDescriptor
                 DisplayNameAttribute attr = (DisplayNameAttribute)m_Attributes.FirstOrDefault(a => a is DisplayNameAttribute);
                 if (attr != null)
                 {
-                    return attr.DisplayName;
+                    return CaeGlobals.UiLocalization.Text(attr.DisplayName, ComponentType.Name + "." + Name);
                 }
-                return base.DisplayName;
+                return CaeGlobals.UiLocalization.Text(base.DisplayName, ComponentType.Name + "." + Name);
             }
         }
         public void SetDisplayName(string displayName)
@@ -2004,7 +2016,9 @@ namespace DynamicTypeDescriptor
                     sResult = base.Category;
                 }
                 //return sResult.PadLeft(base.Category.Length + m_TabAppendCount, '\t');
-                return sResult.PadLeft(base.Category.Length + m_TabAppendCount, '\u200B');
+                string translated = CaeGlobals.UiLocalization.Text(sResult, ComponentType.Name + "." + Name + ".Category");
+                return translated == sResult ? sResult.PadLeft(base.Category.Length + m_TabAppendCount, '\u200B')
+                    : translated.PadLeft(translated.Length + m_TabAppendCount, '\u200B');
             }
         }
         public void SetCategory(string category)
@@ -2033,9 +2047,9 @@ namespace DynamicTypeDescriptor
                 DescriptionAttribute attr = (DescriptionAttribute)m_Attributes.FirstOrDefault(a => a is DescriptionAttribute);
                 if (attr != null)
                 {
-                    return attr.Description;
+                    return CaeGlobals.UiLocalization.Text(attr.Description, ComponentType.Name + "." + Name + ".Description");
                 }
-                return base.Description;
+                return CaeGlobals.UiLocalization.Text(base.Description, ComponentType.Name + "." + Name + ".Description");
             }
         }
         public void SetDescription(string description)

@@ -30,6 +30,18 @@ namespace PrePoMax.Commands
     }
     [System.Runtime.CompilerServices.TypeForwardedFrom("PrePoMax, Version=3.0.0.0, Culture=neutral, PublicKeyToken=null")]
     [Serializable]
+    class CDuplicateCompositeLayups : PreprocessCommand
+    {
+        private readonly string[] _names;
+        public CDuplicateCompositeLayups(string[] names) : base("Duplicate composite layups") { _names = (string[])names.Clone(); }
+        public override bool Execute(Controller receiver) { receiver.DuplicateCompositeLayups(_names); return true; }
+        public override void ToPython(PythonJournalWriter writer)
+        {
+            PythonModelItemEmitter.Duplicate(writer, "pmx.model.composite_layups", _names);
+        }
+        public override string GetCommandString() { return base.GetCommandString() + GetArrayAsString(_names); }
+    }
+    [Serializable]
     class CAddCompositeLayup : PreprocessCommand
     {
         private readonly CompositeLayup _layup;

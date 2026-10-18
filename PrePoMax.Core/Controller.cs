@@ -1,4 +1,4 @@
-using PrePoMax.Forms;
+﻿using PrePoMax.Forms;
 using MessageBoxes = CaeGlobals.PortableMessageBoxes;
 using DialogResult = CaeGlobals.DialogAnswer;
 // PrePoMax - Copyright (C) 2016-2026 Matej Borovinšek
@@ -19130,6 +19130,7 @@ namespace PrePoMax
             // Called on property Settings Set when the user changes the setting values
 
             // General settings
+            UiLocalization.SetLanguage?.Invoke(_settings.General.Language);
             CaeMesh.Globals.EdgeAngle = _settings.General.EdgeAngle;
             _form.SetShowAllProperties(_settings.General.ShowAllProperties);
             // Graphics settings
