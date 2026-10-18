@@ -55,7 +55,11 @@ for name in ['DCB','M2a']:
         geom['membership_equal']=geom['element']==geometry['element'] and sorted(geom['edge'])==sorted(geometry['edge']) and sorted(geom['face'])==sorted(geometry['face'])
         receipts[name]=dict(cases=cases,geometry=geom,semantic_passed=all(x['same_planes_ids_equal'] for x in cases),display_passed=all(x['display_ids_equal'] for x in cases))
     finally: vm.vm_destroy(view)
-result=dict(passed=all(r['semantic_passed'] and r['geometry']['membership_equal'] for r in receipts.values()),fixtures=receipts,abi=vm.vm_abi_version())
+result=dict(passed=all(r['semantic_passed'] and r['display_passed'] and r['geometry']['membership_equal'] for r in receipts.values()),fixtures=receipts,abi=vm.vm_abi_version(),scope='frustum and geometry membership; plane numeric tolerance is recorded separately')
 (logs/'native-windows-comparison.json').write_text(json.dumps(result,indent=2),encoding='utf-8')
+tolerance=dict(passed=all(max(case['plane_relative_error'])<=1e-9 for r in receipts.values() for case in r['cases']),required_relative_error=1e-9,
+    fixtures={name:[dict(name=case['name'],origin_and_normal_relative_error=case['plane_relative_error'],equation_relative_error=case['equation_relative_error'],
+        normal_max_absolute_error=max(abs(a-b) for w,n in zip(case['windows_planes'],case['native_planes']) for a,b in zip(w[3:],n[3:]))) for case in r['cases']] for name,r in receipts.items()})
+(logs/'plane-tolerance.json').write_text(json.dumps(tolerance,indent=2),encoding='utf-8')
 print(json.dumps({n:dict(semantic=r['semantic_passed'],display=r['display_passed'],geometry=r['geometry']['membership_equal'],counts=[(len(x['points']),len(x['cells'])) for x in r['cases']]) for n,r in receipts.items()}))
 raise SystemExit(0 if result['passed'] else 1)

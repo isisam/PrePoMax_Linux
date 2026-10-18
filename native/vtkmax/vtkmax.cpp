@@ -23,6 +23,9 @@
 #include <vtkCellArray.h>
 #include <vtkCellData.h>
 #include <vtkCellPicker.h>
+#include <vtkHardwareSelector.h>
+#include <vtkSelection.h>
+#include <vtkInformation.h>
 #include <vtkStaticCellLocator.h>
 #include <vtkDataSetMapper.h>
 #include <vtkDoubleArray.h>
@@ -522,11 +525,51 @@ int32_t vm_pick(vm_view* v,int32_t x,int32_t y,vm_pick_result* r) {
         vtkNew<vtkCellPicker> p;p->SetTolerance(0.0005);p->PickFromListOn();
         if(selectable(v,0,v)){p->AddPickList(v->actor);p->AddLocator(v->locator);}
         for(auto& pair:v->actors) if(selectable(v,pair.first,pair.second.get())){p->AddPickList(pair.second->actor);p->AddLocator(pair.second->locator);}
-        if(!p->Pick(x,y,0,v->renderer)||p->GetCellId()<0) return publish_pick(v,r);
-        actor_state* mesh=v;r->actor_id=0;
-        for(auto& pair:v->actors)if(pair.second->actor==p->GetActor()){mesh=pair.second.get();r->actor_id=pair.first;break;}
-        auto id=p->GetCellId();require(id<static_cast<vtkIdType>(mesh->elements.size()),"unexpected picker cell mapping");
-        auto pos=p->GetPickPosition();r->hit=1;r->element_id=mesh->elements[id];r->x=pos[0];r->y=pos[1];r->z=pos[2];
+        actor_state* mesh=v;r->actor_id=0;vtkIdType id=-1;double position[3];bool hardware_hit=false;
+        // vtkControl first uses the hardware-picked depth, then projects that
+        // position onto the picked actor's visual triangles. A ray/volume-only
+        // pick can cross a geometry edge at a different pixel.
+        if(v->selection_mode){
+            struct PickVisibility {
+                struct State {vtkActor* actor;int visible,pickable;};std::vector<State> states;
+                void add(vtkActor* actor,bool allowed){states.push_back({actor,actor->GetVisibility(),actor->GetPickable()});actor->SetVisibility(allowed);actor->SetPickable(allowed);}
+                ~PickVisibility(){for(auto& s:states){s.actor->SetVisibility(s.visible);s.actor->SetPickable(s.pickable);}}
+            } visibility;
+            visibility.add(v->actor,selectable(v,0,v));
+            for(auto& pair:v->actors)visibility.add(pair.second->actor,selectable(v,pair.first,pair.second.get()));
+            vtkNew<vtkHardwareSelector> hardware;hardware->SetRenderer(v->renderer);
+            hardware->SetActorPassOnly(true);hardware->SetCaptureZValues(true);hardware->SetArea(x,y,x,y);
+            vtkSmartPointer<vtkSelection> selection;selection.TakeReference(hardware->Select());
+            vtkActor* picked=nullptr;double depth=1;
+            if(selection)for(unsigned int i=0;i<selection->GetNumberOfNodes();++i){
+                auto info=selection->GetNode(i)->GetProperties();auto prop=vtkActor::SafeDownCast(info->Get(vtkSelectionNode::PROP()));
+                bool allowed=prop==v->actor&&selectable(v,0,v);
+                for(auto& pair:v->actors)if(prop==pair.second->actor&&selectable(v,pair.first,pair.second.get()))allowed=true;
+                double z=info->Get(vtkSelectionNode::ZBUFFER_VALUE());if(allowed&&z<depth){picked=prop;depth=z;}
+            }
+            if(picked){
+                for(auto& pair:v->actors)if(pair.second->actor==picked){mesh=pair.second.get();r->actor_id=pair.first;break;}
+                v->renderer->SetDisplayPoint(x,y,depth);v->renderer->DisplayToWorld();auto world=v->renderer->GetWorldPoint();
+                double hardware_point[3];for(int k=0;k<3;++k)hardware_point[k]=world[k]/world[3];
+                vtkIdType triangle;int sub;double distance;
+                mesh->surface_locator->BuildLocator();
+                mesh->surface_locator->FindClosestPoint(hardware_point,position,triangle,sub,distance);
+                if(triangle>=0){
+                    auto global=static_cast<int64_t>(mesh->surface->GetCellData()->GetGlobalIds()->GetTuple1(triangle));
+                    auto found=mesh->element_map.find(global);
+                    if(found!=mesh->element_map.end()){id=found->second;hardware_hit=true;}
+                }
+            }
+        }
+        if(!hardware_hit){
+            if(v->selection_mode)p->SetTolerance(static_cast<double>(v->selection_pixels)/std::hypot(size[0],size[1]));
+            if(!p->Pick(x,y,0,v->renderer)||p->GetCellId()<0) return publish_pick(v,r);
+            mesh=v;r->actor_id=0;
+            for(auto& pair:v->actors)if(pair.second->actor==p->GetActor()){mesh=pair.second.get();r->actor_id=pair.first;break;}
+            id=p->GetCellId();std::copy_n(p->GetPickPosition(),3,position);
+        }
+        require(id>=0&&id<static_cast<vtkIdType>(mesh->elements.size()),"unexpected picker cell mapping");
+        auto pos=position;r->hit=1;r->element_id=mesh->elements[id];r->x=pos[0];r->y=pos[1];r->z=pos[2];
         auto cell=mesh->grid->GetCell(id);double best=1e100;
         if(cell->GetCellDimension()==2) r->face_id=0;
         else for(int f=0;f<cell->GetNumberOfFaces();++f) {
