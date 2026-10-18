@@ -28,7 +28,7 @@ def main():
         value=str(Path(path).resolve()).replace('\\','/')
         return '/mnt/'+value[0].lower()+value[2:]
     host=linux(args.headless_linux)
-    prefix=['wsl','-d','Ubuntu-24.04','--','env','TZ=Asia/Taipei','DOTNET_PROCESSOR_COUNT=4',host]
+    prefix=['wsl','-d','Ubuntu-24.04','--','env','TZ=Asia/Taipei','DOTNET_PROCESSOR_COUNT=4','nice','-n','19',host]
     application('windows_fixture','WindowsFixture.py')
     data=(work/'full.pmx').read_bytes()
     length=struct.unpack_from('<i',data,32)[0]

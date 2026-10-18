@@ -66,3 +66,6 @@ Licenses/linux-cache/* -text
 
 # Keep the upstream generated NCalc formatting intact.
 ThirdParty/NCalc.RCM/** whitespace=-blank-at-eol,-blank-at-eof,-space-before-tab
+
+# Linux acceptance scripts must run directly from Windows checkouts.
+tests/L3b2/*.sh text eol=lf
