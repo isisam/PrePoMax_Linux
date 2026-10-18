@@ -14,6 +14,7 @@ internal static class Program
     [STAThread] public static void Main(string[] args)
     {
         Arguments = args;
+        System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
         WslRenderer.Configure();
         Console.Write(BuildProvenance.Header);
         if(args.Length==3 && args[0]=="--tree-check")

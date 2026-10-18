@@ -88,6 +88,7 @@ public sealed class SurfaceFormSession : EntityFormSession, IIdSelectionSession
     {
         surface = source?.DeepClone() ?? new FeSurface(c.GetAllMeshEntityNames().GetNextNumberedKey("Surface"));
         view = new ViewFeSurface(surface); view.PopulateDropDownList(c.GetUserNodeSetNames());
+        if (!SelectionVisible && c.GetUserNodeSetNames().Contains(surface.CreatedFromNodeSetName)) c.UpdateSurfaceArea(surface);
     }
     public override void Changed(string property)
     {
@@ -100,6 +101,7 @@ public sealed class SurfaceFormSession : EntityFormSession, IIdSelectionSession
         CheckName(Controller.GetAllMeshEntityNames(), "surface");
         if (SelectionVisible && Ids.Length == 0) throw new CaeException("The surface selection must contain at least one item.");
         if (!SelectionVisible && !Controller.GetUserNodeSetNames().Contains(surface.CreatedFromNodeSetName)) throw new CaeException("The surface node set does not exist.");
+        Controller.UpdateSurfaceArea(surface);
     }
     protected override void Publish()
     {

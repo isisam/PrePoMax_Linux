@@ -168,7 +168,11 @@ public sealed partial class MainWindow : Window, IMainView
     {
         if (model == null || loading) return;
         var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions { Title = "Export CalculiX input", SuggestedFileName = Path.GetFileNameWithoutExtension(modelPath) + ".inp", DefaultExtension = "inp" });
-        if (file?.TryGetLocalPath() is { } path) ExportInpTo(path);
+        if (file?.TryGetLocalPath() is { } path)
+        {
+            try { ExportInpTo(path); }
+            catch (Exception error) { Log(error.ToString()); SetStatus("Export failed: " + error.Message); }
+        }
     }
     private void ExportInpTo(string path)
     {
@@ -227,7 +231,11 @@ public sealed partial class MainWindow : Window, IMainView
                     using var command=JsonDocument.Parse(File.ReadAllText(commandPath));File.Delete(commandPath);
                     var c=command.RootElement;string op=c.GetProperty("op").GetString()!;
                     if(op.StartsWith("tree-"))TreeEvidenceCommand(op,c);
-                    if(op.StartsWith("form-"))FormsEvidenceCommand(op,c);
+                    if(op.StartsWith("form-"))
+                    {
+                        try { FormsEvidenceCommand(op,c); }
+                        catch (Exception error) { Log(error.ToString()); File.WriteAllText(Path.Combine(output,"command-error.txt"),error.Message); }
+                    }
                     if(op=="front")viewport.SetFrontBackView(false,true);
                     if(op=="contour")Contour(c.GetProperty("field").GetString()!);
                     if(op=="deform"){deformationScale=c.GetProperty("scale").GetDouble();ViewportModelBridge.Deform(viewport,model,deformationScale);}

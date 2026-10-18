@@ -36,7 +36,7 @@ public sealed class EntityEditorWindow : Window
     public EntityEditorWindow(EntityFormSession session, Controller? controller = null)
     {
         Session = session; Title = (session.OriginalName == null ? "New " : "Edit ") + session.Kind;
-        Width = 900; Height = 850; MinWidth = 680; MinHeight = 550;
+        Width = 900; Height = 900; MinWidth = 680; MinHeight = 550;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
         var root = new Grid { RowDefinitions = new RowDefinitions("Auto,Auto,*,Auto,Auto"), Margin = new Thickness(14) };
         var header = new StackPanel { Spacing = 6 };
@@ -157,6 +157,7 @@ public sealed class EntityEditorWindow : Window
         acceptedRow = RowSelector.SelectedIndex; selecting = false;
         DataProperties.SelectedObject = data?.Count > 0 ? data[0] : null;
         bool showRows = data != null;
+        propertyArea.RowDefinitions[0].Height = page?.View is ViewUserMaterial ? new GridLength(210) : new GridLength(1, GridUnitType.Star);
         RowSelector.IsVisible = showRows; DataProperties.IsVisible = showRows; dataTools.IsVisible = showRows; propertyArea.Children[1].IsVisible = showRows;
         propertyArea.RowDefinitions[4].Height = showRows ? new GridLength(1, GridUnitType.Star) : new GridLength(0);
     }
