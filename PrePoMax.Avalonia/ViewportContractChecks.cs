@@ -18,7 +18,7 @@ internal static class ViewportContractChecks
         public void Execute(Action<Viewport> action)=>action(View);
         public void Dispose()=>View.Dispose();
     }
-    public static void Run(string output)
+    public static void Run(string output,string? modelPath=null,string? frdPath=null)
     {
         Directory.CreateDirectory(output);
         using var host=new EglHost();var adapter=new VtkMaxView(host);IViewport3D v=adapter;
@@ -48,8 +48,30 @@ internal static class ViewportContractChecks
         Require(File.Exists(Path.Combine(output,"contract-2x.png")),"PNG magnification export");
         bool unsupported=false;try{v.StartBoxZoom();}catch(NotSupportedException e){unsupported=e.Message.Contains("L2");}Require(unsupported,"unsupported contract fails clearly");
         adapter.RemoveActors(["part"]);Require(!v.ContainsActor("part"),"actor removal");
+        if(modelPath!=null)
+        {
+            var model=PrePoMax.Viewer.ViewerModel.Open(modelPath);if(frdPath!=null)model.LoadResults(frdPath);
+            ViewportModelBridge.Load(adapter,model);if(frdPath!=null)ViewportModelBridge.Contour(adapter,model,"S (Mises)",0);
+            for(int i=0;i<5;i++){host.View.Rotate(1,.25);host.View.Render();}
+            var timer=System.Diagnostics.Stopwatch.StartNew();for(int i=0;i<30;i++){host.View.Rotate(1,.25);host.View.Render();}
+            var fps=30/timer.Elapsed.TotalSeconds;
+            File.WriteAllText(Path.Combine(output,"egl-fps.json"),JsonSerializer.Serialize(new{fps,frames=30,warmup=5,nodes=model.NodeIds.Length,elements=model.ElementIds.Length,renderer=host.View.GlInfo},new JsonSerializerOptions{WriteIndented=true}));
+            Console.WriteLine($"PASS adapted DCB EGL render loop {fps:F2} FPS (llvmpipe; not scanout FPS)");
+        }
         var map=typeof(VtkMaxView).GetInterfaceMap(typeof(IViewport3D));
+        int unsupportedThrows=0;
+        for(int i=0;i<map.InterfaceMethods.Length;i++)
+        {
+            if(!map.TargetMethods[i].Name.StartsWith("vtkControl.IViewport3D."))continue;
+            var method=map.InterfaceMethods[i];var arguments=method.GetParameters().Select(p=>{
+                var type=p.ParameterType.IsByRef?p.ParameterType.GetElementType()!:p.ParameterType;
+                return type.IsValueType?Activator.CreateInstance(type):null;
+            }).ToArray();
+            try{method.Invoke(v,arguments);throw new Exception("Unsupported member returned silently: "+method.Name);}
+            catch(System.Reflection.TargetInvocationException e) when(e.InnerException is NotSupportedException refusal && refusal.Message.Contains("L2")){unsupportedThrows++;}
+        }
+        Require(unsupportedThrows==120,"all 120 unsupported declarations throw descriptive NotSupportedException");
         File.WriteAllText(Path.Combine(output,"contract.json"),JsonSerializer.Serialize(new{hit,renderer=host.View.GlInfo,interfaceMethods=map.InterfaceMethods.Length,
-            implementedAccessors=map.TargetMethods.Count(m=>!m.Name.StartsWith("vtkControl.IViewport3D."))},new JsonSerializerOptions{IncludeFields=true,WriteIndented=true}));
+            unsupportedThrows,implementedAccessors=map.TargetMethods.Count(m=>!m.Name.StartsWith("vtkControl.IViewport3D."))},new JsonSerializerOptions{IncludeFields=true,WriteIndented=true}));
     }
 }

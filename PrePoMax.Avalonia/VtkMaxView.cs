@@ -37,6 +37,18 @@ public sealed partial class VtkMaxView : UserControl, IViewport3D, IViewportHost
         DetachedFromVisualTree += (_,_) => animation?.Stop();
     }
     public void Execute(Action<Viewport> action) => host.Execute(action);
+    internal Task<double> BenchmarkFramesAsync()
+    {
+        if(host is not GenericVtkView generic)throw Unsupported("Embedded benchmark on X11 backend");
+        var completion=new TaskCompletionSource<double>();var watch=new System.Diagnostics.Stopwatch();int frames=0;
+        void Frame()
+        {
+            frames++;if(frames==5)watch.Start();
+            if(frames==35){generic.FramePresented-=Frame;completion.SetResult(30/watch.Elapsed.TotalSeconds);return;}
+            Execute(v=>v.Rotate(1,.25));
+        }
+        generic.FramePresented+=Frame;Execute(v=>v.Rotate(1,.25));return completion.Task;
+    }
     private void Change(Action<Viewport> action) => Execute(v =>
     {
         try { action(v); if (rendering) v.Render(); }

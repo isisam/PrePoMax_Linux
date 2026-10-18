@@ -14,9 +14,10 @@ internal static class Program
     [STAThread] public static void Main(string[] args)
     {
         Arguments = args;
-        if(args.Length==2 && args[0]=="--contract-check")
+        Console.Write(BuildProvenance.Header);
+        if(args.Length>=2 && args[0]=="--contract-check")
         {
-            try { AppBuilder.Configure<App>().UsePlatformDetect().SetupWithoutStarting();ViewportContractChecks.Run(args[1]); }
+            try { AppBuilder.Configure<App>().UsePlatformDetect().SetupWithoutStarting();ViewportContractChecks.Run(args[1],args.Length>2?args[2]:null,args.Length>3?args[3]:null); }
             catch(Exception e){Console.Error.WriteLine(e);Environment.ExitCode=1;}return;
         }
         if (args.Length > 0 && args[0] is "--probe" or "--render")

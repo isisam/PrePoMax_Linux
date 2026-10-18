@@ -185,17 +185,22 @@ public sealed partial class MainWindow : Window, IMainView
     // Optional deterministic setup for the external X11 interaction harness.
     private void Evidence()
     {
+        if(Environment.GetEnvironmentVariable("PPM_L2C_EVIDENCE")!="1"&&Environment.GetEnvironmentVariable("PPM_L2B_EVIDENCE")!="1")return;
         int flag = Array.IndexOf(Program.Arguments, "--evidence");
         if (flag + 1 >= Program.Arguments.Length) return;
         var output = Program.Arguments[flag + 1]; Directory.CreateDirectory(output);
         DispatcherTimer.RunOnce(() =>
         {
-            Change(v => { v.StandardView(1); v.Fit(); v.WritePng(Path.Combine(output, "embedded-initial.png")); Console.WriteLine("READY_FOR_X11_INPUT"); File.WriteAllText(Path.Combine(output,"ready"),"ready"); });
             var mesh = model!.Model.Mesh;
             double z = mesh.Nodes.Values.Max(n => n.Z);
             var element = mesh.Elements.Values.OrderBy(e => e.Id).First(e => e.NodeIds.Count(id => Math.Abs(mesh.Nodes[id].Z - z) < 1e-8) >= 3);
             var nodes = element.NodeIds.Select(id => mesh.Nodes[id]).Where(n => Math.Abs(n.Z - z) < 1e-8).ToArray();
             double x = nodes.Average(n => n.X), y = nodes.Average(n => n.Y);
+            Change(v => {v.StandardView(1);v.Fit();v.WritePng(Path.Combine(output,"embedded-initial.png"));
+                // DCB layers are subpixel at whole-model fit. Resolve the selected face before exact-ID XTest assertions.
+                var camera=v.Camera;double distance=Math.Sqrt(camera.Position.Zip(camera.Focal,(a,b)=>(a-b)*(a-b)).Sum());
+                v.SetCamera([x+1,y,z+distance],[x+1,y,z],[0,1,0],2);
+                Console.WriteLine("READY_FOR_X11_INPUT");File.WriteAllText(Path.Combine(output,"ready"),"ready");});
             var monitor = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(20) };
             Closed+=(_,_)=>monitor.Stop();
             monitor.Tick += async (_, _) =>
@@ -227,8 +232,10 @@ public sealed partial class MainWindow : Window, IMainView
                     if(op=="contour")Contour(c.GetProperty("field").GetString()!);
                     if(op=="deform"){deformationScale=c.GetProperty("scale").GetDouble();ViewportModelBridge.Deform(viewport,model,deformationScale);}
                     if(op=="png")viewport.RenderToPNG(c.GetProperty("path").GetString()!);
+                    if(op=="edges")viewport.EdgesVisibility=c.GetProperty("visible").GetBoolean()?vtkEdgesVisibility.ElementEdges:vtkEdgesVisibility.NoEdges;
                     if(op=="save"){await SavePmxTo(c.GetProperty("path").GetString()!);File.WriteAllText(Path.Combine(output,"save-done"),"done");}
                     if(op=="language"){ShellLocale.Chinese=c.GetProperty("chinese").GetBoolean();BuildMenu();}
+                    if(op=="benchmark"){double fps=await viewport.BenchmarkFramesAsync();File.WriteAllText(Path.Combine(output,"fps.json"),JsonSerializer.Serialize(new{fps,frames=30,warmup=5,backend="Avalonia generic",renderer=viewport.View!.GlInfo}));}
                     if(op=="run"){if(c.TryGetProperty("threads",out var count))threads.Value=count.GetInt32();await RunAnalysis(c.GetProperty("directory").GetString());File.WriteAllText(Path.Combine(output,"analysis-done"),"done");}
                     if(op=="tooltip")ToolTip.SetIsOpen(viewport.Control,c.GetProperty("open").GetBoolean());
                     if(op=="menu") {if(c.GetProperty("open").GetBoolean())viewport.Control.ContextMenu!.Open(viewport.Control);else viewport.Control.ContextMenu!.Close();}

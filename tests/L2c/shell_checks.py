@@ -36,8 +36,10 @@ with (case/'gui.log').open('w') as log:
             command(op='close');p.wait(timeout=20);assert p.returncode==0
             print('PASS actual shell analysis: release-source Linux ccx_fat, 1/4 threads, nice 19, streamed log, automatic FRD S/U load');sys.exit(0)
         assert s['increment']==70,s
+        command(op='benchmark');wait(lambda:(case/'fps.json').exists());assert json.loads((case/'fps.json').read_text())['fps']>0
         command(op='save',path=str(case/'saved.pmx'));wait(lambda:(case/'save-done').exists());assert (case/'saved.pmx').stat().st_size>1000
         command(op='language',chinese=True);assert wait(state)['language']=='zh-TW';command(op='language',chinese=False)
+        command(op='front');command(op='png',path=str(case/'mesh.png'));wait(lambda:(case/'mesh.png').exists());command(op='edges',visible=False)
         for field,name in [('S (Mises)','S'),('U (magnitude)','U')]:
             command(op='contour',field=field);command(op='front');command(op='png',path=str(case/(name+'.png')));wait(lambda:(case/(name+'.png')).exists())
         command(op='deform',scale=1);command(op='front');command(op='png',path=str(case/'U-deformed.png'));wait(lambda:(case/'U-deformed.png').exists())

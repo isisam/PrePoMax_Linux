@@ -15,6 +15,7 @@ public sealed class GenericVtkView : OpenGlControlBase, IViewportHost
     public Viewport? View { get; private set; }
     public event Action? Ready;
     public event Action<PickResult>? Picked;
+    public event Action? FramePresented;
     private readonly Queue<Action<Viewport>> actions = new();
     private ulong sequence;
     private int w, h;
@@ -40,6 +41,7 @@ public sealed class GenericVtkView : OpenGlControlBase, IViewportHost
         if (width != w || height != h) { w = width; h = height; view.Resize(w, h); }
         while (actions.TryDequeue(out var action)) action(view);
         view.RenderExternal(fb);
+        FramePresented?.Invoke();
         if (inputAt != 0) { Console.WriteLine($"INPUT_FRAME_MS={Stopwatch.GetElapsedTime(inputAt).TotalMilliseconds:F3}"); inputAt = 0; }
         var pick = view.LastPick;
         if (pick.Sequence != sequence) { sequence = pick.Sequence; Dispatcher.UIThread.Post(() => Picked?.Invoke(pick)); }

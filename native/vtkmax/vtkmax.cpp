@@ -371,7 +371,14 @@ int32_t vm_render_external(vm_view* v,int32_t framebuffer) {
     TRY {VIEW;require(v->backend==2&&framebuffer>=0,"generic framebuffer required");
         auto s=v->window->GetState();s->Reset();s->Push();
         s->vtkglBindFramebuffer(GL_FRAMEBUFFER,static_cast<unsigned>(framebuffer));
-        v->window->Render();v->rendered=true;s->Pop();return 0;} CATCH
+        v->window->Render();v->rendered=true;
+        if(v->gl_info.empty()) {
+            auto vendor=glGetString(GL_VENDOR),renderer=glGetString(GL_RENDERER),version=glGetString(GL_VERSION);
+            v->gl_info=std::string("OpenGL vendor string: ")+(vendor?reinterpret_cast<const char*>(vendor):"unknown")+
+                "\nOpenGL renderer string: "+(renderer?reinterpret_cast<const char*>(renderer):"unknown")+
+                "\nOpenGL version string: "+(version?reinterpret_cast<const char*>(version):"unknown");
+        }
+        s->Pop();return 0;} CATCH
 }
 int32_t vm_input(vm_view* v,int32_t kind,int32_t x,int32_t y,int32_t ctrl,int32_t shift) {
     TRY {VIEW;require(v->interactor&&kind>=0&&kind<=8,"invalid input/interactor");
@@ -384,6 +391,7 @@ int32_t vm_input(vm_view* v,int32_t kind,int32_t x,int32_t y,int32_t ctrl,int32_
 }
 const char* vm_gl_info(vm_view* v) {
     if(!v)return "null view";
+    if(v->backend==2&&!v->gl_info.empty())return v->gl_info.c_str();
     v->gl_info=v->window->ReportCapabilities();return v->gl_info.c_str();
 }
 int32_t vm_project(vm_view* v,const double* xyz,double* out) {
