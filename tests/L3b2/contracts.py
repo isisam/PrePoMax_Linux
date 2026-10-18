@@ -2,7 +2,7 @@
 from pathlib import Path
 import importlib.util, json, os, sys
 repo = Path(__file__).resolve().parents[2]
-logs = repo.parent/'logs/L3b2/forms'
+logs = Path(os.environ.get('PPM_FORMS_LOGS', repo.parent/'logs/L3b2/forms'))
 spec = importlib.util.spec_from_file_location('hidden', repo/'tests/M2bUi/run.py')
 hidden = importlib.util.module_from_spec(spec); spec.loader.exec_module(hidden)
 os.environ['DOTNET_PROCESSOR_COUNT'] = '4'

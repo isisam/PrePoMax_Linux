@@ -20,7 +20,7 @@ public sealed partial class MainWindow
             string Format(object? v) { try { return p.Converter.ConvertToString(ctx, System.Globalization.CultureInfo.CurrentCulture, v) ?? ""; } catch { return v?.ToString() ?? ""; } }
             return (object)new { p.Name, p.DisplayName, p.Category, p.Description, p.IsReadOnly,
                 value = Format(p.GetValue(grid.SelectedObject)), editor = grid.Editors.GetValueOrDefault(p.Name)?.GetType().Name,
-                exclusive = p.Converter.GetStandardValuesExclusive(ctx), values = p.Converter.GetStandardValuesSupported(ctx) ? p.Converter.GetStandardValues(ctx)?.Cast<object>().Select(Format).ToArray() : null };
+                exclusive = p.Converter.GetStandardValuesExclusive(ctx), values = p.Converter.GetStandardValuesSupported(ctx) ? DescriptorPropertyGrid.StandardValues(p, ctx).Select(Format).ToArray() : null };
         }).ToArray();
         return new { kind = editor.Session.Kind, name = editor.Session.Draft.Name, original = editor.Session.OriginalName,
             pages = editor.Session.Pages.Select(p => p.Title).ToArray(), page = editor.PageSelector.SelectedIndex, row = editor.RowSelector.SelectedIndex,

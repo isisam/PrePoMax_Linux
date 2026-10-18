@@ -108,7 +108,13 @@ internal static class FormContracts
         }
         return new { properties = properties.Select(p => { var ctx = new Context(view, p); return new {
             p.Name, p.DisplayName, p.Category, p.Description, p.IsReadOnly, converter = p.Converter.GetType().FullName,
-            exclusive = p.Converter.GetStandardValuesExclusive(ctx), values = p.Converter.GetStandardValuesSupported(ctx) ? p.Converter.GetStandardValues(ctx)?.Cast<object>().Select(v => p.Converter.ConvertToString(ctx, CultureInfo.InvariantCulture, v)).ToArray() : null
+            exclusive = p.Converter.GetStandardValuesExclusive(ctx), values = p.Converter.GetStandardValuesSupported(ctx) ?
+#if NETFRAMEWORK
+                p.Converter.GetStandardValues(ctx)?.Cast<object>()
+#else
+                PrePoMax.Avalonia.DescriptorPropertyGrid.StandardValues(p, ctx)
+#endif
+                .Select(v => p.Converter.ConvertToString(ctx, CultureInfo.InvariantCulture, v)).ToArray() : null
         }; }).ToArray(), invalid };
     }
     private sealed class Context(object value, PropertyDescriptor p) : ITypeDescriptorContext

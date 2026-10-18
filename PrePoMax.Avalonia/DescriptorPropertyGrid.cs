@@ -43,6 +43,15 @@ public sealed class DescriptorPropertyGrid : UserControl
         .ThenByDescending(p => PrefixLength(p.DisplayName)).ThenBy(p => Display(p.DisplayName), StringComparer.CurrentCulture).ToArray();
     private static int PrefixLength(string value) => value.TakeWhile(c => c is '\t' or '\u200b').Count();
     public static string Display(string value) => value.Replace("\t", "").Replace("\u200b", "");
+    public static object[] StandardValues(PropertyDescriptor property, ITypeDescriptorContext context)
+    {
+        var values = property.Converter.GetStandardValues(context)?.Cast<object>() ?? [];
+        // .NET 10 adds this KnownColor to ColorConverter's palette. Keep the
+        // Windows net48 palette for these shared forms; custom RGB input remains.
+        if (property.PropertyType == typeof(System.Drawing.Color))
+            values = values.Where(v => v is not System.Drawing.Color { Name: "RebeccaPurple" });
+        return values.ToArray();
+    }
     public bool CommitPending()
     {
         foreach (var commit in commits.Values.ToArray()) if (!commit()) return false;
@@ -108,22 +117,24 @@ public sealed class DescriptorPropertyGrid : UserControl
                 button.Click += async (_, _) => { var result = await RegionEditor(owner, p); if (result != null) Set(result); };
                 editor = button;
             }
-            else if (kind == PropertyEditorKind.Color && !p.IsReadOnly && p.Converter.CanConvertFrom(ctx, typeof(string)))
-                editor = MakeText();
             else if (kind == PropertyEditorKind.Flags && p.PropertyType.IsEnum && !p.IsReadOnly)
             {
                 var choices = new StackPanel();
                 long bits = Convert.ToInt64(value);
                 foreach (object option in p.Converter.GetStandardValues(ctx)?.Cast<object>() ?? Enum.GetValues(p.PropertyType).Cast<object>())
                 {
-                    long mask = Convert.ToInt64(option);
-                    var check = new CheckBox { Content = Format(option), IsChecked = mask == 0 ? bits == 0 : (bits & mask) == mask };
-                    check.IsCheckedChanged += (_, _) => { if (!rebuilding) { long current = Convert.ToInt64(p.GetValue(owner)); Set(Enum.ToObject(p.PropertyType, check.IsChecked == true ? current | mask : current & ~mask)); } };
+                    var metadata = option as DynamicTypeDescriptor.StandardValueAttribute;
+                    if (metadata is { Visible: false }) continue;
+                    long mask = Convert.ToInt64(metadata?.Value ?? option);
+                    var check = new CheckBox { Content = metadata?.DisplayName ?? Format(option), IsEnabled = metadata?.Enabled ?? true,
+                        IsChecked = mask == 0 ? bits == 0 : (bits & mask) == mask };
+                    ToolTip.SetTip(check, metadata?.Description);
+                    check.IsCheckedChanged += (_, _) => { if (!rebuilding) { long current = Convert.ToInt64(p.GetValue(owner)); Set(Enum.ToObject(p.PropertyType, mask == 0 && check.IsChecked == true ? 0 : check.IsChecked == true ? current | mask : current & ~mask)); } };
                     choices.Children.Add(check);
                 }
                 editor = new Expander { Header = Format(value), Content = choices };
             }
-            else if (kind != PropertyEditorKind.Default)
+            else if (kind != PropertyEditorKind.Default && kind != PropertyEditorKind.Color)
                 editor = new TextBox { Text = "unsupported (" + kind + "): " + Format(value), IsReadOnly = true };
             else if (p.IsReadOnly)
                 editor = new TextBox { Text = Format(value), IsReadOnly = true };
@@ -135,7 +146,7 @@ public sealed class DescriptorPropertyGrid : UserControl
             }
             else if (p.Converter.GetStandardValuesSupported(ctx))
             {
-                var values = p.Converter.GetStandardValues(ctx)?.Cast<object>().ToArray() ?? [];
+                var values = StandardValues(p, ctx);
                 var dropdown = new ComboBox { ItemsSource = values.Select(Format).ToArray(), HorizontalAlignment = HorizontalAlignment.Stretch };
                 dropdown.SelectedIndex = Array.FindIndex(values, v => Equals(v, value) || Format(v) == Format(value));
                 if (p.Converter.GetStandardValuesExclusive(ctx))
