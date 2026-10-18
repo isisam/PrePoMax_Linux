@@ -59,7 +59,25 @@ with (out/'gui.log').open('w') as log:
     p = sp.Popen([str(app/'PrePoMax.Avalonia'), str(fixture), '--frd', str(out/'no-results.frd'), '--evidence', str(out)], env=env, stdout=log, stderr=sp.STDOUT, start_new_session=True)
     try:
         wait(lambda:(out/'ready').exists()); initial=read(); (out/'initial.json').write_text(json.dumps(initial,indent=2))
+        if '--repair-invalid' in sys.argv:
+            command(op='form-audit',path=str(out/'before.json'))
+            section=find('Section','L3FormsSection'); command(op='tree-action',key=section['Key'],action='Delete')
+            command(op='form-export',path=str(out/'repaired.inp')); command(op='form-audit',path=str(out/'after.json'))
+            command(op='save',path=str(out/'repaired.pmx')); command(op='close'); p.wait(timeout=25)
+            assert p.returncode==0
+            before=json.loads((out/'before.json').read_text()); after=json.loads((out/'after.json').read_text())
+            assert before['plyWarning'] and not after['plyWarning'] and before['layups']==after['layups'] and all(l['Active'] for l in after['layups'])
+            (out/'acceptance.json').write_text(json.dumps(dict(passed=True,exit=p.returncode,repair='delete overlapping ordinary section through tree command',active_layups_preserved=True),indent=2)); sys.exit(0)
         command(op='form-export',path=str(out/'initial.inp'))
+        if '--check-overlap' in sys.argv:
+            count=read()['tree']['commandCount']; new('Section','Solid Section'); setprop('Name','OverlapRejected')
+            click('Apply'); assert 'Overlaps ordinary section' in read()['form']['error']; assert read()['tree']['commandCount']==count
+            click('Cancel'); command(op='close'); p.wait(timeout=25); assert p.returncode==0
+            (out/'acceptance.json').write_text(json.dumps(dict(passed=True,exit=p.returncode,rejected_before_command=True,check='active layup and ordinary section overlap'),indent=2)); sys.exit(0)
+        if '--audit-only' in sys.argv:
+            command(op='form-audit',path=str(out/'model-audit.json')); command(op='close'); p.wait(timeout=25)
+            assert p.returncode==0
+            (out/'acceptance.json').write_text(json.dumps(dict(passed=True,exit=p.returncode,read_only_audit=True,fixture=str(fixture)),indent=2)); sys.exit(0)
         lines=(out/'initial.inp').read_text().splitlines()
         card=next(i for i,line in enumerate(lines) if line.upper().startswith('*ELEMENT,'))
         assert 'TYPE=C3D8' in lines[card].upper(),lines[card]

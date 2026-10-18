@@ -137,6 +137,7 @@ public sealed class EntityEditorWindow : Window
         void Changed(string name)
         {
             dirty = true; Session.Changed(name);
+            if (Session is StepFormSession step && Properties.SelectedObject is ViewStepControlParameter) step.ControlsChanged = true;
             if (SelectionPanel != null && session is IIdSelectionSession s) SelectionPanel.IsVisible = s.SelectionVisible;
             DraftChanged?.Invoke();
         }
@@ -169,8 +170,8 @@ public sealed class EntityEditorWindow : Window
         RowSelector.IsVisible = showRows; DataProperties.IsVisible = showRows; dataTools.IsVisible = showRows; propertyArea.Children[1].IsVisible = showRows;
         propertyArea.RowDefinitions[4].Height = showRows ? new GridLength(1, GridUnitType.Star) : new GridLength(0);
     }
-    private object DataRow(object row) => Session is MaterialFormSession material && row is TempDataPoint
-        ? new MaterialRowDescriptor(row, material.TemperatureDependent) : row;
+    private object DataRow(object row) => Session is MaterialFormSession material
+        ? new MaterialRowDescriptor(row, material.TemperatureDependent, material.Units) : row;
     public bool Flush() => Properties.CommitPending() && DataProperties.CommitPending();
     private bool submitting;
     private async Task<bool> Submit()
@@ -187,6 +188,10 @@ public sealed class EntityEditorWindow : Window
             }
             if (Session is LoadFormSession load && (dirty || Session.OriginalName == null))
             { load.Validate(); if (load.Confirmation() is { } question && !await Confirm(question)) return false; }
+            if (Session is BoundaryFormSession boundary && (dirty || Session.OriginalName == null))
+            { boundary.Validate(); if (boundary.Confirmation() is { } question && !await Confirm(question)) return false; }
+            if (Session is StepFormSession { ControlsChanged: true, ControlWarningAccepted: false } step)
+            { if (!await Confirm(StepFormSession.ControlWarning)) return false; step.ControlWarningAccepted = true; }
             return Apply();
         }
         catch (Exception ex) { Error.Text = DescriptorPropertyGrid.Message(ex); return false; }

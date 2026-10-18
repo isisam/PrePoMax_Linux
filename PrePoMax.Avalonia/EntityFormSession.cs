@@ -38,6 +38,7 @@ public sealed class MaterialFormSession : EntityFormSession
 {
     private readonly Material material;
     private readonly List<ViewMaterialProperty> properties;
+    public UnitSystem Units => Controller.Model.UnitSystem;
     public bool TemperatureDependent
     {
         get => material.TemperatureDependent;
@@ -48,7 +49,8 @@ public sealed class MaterialFormSession : EntityFormSession
         }
     }
     public bool ShowScalar(object view) => !TemperatureDependent || view is not (ViewDensity or ViewElastic or ViewElasticEngineeringConstants or ViewElasticLamina or ViewThermalConductivity or ViewSpecificHeat);
-    public bool ShowRows(object view) => view is ViewPlastic or ViewUserMaterial || TemperatureDependent && view is ViewDensity or ViewElastic or ViewElasticEngineeringConstants or ViewElasticLamina or ViewThermalExpansion or ViewThermalConductivity or ViewSpecificHeat;
+    public bool ShowRows(object view) => view is ViewPlastic or ViewUserMaterial || TemperatureDependent &&
+        view is (ViewDensity or ViewElastic or ViewElasticEngineeringConstants or ViewElasticLamina or ViewThermalExpansion or ViewThermalConductivity or ViewSpecificHeat);
     public override string Kind => "Material";
     public override NamedClass Draft => material;
     public override IReadOnlyList<FormPage> Pages => properties.Select(v => new FormPage(v.Name, v,
@@ -173,6 +175,21 @@ public sealed class SectionFormSession : EntityFormSession
         if (!compatible) throw new CaeException("The section type and the section region are not compatible.");
         if (section.TwoD && section.Thickness.Value <= 0) throw new CaeException("The section thickness must be larger than 0.");
         if (!Controller.Model.Materials.ContainsKey(section.MaterialName)) throw new CaeException("The section material does not exist.");
+        // Catch the existing writer safeguard before publishing a command. Resolve
+        // just the affected regions so an unrelated invalid layup remains repairable.
+        if (section.Active)
+        {
+            var ids = CompositeLayupExpansion.ResolveRegion(Controller.Model, section).ToHashSet();
+            foreach (var layup in Controller.Model.CompositeLayups.Values.Where(l => l.Active))
+            {
+                int[] region;
+                try { region = CompositeLayupExpansion.ResolveRegion(Controller.Model, layup); }
+                catch (CaeException) { continue; }
+                var overlap = region.Where(ids.Contains).Order().ToArray();
+                if (overlap.Length > 0) throw new CaeException("Composite layup '" + layup.Name + "': Overlaps ordinary section '" + section.Name +
+                    "': " + overlap.Length + " elements; IDs " + string.Join(", ", overlap.Take(8)) + ".");
+            }
+        }
     }
     protected override void Publish()
     {

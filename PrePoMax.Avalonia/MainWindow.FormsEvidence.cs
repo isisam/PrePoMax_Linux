@@ -31,6 +31,21 @@ public sealed partial class MainWindow
     private void FormsEvidenceCommand(string op, JsonElement c)
     {
         if (op == "form-export") { ExportInpTo(c.GetProperty("path").GetString()!); return; }
+        if (op == "form-audit")
+        {
+            var model = mainView.Controller.Model;
+            var audit = new {
+                materials = model.Materials.Values.Select(m => new { m.Name, properties = m.Properties.Select(p => new {
+                    type = p.GetType().Name, constants = p is CaeModel.UserMaterial um ? um.Constants.Select(v => v.Value.Value).ToArray() : null }) }),
+                sections = model.Sections.Values.Select(s => new { s.Name, s.MaterialName, region = s.RegionName, s.RegionType, s.Active }),
+                layups = model.CompositeLayups.Values.Select(l => new { l.Name, l.Active, region = l.RegionName }),
+                steps = mainView.Controller.GetStepNames(),
+                keywords = model.CalculixUserKeywords.Select(k => new { path = k.Key, text = k.Value.Data, suppressed = k.Value.IsSuppressed }),
+                overrides = model.CalculixKeywordOverrides.Select(k => new { path = k.Indices, text = k.Data, k.Disabled, suppressed = k.IsSuppressed }),
+                plyWarning = this.model?.PlyWarning
+            };
+            File.WriteAllText(c.GetProperty("path").GetString()!, JsonSerializer.Serialize(audit, new JsonSerializerOptions { WriteIndented = true })); return;
+        }
         var editor = activeEditor ?? throw new InvalidOperationException("No form is open");
         if (op == "form-page") { editor.PageSelector.SelectedIndex = c.GetProperty("index").GetInt32(); return; }
         if (op == "form-row") { editor.RowSelector.SelectedIndex = c.GetProperty("index").GetInt32(); return; }

@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using CaeGlobals;
 using CaeMesh;
 using CaeModel;
+using vtkControl;
 
 namespace PrePoMax.Avalonia;
 
@@ -54,7 +55,7 @@ public sealed partial class MainWindow
         dialog.Applied += () => { RefreshModelTrees(); Log("FORM " + session.Kind + " " + session.Draft.Name + " commands=" + mainView.Controller.GetActiveCommandCount()); };
         dialog.DraftChanged += () => HighlightDraft(session);
         dialog.AddNewRequested += () => global::Avalonia.Threading.Dispatcher.UIThread.Post(() => addNew?.Invoke());
-        dialog.Closed += (_, _) => { activeEditor = null; viewport.ClearSelection(); };
+        dialog.Closed += (_, _) => { activeEditor = null; viewport.RemoveActors(["__form_reference_point"]); viewport.ClearSelection(); };
         _ = dialog.ShowDialog(this); HighlightDraft(session);
     }
     private void HighlightDraft(EntityFormSession session)
@@ -62,12 +63,29 @@ public sealed partial class MainWindow
         try
         {
             var c = mainView.Controller; NamedClass entity = session.Draft;
+            viewport.RemoveActors(["__form_reference_point"]);
             if (entity is Section section && section.RegionType is RegionTypeEnum.PartName or RegionTypeEnum.ElementSetName)
                 entity = section.RegionType == RegionTypeEnum.PartName ? c.Model.Mesh.Parts[section.RegionName] : c.Model.Mesh.ElementSets[section.RegionName];
             if (entity is FeSurface surface && surface.CreatedFrom == FeSurfaceCreatedFrom.NodeSet && surface.CreatedFromNodeSetName != null)
                 entity = c.Model.Mesh.NodeSets[surface.CreatedFromNodeSetName];
             if (entity is BoundaryCondition bc && bc.RegionType == RegionTypeEnum.NodeSetName) entity = c.Model.Mesh.NodeSets[bc.RegionName];
+            else if (entity is BoundaryCondition surfaceBc && surfaceBc.RegionType == RegionTypeEnum.SurfaceName) entity = c.GetSurfaceNodeSet(surfaceBc.RegionName);
+            else if (entity is BoundaryCondition pointBc && pointBc.RegionType == RegionTypeEnum.ReferencePointName) entity = c.GetModelReferencePoint(pointBc.RegionName);
             if (entity is Load load && load.RegionType == RegionTypeEnum.NodeSetName) entity = c.Model.Mesh.NodeSets[load.RegionName];
+            else if (entity is Load surfaceLoad && surfaceLoad.RegionType == RegionTypeEnum.SurfaceName) entity = c.GetSurfaceNodeSet(surfaceLoad.RegionName);
+            else if (entity is Load pointLoad && pointLoad.RegionType == RegionTypeEnum.ReferencePointName) entity = c.GetModelReferencePoint(pointLoad.RegionName);
+            else if (entity is Load selectedLoad && selectedLoad.RegionType == RegionTypeEnum.Selection)
+                entity = session is IIdSelectionSession { SelectItem: CaeGlobals.vtkSelectItem.Surface } surfaceSelection
+                    ? new FeSurface("selection") { FaceIds = surfaceSelection.Ids } : new FeNodeSet("selection", selectedLoad.CreationIds);
+            if (entity is BoundaryCondition selectedBc && selectedBc.RegionType == RegionTypeEnum.Selection)
+                entity = new FeNodeSet("selection", selectedBc.CreationIds);
+            if (entity is FeReferencePoint point)
+            {
+                viewport.ClearSelection();
+                var marker = new vtkMaxActorData { Name = "__form_reference_point", Pickable = false, Layer = vtkRendererLayer.Selection, Color = System.Drawing.Color.Yellow };
+                marker.Geometry.Nodes = new() { Ids = [-1], Coor = [[point.X.Value, point.Y.Value, point.Z.Value]] };
+                viewport.AddPoints(marker); SetStatus(point.Name + ": reference point"); return;
+            }
             SelectTreeEntity(new TreeEntry("draft", entity.Name, session.Kind, ViewGeometryModelResults.Model, entity));
         }
         catch (Exception error) { Log("Form highlight: " + error.Message); }

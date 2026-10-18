@@ -12,6 +12,10 @@ public sealed class StepFormSession : EntityFormSession
     public override string Kind => "Step";
     public override NamedClass Draft => step;
     private readonly List<ViewStepControlParameter> controls;
+    public bool ControlsChanged { get; set; }
+    public bool ControlWarningAccepted { get; set; }
+    public const string ControlWarning = "Customized solution controls are not needed in most nonlinear analyses." +
+        " They should only be used by those users who know what they are doing and are expert in the field.";
     public override IReadOnlyList<FormPage> Pages => new[] { new FormPage("Static step", View) }.Concat(controls.Select(v => new FormPage(v.Name, v))).ToArray();
     public static readonly string[] ControlTypes = ["Reset", "Time Incrementation", "Field", "Contact"];
     public StepFormSession(Controller c, StaticStep? source = null) : base(c, source?.Name)
@@ -29,9 +33,9 @@ public sealed class StepFormSession : EntityFormSession
     {
         StepControlParameter p = name switch { "Reset" => new ResetStepControlParameter(), "Time Incrementation" => new TimeIncrementationStepControlParameter(),
             "Field" => new FieldStepControlParameter(), "Contact" => new ContactStepControlParameter(), _ => throw new NotSupportedException(name) };
-        controls.Add(Wrap(p));
+        controls.Add(Wrap(p)); ControlsChanged = true;
     }
-    public void RemoveControl(int index) => controls.RemoveAt(index);
+    public void RemoveControl(int index) { controls.RemoveAt(index); ControlsChanged = true; }
     public override void Changed(string property) => View.UpdateVisibility();
     public void FatiguePreset(int jumps)
     {

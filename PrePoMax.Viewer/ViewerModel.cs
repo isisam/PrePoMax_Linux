@@ -16,9 +16,10 @@ public sealed class ViewerModel
     public int[] Offsets { get; }
     public long[] Connectivity { get; }
     public List<PlyGroup> Plies { get; } = [];
-    public double[] PlyScalars { get; }
+    public double[] PlyScalars { get; private set; } = [];
     public string[] RawUserKeywords { get; private set; } = [];
     public string PlySource { get; private set; } = "Composite layup expansion";
+    public string? PlyWarning { get; private set; }
     public FeResults? Results { get; private set; }
     public double[]? Displacement { get; private set; }
     public Dictionary<string, double[]> Contours { get; } = [];
@@ -78,9 +79,22 @@ public sealed class ViewerModel
         Offsets = new int[elements.Length + 1]; var conn = new List<long>();
         for (int i = 0; i < elements.Length; i++) { conn.AddRange(elements[i].GetVtkNodeIds().Select(id => index[id])); Offsets[i + 1] = conn.Count; }
         Connectivity = conn.ToArray();
+        RefreshPlyGroups();
+    }
+    public void RefreshPlyGroups()
+    {
+        var model = Model;
+        var elements = model.Mesh.Elements.Values.OrderBy(e => e.Id).ToArray();
+        Plies.Clear(); PlyWarning = null; PlySource = "Composite layup expansion";
         if (model.CompositeLayups.Count > 0)
         {
-            foreach (var ply in CompositeLayupExpansion.Expand(model)) Plies.Add(new(ply.Section.Name, ply.ElementIds.Select(i => (long)i).ToArray()));
+            try { foreach (var ply in CompositeLayupExpansion.Expand(model)) Plies.Add(new(ply.Section.Name, ply.ElementIds.Select(i => (long)i).ToArray())); }
+            catch (CaeGlobals.CaeException error)
+            {
+                // Keep the real model editable for repair. The writer still refuses
+                // invalid layups; no false ply groups or export exceptions are hidden.
+                PlyWarning = error.Message; PlySource = "Invalid composite layup; mesh display only";
+            }
         }
         else
         {

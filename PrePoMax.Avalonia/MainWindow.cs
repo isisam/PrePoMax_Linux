@@ -134,6 +134,7 @@ public sealed partial class MainWindow : Window, IMainView
                     finally{CoreHost.FileReadError=previous;}
                 });
                 model=loaded;modelPath=path;ViewportModelBridge.Load(viewport,loaded);RefreshTree();
+                if (loaded.PlyWarning != null) Log("Model requires repair; ply colouring unavailable: " + loaded.PlyWarning);
                 Log($"OPEN path={path} nodes={loaded.NodeIds.Length} elements={loaded.ElementIds.Length} controllerCommands={mainView.Controller.GetActiveCommandCount()}");
                 int flag=Array.IndexOf(Program.Arguments,"--frd");
                 string frd=extension==".frd"?path:flag>=0&&flag+1<Program.Arguments.Length?Program.Arguments[flag+1]:Path.ChangeExtension(path,".frd");

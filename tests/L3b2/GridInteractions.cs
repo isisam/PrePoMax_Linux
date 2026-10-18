@@ -8,6 +8,7 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using CaeGlobals;
 using CaeModel;
 using PrePoMax;
@@ -92,6 +93,7 @@ public sealed class GridTestApp : Application
                 Check(fixture.Flags == ExampleFlags.None, "zero flag clears all bits");
                 Check(DescriptorPropertyGrid.Display("\t\u200bVisible") == "Visible", "ordering prefixes stripped for display");
                 var controller = new Controller(new NullMainView()); controller.New();
+                controller.SetNewModelPropertiesCommand(ModelSpaceEnum.ThreeD, UnitSystemType.MM_TON_S_C);
                 foreach (string type in MaterialFormSession.AvailableProperties)
                 {
                     var session = new MaterialFormSession(controller);
@@ -110,6 +112,7 @@ public sealed class GridTestApp : Application
                     if (!scalarOnly && !user)
                     {
                         Check(editor.DataProperties.Editors.ContainsKey("TemperatureEq"), "temperature column shown: " + type);
+                        if (type == "Elastic") Check(DescriptorPropertyGrid.Properties(editor.DataProperties.SelectedObject!).Single(p => p.Name == "YoungsModulusEq").DisplayName.Contains("MPa"), "material table header uses model pressure unit");
                         int count = session.Pages[0].DataRows!.Count;
                         Click("Add data row"); Check(session.Pages[0].DataRows!.Count == count + 1, "add data row: " + type);
                         Click("Remove data row"); Check(session.Pages[0].DataRows!.Count == count, "remove data row: " + type);
@@ -123,6 +126,36 @@ public sealed class GridTestApp : Application
                     }
                     editor.Close();
                 }
+                controller.AddStepCommand(new StaticStep("ControlsStep"), false);
+                var stepSession = new StepFormSession(controller, (StaticStep)controller.GetStep("ControlsStep"));
+                var stepEditor = new EntityEditorWindow(stepSession); stepEditor.Show();
+                var controlType = stepEditor.GetVisualDescendants().OfType<ComboBox>().Single(c => c.Items.Cast<object>().SequenceEqual(StepFormSession.ControlTypes));
+                foreach (string type in StepFormSession.ControlTypes)
+                {
+                    controlType.SelectedItem = type; stepEditor.Buttons["Add step control"].RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                }
+                Check(stepSession.Pages.Count == 5, "all four typed step controls added through controls");
+                stepEditor.PageSelector.SelectedIndex = 2;
+                var timeControl = (TextBox)stepEditor.Properties.Editors["I0"]; timeControl.Text = "8";
+                timeControl.RaiseEvent(new KeyEventArgs { RoutedEvent = InputElement.KeyDownEvent, Key = Key.Enter });
+                await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+                int commands = controller.GetActiveCommandCount();
+                stepEditor.Buttons["Apply"].RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                await System.Threading.Tasks.Task.Delay(20);
+                var question = life.Windows.Single(w => w.Title == "Confirm");
+                Check(question.GetVisualDescendants().OfType<TextBlock>().Any(t => t.Text == StepFormSession.ControlWarning), "step-control Windows warning shown");
+                question.GetVisualDescendants().OfType<Button>().Single(b => b.Content?.ToString() == "Cancel").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                await System.Threading.Tasks.Task.Delay(20);
+                Check(controller.GetActiveCommandCount() == commands, "cancel step-control warning preserves model");
+                stepEditor.Buttons["Apply"].RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                await System.Threading.Tasks.Task.Delay(20);
+                question = life.Windows.Single(w => w.Title == "Confirm");
+                question.GetVisualDescendants().OfType<Button>().Single(b => b.Content?.ToString() == "OK").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                await System.Threading.Tasks.Task.Delay(20);
+                Check(controller.GetActiveCommandCount() == commands + 1 && controller.GetStep("ControlsStep").StepControls.Parameters.Count == 4, "accept warning publishes four typed controls with one replace command");
+                Check(controller.GetStep("ControlsStep").StepControls.Parameters.OfType<TimeIncrementationStepControlParameter>().Single().I0 == 8, "edited step-control value persisted");
+                stepEditor.PageSelector.SelectedIndex = 4; stepEditor.Buttons["Remove step control"].RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                Check(stepSession.Pages.Count == 4, "remove step control through real control"); stepEditor.Close();
                 File.WriteAllText(GridInteractions.Output, JsonSerializer.Serialize(new { passed = true, checks, real_controls = true, entity_acceptance = false }, new JsonSerializerOptions { WriteIndented = true }));
             }
             catch (Exception error) { File.WriteAllText(GridInteractions.Output, JsonSerializer.Serialize(new { passed = false, checks, error = error.ToString() })); Environment.ExitCode = 1; }

@@ -2,7 +2,7 @@
 from pathlib import Path
 import hashlib, json, os, subprocess as sp, sys
 repo = Path(__file__).resolve().parents[2]
-logs = repo.parent/'logs/L3b2/forms'
+logs = Path(os.environ.get('PPM_FORMS_LOGS', repo.parent/'logs/L3b2/forms'))
 summary = json.loads((logs/'roundtrip.json').read_text()) if (logs/'roundtrip.json').exists() else {}
 for name in sys.argv[1:] or ('DCB','M2a'):
     folder = logs/('ui-'+name)

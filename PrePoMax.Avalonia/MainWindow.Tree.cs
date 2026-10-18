@@ -38,6 +38,7 @@ public sealed partial class MainWindow
     private void RefreshModelTrees()
     {
         if (mainView.Controller?.Model == null) return;
+        if (ReferenceEquals(model?.Model, mainView.Controller.Model)) model.RefreshPlyGroups();
         var expanded = treeItems.Where(p => p.Value.IsExpanded).Select(p => p.Key).ToHashSet();
         string? selected = (new[] { tree, geometryTree, resultsTree }.Select(t => t.SelectedItem).OfType<TreeViewItem>().FirstOrDefault()?.Tag as TreeEntry)?.Key;
         changingTree=true;

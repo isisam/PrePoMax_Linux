@@ -39,10 +39,16 @@ public sealed class BoundaryFormSession : EntityFormSession, IIdSelectionSession
     }
     public override void Changed(string property) { view.UpdateRegionVisibility(); view.UpdateVisibility(); }
     public void SelectionChanged(int[] ids, Selection selection) { bc.CreationIds = ids; bc.CreationData = selection.DeepCopy(true, false); }
+    public string? Confirmation() => bc is DisplacementRotation dr && dr.RegionType == RegionTypeEnum.ReferencePointName &&
+        dr.CoordinateSystemName != CoordinateSystem.DefaultCoordinateSystemName
+        ? "A coordinate system will not be taken into account if applied on a reference point." : null;
     public override void Validate()
     {
         CheckName(Controller.GetBoundaryConditionNamesForStep(stepName), "boundary condition"); bc.CheckEquations();
         if (SelectionVisible && Ids.Length == 0) throw new CaeException("The boundary condition selection must contain at least one item.");
+        if (bc is DisplacementRotation distributed && distributed.DistributionName != Distribution.DefaultDistributionName &&
+            !distributed.IsDistributionTypeSupported(Controller.GetDistribution(distributed.DistributionName).DistributionType, out string distributionError))
+            throw new CaeException(distributionError);
         if (bc is DisplacementRotation dr && !dr.IsProperlyDefined(out string error)) throw new CaeException(error);
         if (!Controller.GetStep(stepName).IsBoundaryConditionSupported(bc)) throw new CaeException("The step does not support this boundary condition.");
     }
