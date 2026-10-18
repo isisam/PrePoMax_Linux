@@ -7,9 +7,22 @@ namespace PrePoMax.Avalonia;
 internal static class ViewportModelBridge
 {
     public static void Load(VtkMaxView viewport, ViewerModel model)
+        => LoadMesh(viewport,model.Model.Mesh);
+    public static void LoadMesh(VtkMaxView viewport,CaeMesh.FeMesh mesh,bool fit=true)
     {
         viewport.Clear();
-        var mesh=model.Model.Mesh;
+        // An invisible complete mesh backs cross-part highlights. Its highlight actor
+        // is owned by vtkmax and is not pickable; visible parts remain separate actors.
+        if(mesh.Elements.Count>0)
+        {
+            var allNodes=mesh.Nodes.Keys.Order().ToArray();var allElements=mesh.Elements.Values.OrderBy(e=>e.Id).ToArray();
+            var index=allNodes.Select((id,i)=>(id,i)).ToDictionary(p=>p.id,p=>(long)p.i);
+            var cells=allElements.Select(e=>e.GetVtkNodeIds()).ToArray();var offsets=new int[cells.Length+1];
+            for(int i=0;i<cells.Length;i++)offsets[i+1]=offsets[i]+cells[i].Length;
+            viewport.Execute(v=>{v.Load(allNodes.Select(id=>(long)id).ToArray(),allNodes.SelectMany(id=>mesh.Nodes[id].Coor).ToArray(),
+                allElements.Select(e=>(long)e.Id).ToArray(),allElements.Select(e=>e.GetVtkCellType()).ToArray(),offsets,cells.SelectMany(c=>c.Select(id=>index[id])).ToArray());
+                v.ActorStyle(0,false,0,0,0);});
+        }
         foreach(var part in mesh.Parts.Values)
         {
             var elements=part.Labels.Select(id=>mesh.Elements[id]).ToArray();
@@ -20,8 +33,9 @@ internal static class ViewportModelBridge
             data.Geometry.Cells=new(){Ids=elements.Select(e=>e.Id).ToArray(),Types=elements.Select(e=>e.GetVtkCellType()).ToArray(),
                 CellNodeIds=elements.Select(e=>e.GetVtkNodeIds().Select(id=>map[id]).ToArray()).ToArray()};
             viewport.AddCells(data);
+            if(!part.Visible)viewport.HideActors([part.Name],true);
         }
-        viewport.Standard(0);
+        if(fit)viewport.Standard(0);
     }
     public static void Contour(VtkMaxView viewport,ViewerModel model,string field,double scale)
     {

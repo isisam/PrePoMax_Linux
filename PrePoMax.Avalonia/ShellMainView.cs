@@ -25,6 +25,7 @@ internal sealed class ShellMainView(MainWindow window,VtkMaxView viewport) : Nul
     public override void RegenerateTree(bool remeshing=false) {if(!Loading)UI(()=>window.RefreshTree());}
     public override void AddTreeNode(ViewGeometryModelResults view,NamedClass item,string parentName)=>RegenerateTree();
     public override void UpdateTreeNode(ViewGeometryModelResults view,string oldItemName,NamedClass item,string parentName,bool updateSelection=true)=>RegenerateTree();
+    public override void UpdateTreeNodeLayout(ViewGeometryModelResults view,string itemName,NamedClass item,string parentName)=>RegenerateTree();
     public override void RemoveTreeNode<T>(ViewGeometryModelResults view,string nodeName,string parentName)=>RegenerateTree();
     public override void SelectionChanged(int[] ids=null!)=>UI(()=>window.SetStatus("Selection: "+string.Join(", ",ids??[])));
     public override void SetSelectBy(vtkSelectBy selectBy)=>UI(()=>viewport.SelectBy=selectBy);

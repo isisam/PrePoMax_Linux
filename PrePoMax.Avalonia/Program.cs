@@ -15,6 +15,8 @@ internal static class Program
     {
         Arguments = args;
         Console.Write(BuildProvenance.Header);
+        if(args.Length==3 && args[0]=="--tree-check")
+        {try{TreeContractChecks.Run(args[1],args[2]);}catch(Exception e){Console.Error.WriteLine(e);Environment.ExitCode=1;}return;}
         if(args.Length>=2 && args[0]=="--contract-check")
         {
             try { AppBuilder.Configure<App>().UsePlatformDetect().SetupWithoutStarting();ViewportContractChecks.Run(args[1],args.Length>2?args[2]:null,args.Length>3?args[3]:null); }

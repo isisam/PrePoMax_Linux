@@ -31,7 +31,7 @@ public sealed partial class MainWindow : Window, IMainView
     private PickResult lastPick = new() { NodeId = -1, ElementId = -1, FaceId = -1 };
     public MainWindow()
     {
-        Title = "PrePoMax RCM - Linux shell (L2)"; Width = 1280; Height = 900; MinWidth = 1000; MinHeight = 600;
+        Title = "PrePoMax RCM - Linux model tree"; Width = 1280; Height = 900; MinWidth = 1000; MinHeight = 600;
         mainView=new ShellMainView(this,viewport){Loading=true};
         SettingsContainer.IsSaveDisabled=true;
         _=new Controller(this);mainView.Loading=false;
@@ -62,8 +62,7 @@ public sealed partial class MainWindow : Window, IMainView
         var statusPanel=new DockPanel();DockPanel.SetDock(units,Dock.Right);statusPanel.Children.Add(units);statusPanel.Children.Add(status);
         DockPanel.SetDock(statusPanel,Dock.Bottom);root.Children.Add(statusPanel);
         var layout = new Grid { RowDefinitions=new RowDefinitions("*,5,170"),ColumnDefinitions = new ColumnDefinitions("330,5,*") };
-        var sidebar = new DockPanel();var heading=new TextBlock{Text="MODEL - controller tree",Margin=new Thickness(10)};
-        DockPanel.SetDock(heading,Dock.Top);sidebar.Children.Add(heading);sidebar.Children.Add(tree);layout.Children.Add(sidebar);
+        var sidebar = new DockPanel();sidebar.Children.Add(BuildModelTrees());layout.Children.Add(sidebar);
         var vertical=new GridSplitter{ResizeDirection=GridResizeDirection.Columns};Grid.SetColumn(vertical,1);layout.Children.Add(vertical);
         Grid.SetColumn(viewport,2);layout.Children.Add(viewport);
         var horizontal=new GridSplitter{ResizeDirection=GridResizeDirection.Rows};Grid.SetRow(horizontal,1);Grid.SetColumnSpan(horizontal,3);layout.Children.Add(horizontal);
@@ -73,7 +72,7 @@ public sealed partial class MainWindow : Window, IMainView
         root.Children.Add(layout);Content=root;
         viewport.Ready+=async()=>{if(Program.Arguments.Length>0&&!Program.Arguments[0].StartsWith("--"))await Open(Program.Arguments[0]);};
         viewport.Picked+=Picked;
-        Log("L2 shell ready. Model tree and file persistence use the L1b Controller.");
+        Log("Ready. Open a model to begin.");
     }
     private void BuildMenu()
     {
@@ -99,20 +98,7 @@ public sealed partial class MainWindow : Window, IMainView
     internal void UpdateUnits(UnitSystem unitSystem)=>units.Text="Units: "+unitSystem.UnitSystemType;
     internal void RefreshTree()
     {
-        var controller=mainView.Controller;if(controller?.Model?.Mesh==null)return;
-        var mesh=controller.Model.Mesh;
-        var parts=mesh.Parts.Values.Select(part=>{
-            var row=new StackPanel{Orientation=Orientation.Horizontal,Spacing=4};
-            var visible=new CheckBox{IsChecked=true,Content=part.Name};visible.IsCheckedChanged+=(_,_)=>{if(viewport.ContainsActor(part.Name)){if(visible.IsChecked==true)viewport.ShowActors([part.Name],true);else viewport.HideActors([part.Name],true);}};row.Children.Add(visible);
-            var alpha=new NumericUpDown{Minimum=0,Maximum=1,Increment=.1m,Value=(decimal)(part.Color.A/255d),Width=110,FormatString="0.0"};
-            alpha.ValueChanged+=(_,_)=>{if(viewport.ContainsActor(part.Name))viewport.UpdateActor(part.Name,part.Name,System.Drawing.Color.FromArgb((int)((alpha.Value??1)*255),part.Color));};
-            row.Children.Add(alpha);return new TreeViewItem{Header=row};
-        }).ToArray();
-        tree.ItemsSource=new[]{new TreeViewItem{Header=$"Parts ({parts.Length})",IsExpanded=true,ItemsSource=parts},
-            new TreeViewItem{Header="Materials",IsExpanded=true,ItemsSource=controller.Model.Materials.Keys.Select(n=>new TreeViewItem{Header=n}).ToArray()},
-            new TreeViewItem{Header="Sections",ItemsSource=controller.Model.Sections.Keys.Select(n=>new TreeViewItem{Header=n}).ToArray()},
-            new TreeViewItem{Header="Composite layups",ItemsSource=controller.Model.CompositeLayups.Keys.Select(n=>new TreeViewItem{Header=n}).ToArray()}};
-        UpdateUnits(controller.Model.UnitSystem);
+        RefreshModelTrees();
     }
     private async Task Open(string path)
     {
@@ -153,6 +139,7 @@ public sealed partial class MainWindow : Window, IMainView
                 string frd=extension==".frd"?path:flag>=0&&flag+1<Program.Arguments.Length?Program.Arguments[flag+1]:Path.ChangeExtension(path,".frd");
                 if(File.Exists(frd))try{await loaded.LoadResultsAsync(frd,progress);}catch(Exception e){Log("Mesh loaded; "+e.Message);}
             }
+            RefreshTree();
             status.Text=$"{Path.GetFileName(path)} | {model!.NodeIds.Length:N0} nodes | {model.ElementIds.Length:N0} elements";
             if((Environment.GetEnvironmentVariable("PPM_L2C_EVIDENCE")=="1"||Environment.GetEnvironmentVariable("PPM_L2B_EVIDENCE")=="1")&&Program.Arguments.Contains("--evidence"))Evidence();
         }
@@ -182,7 +169,7 @@ public sealed partial class MainWindow : Window, IMainView
     private async Task SavePng()
     {var file=await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions{SuggestedFileName="view.png",DefaultExtension="png"});if(file?.TryGetLocalPath() is {} path)viewport.RenderToPNG(path);}
     private void Picked(PickResult r)
-    {lastPick=r;status.Text=r.Hit!=0?$"Element {r.ElementId} | Node {r.NodeId} | Face {r.FaceId} | ({r.X:G5}, {r.Y:G5}, {r.Z:G5})":"No element at pointer";Log($"PICK hit={r.Hit} element={r.ElementId} face={r.FaceId} node={r.NodeId}");}
+    {lastPick=r;SelectPickedPart(r);status.Text=r.Hit!=0?$"Element {r.ElementId} | Node {r.NodeId} | Face {r.FaceId} | ({r.X:G5}, {r.Y:G5}, {r.Z:G5})":"No element at pointer";Log($"PICK hit={r.Hit} element={r.ElementId} face={r.FaceId} node={r.NodeId}");}
     // Optional deterministic setup for the external X11 interaction harness.
     private void Evidence()
     {
@@ -212,12 +199,12 @@ public sealed partial class MainWindow : Window, IMainView
                 {
                     expectedElement = element.Id, world = new[] { x, y, z }, screen, width = viewport.Bounds.Width,
                     height = viewport.Bounds.Height, scale=RenderScaling, lastPick, runtime = Environment.Version.ToString(),
-                    origin=viewport.Control.TranslatePoint(new Point(0,0),this),
+                    origin=viewport.Control.TranslatePoint(new Point(0,0),this), windowId=TryGetPlatformHandle()?.Handle.ToInt64()??0,
                     pumpCount=viewport.PumpCount,
                     focus=viewport.HasViewportFocus, status=status.Text, log=messages.Text, actors=viewport.GetVtkMaxActorData().Length,
                     nodes=model.NodeIds.Length,elements=model.ElementIds.Length,controllerNodes=mainView.Controller.Model.Mesh?.Nodes.Count??0,step=model.ResultsStep,increment=model.ResultsIncrement,time=model.ResultsTime,
                     fields=model.Contours.ToDictionary(p=>p.Key,p=>new{min=p.Value.Min(),max=p.Value.Max()}),
-                    language=ShellLocale.Chinese?"zh-TW":"en", units=units.Text
+                    language=ShellLocale.Chinese?"zh-TW":"en", units=units.Text, tree=TreeEvidenceState()
                 }, new JsonSerializerOptions { IncludeFields = true }));
                 File.Move(Path.Combine(output,"state.tmp"),Path.Combine(output,"state.json"),true);
                 if (File.Exists(Path.Combine(output, "capture")))
@@ -229,6 +216,7 @@ public sealed partial class MainWindow : Window, IMainView
                 {
                     using var command=JsonDocument.Parse(File.ReadAllText(commandPath));File.Delete(commandPath);
                     var c=command.RootElement;string op=c.GetProperty("op").GetString()!;
+                    if(op.StartsWith("tree-"))TreeEvidenceCommand(op,c);
                     if(op=="front")viewport.SetFrontBackView(false,true);
                     if(op=="contour")Contour(c.GetProperty("field").GetString()!);
                     if(op=="deform"){deformationScale=c.GetProperty("scale").GetDouble();ViewportModelBridge.Deform(viewport,model,deformationScale);}
