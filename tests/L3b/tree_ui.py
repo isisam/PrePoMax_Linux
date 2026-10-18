@@ -55,7 +55,7 @@ while gdb.selected_inferior().pid:
 end
 ''')
         launch=['gdb','--batch','--return-child-result','-x',str(capture),'--args']
-    p=sp.Popen(launch+[str(app/'PrePoMax.Avalonia'),str(fixture),'--evidence',str(out)],env=env,stdout=log,stderr=sp.STDOUT,start_new_session=True)
+    p=sp.Popen(launch+[str(app/'PrePoMax.Avalonia'),str(fixture),'--non-interactive','--evidence',str(out)],env=env,stdout=log,stderr=sp.STDOUT,start_new_session=True)
     try:
         wait(lambda:(out/'ready').exists()); initial=wait(read)
         (out/'initial.json').write_text(json.dumps(initial,indent=2))

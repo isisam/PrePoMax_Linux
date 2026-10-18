@@ -75,32 +75,33 @@ namespace FileInOut.Output.Calculix
             foreach (var childKeyword in originalKeyword.Keywords) _keywords.Add(childKeyword);
         }
 
-        public override string GetKeywordString()
+        public override string GetKeywordString() => GetKeywordString(Environment.NewLine);
+        internal string GetKeywordString(string newLine)
         {
             string data = _replacementData ?? _originalData;
-            if (_disabled) return Comment(data);
-            return AppendNewLine(data);
+            if (_disabled) return Comment(data, newLine);
+            return AppendNewLine(data, newLine);
         }
         public override string GetDataString()
         {
             return "";
         }
 
-        private static string AppendNewLine(string data)
+        private static string AppendNewLine(string data, string newLine)
         {
             if (string.IsNullOrEmpty(data)) return "";
             if (data.EndsWith("\r") || data.EndsWith("\n")) return data;
-            return data + Environment.NewLine;
+            return data + newLine;
         }
-        private static string Comment(string data)
+        private static string Comment(string data, string newLine)
         {
-            if (string.IsNullOrEmpty(data)) return "** Disabled by CalculiX keyword editor" + Environment.NewLine;
+            if (string.IsNullOrEmpty(data)) return "** Disabled by CalculiX keyword editor" + newLine;
 
             string[] lines = data.Replace("\r\n", "\n").Replace("\r", "\n").Split('\n');
             StringBuilder sb = new StringBuilder();
             int count = lines.Length;
             if (count > 0 && lines[count - 1].Length == 0) count--;
-            for (int i = 0; i < count; i++) sb.Append("**").AppendLine(lines[i]);
+            for (int i = 0; i < count; i++) sb.Append("**").Append(lines[i]).Append(newLine);
             return sb.ToString();
         }
     }

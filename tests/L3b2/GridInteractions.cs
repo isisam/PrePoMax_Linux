@@ -183,6 +183,24 @@ public sealed class GridTestApp : Application
                 Check(unitController.GetActiveCommandCount() == commands, "unchanged legacy buckle skips value validation");
                 bad = new StepFormSession(unitController, unitController.GetStep(buckle.Name)); bad.MarkChanged();
                 try { bad.Apply(); Check(false, "changed invalid buckle rejected"); } catch (CaeException e) { Check(e.Message.Contains("positive finite"), "changed step validates values"); }
+                var stepController = new Controller(new FormTestMainView());
+                stepController.Open(Path.Combine(Path.GetDirectoryName(GridInteractions.Output)!, "fixtures", "M2a.pmx"));
+                stepController.AddNodeSetCommand(new CaeMesh.FeNodeSet("ParityNodes", [1]));
+                stepController.AddStepCommand(new StaticStep("Previous"), false);
+                stepController.AddBoundaryConditionCommand("Previous", new FixedBC("Fixed", "ParityNodes", RegionTypeEnum.NodeSetName, false));
+                stepController.AddLoadCommand("Previous", new CLoad("Force", "ParityNodes", RegionTypeEnum.NodeSetName, 1, 0, 0, false, false, 0));
+                var copy = StepFormSession.Create(stepController, new StaticStep("Copy"));
+                var copyEditor = new EntityEditorWindow(copy); copyEditor.Show(); copyEditor.Buttons["OK"].RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                Check(stepController.GetStep("Copy").BoundaryConditions.Count == 1 && stepController.GetStep("Copy").Loads.Count == 1, "static create copies BCs and loads");
+                var boundaryStep = StepFormSession.Create(stepController, new BoundaryDisplacementStep("NoCopy"));
+                var boundaryEditor = new EntityEditorWindow(boundaryStep); boundaryEditor.Show(); boundaryEditor.Buttons["OK"].RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                Check(stepController.GetStep("NoCopy").BoundaryConditions.Count == 0 && stepController.GetStep("NoCopy").Loads.Count == 0, "boundary displacement create never copies BCs and loads");
+                stepController.AddConstraintCommand(new CyclicSymmetry("Cyclic", "MissingMaster", RegionTypeEnum.SurfaceName, "MissingSlave", RegionTypeEnum.SurfaceName, false));
+                var frequency = new FrequencyStep("Frequency") { CyclicSymmetryModeMax = 5 };
+                stepController.AddStepCommand(frequency, false);
+                var frequencyEditor = new EntityEditorWindow(new StepFormSession(stepController, stepController.GetStep("Frequency"))); frequencyEditor.Show();
+                commands = stepController.GetActiveCommandCount(); frequencyEditor.Buttons["OK"].RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                Check(frequencyEditor.Error.Text!.Contains("nodal diameter must not exceed") && stepController.GetActiveCommandCount() == commands, "unchanged frequency checks cyclic symmetry modes before commands"); frequencyEditor.Close();
                 File.WriteAllText(GridInteractions.Output, JsonSerializer.Serialize(new { passed = true, checks, real_controls = true, entity_acceptance = false }, new JsonSerializerOptions { WriteIndented = true }));
             }
             catch (Exception error) { File.WriteAllText(GridInteractions.Output, JsonSerializer.Serialize(new { passed = false, checks, error = error.ToString() })); Environment.ExitCode = 1; }
@@ -199,4 +217,9 @@ public sealed class EditorFixture
     public string ReadOnly => "fixed";
     [Editor("No.Such.Editor", "System.Drawing.Design.UITypeEditor")] public string Unsupported { get; set; } = "retained";
     [Editor("UserControls.FlagsEnumEditorUIEditor", "System.Drawing.Design.UITypeEditor")] public ExampleFlags Flags { get; set; } = ExampleFlags.One | ExampleFlags.Two;
+}
+
+internal sealed class FormTestMainView : NullMainView
+{
+    public override CaeJob.AnalysisJob GetDefaultJob() => new("ParityAnalysis", "/bin/true", "parity", Path.GetTempPath());
 }

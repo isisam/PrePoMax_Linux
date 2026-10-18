@@ -56,7 +56,7 @@ def ids(value, action='Add IDs'):
     command(op='form-ids',value=value); return command(op='form-selection',button=action)
 
 with (out/'gui.log').open('w') as log:
-    p = sp.Popen([str(app/'PrePoMax.Avalonia'), str(fixture), '--frd', str(out/'no-results.frd'), '--evidence', str(out)], env=env, stdout=log, stderr=sp.STDOUT, start_new_session=True)
+    p = sp.Popen([str(app/'PrePoMax.Avalonia'), str(fixture), '--non-interactive', '--frd', str(out/'no-results.frd'), '--evidence', str(out)], env=env, stdout=log, stderr=sp.STDOUT, start_new_session=True)
     try:
         wait(lambda:(out/'ready').exists()); initial=read(); (out/'initial.json').write_text(json.dumps(initial,indent=2))
         if '--repair-invalid' in sys.argv:

@@ -52,11 +52,8 @@ namespace FileInOut.Output
             StringBuilder sb = new StringBuilder();
             foreach (var keyword in keywords)
             {
-                WriteKeywordRecursively(sb, keyword);
+                WriteKeywordRecursively(sb, keyword, true);
             }
-            // Keep the Windows INP wire format on every runtime, including user keyword text.
-            if (Environment.NewLine != "\r\n")
-                sb = new StringBuilder(sb.ToString().Replace("\r\n", "\n").Replace("\n", "\r\n"));
             // Write to file in multiple steps
             int step = 10_000_000;
             int upper;
@@ -1622,14 +1619,27 @@ namespace FileInOut.Output
             }
             return withoutComments.ToString();
         }
-        static private void WriteKeywordRecursively(StringBuilder sb, CalculixKeyword keyword)
+        static private void WriteKeywordRecursively(StringBuilder sb, CalculixKeyword keyword, bool windowsWire = false)
         {
-            sb.Append(ShortenLongNames(keyword.GetKeywordString()));
-            sb.Append(ShortenLongNames(keyword.GetDataString()));
+            string header = keyword.GetKeywordString();
+            string data = keyword.GetDataString();
+            if (windowsWire && Environment.NewLine != "\r\n")
+            {
+                // Windows preserves stored user text verbatim (including LF), and
+                // appends CRLF only for generated lines. Do not normalize raw text.
+                if (keyword is CalculixUserKeyword user)
+                    header = string.IsNullOrEmpty(user.Data) ? "" : user.Data + "\r\n";
+                else if (keyword is CalKeywordOverride replacement)
+                    header = replacement.GetKeywordString("\r\n");
+                else header = header.Replace("\r\n", "\n").Replace("\n", "\r\n");
+                data = data.Replace("\r\n", "\n").Replace("\n", "\r\n");
+            }
+            sb.Append(ShortenLongNames(header));
+            sb.Append(ShortenLongNames(data));
             //
             foreach (var childKeyword in keyword.Keywords)
             {
-                WriteKeywordRecursively(sb, childKeyword);
+                WriteKeywordRecursively(sb, childKeyword, windowsWire);
             }
         }
         static private string ShortenLongNames(string text)
