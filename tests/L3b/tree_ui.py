@@ -76,6 +76,9 @@ end
         command(op='tree-tab',index=1)
         # Return to deterministic camera, then exercise a real native left click.
         command(op='front');time.sleep(.5);s=read()
+        command(op='tree-select',key=material['Key'])
+        assert read()['tree']['selected']==material['Key'], 'Pick must replace a different prior tree selection'
+        s=read()
         main=str(s['windowId']);assert int(main)>0
         origin=s['origin'];x=round(origin['X']*s['scale']+s['screen'][0]);y=round((origin['Y']+s['height'])*s['scale']-1-s['screen'][1])
         sp.run(['xdotool','windowfocus',main,'mousemove','--window',main,str(x),str(y),'click','1'],check=True)
@@ -85,7 +88,7 @@ end
         sp.run(['import','-window','root',str(out/'tree.png')],check=True)
         (out/'final.json').write_text(json.dumps(picked,indent=2))
         command(op='close');p.wait(timeout=20);assert p.returncode==0,p.returncode
-        (out/'acceptance.json').write_text(json.dumps(dict(passed=True,exit=p.returncode,forced=False,checks=['categories','menu commands','command count','persisted visibility','native highlight','three tabs','pointer selection sync']),indent=2))
+        (out/'acceptance.json').write_text(json.dumps(dict(passed=True,exit=p.returncode,forced=False,checks=['categories','menu commands','command count','persisted visibility','native highlight','three tabs','pointer selection replaces material with picked part']),indent=2))
         print('PASS actual Avalonia tree menus, model state, VTK highlight and pointer/tree sync')
     finally:
         if p.poll() is None: os.killpg(p.pid,signal.SIGTERM);p.wait(timeout=10)
