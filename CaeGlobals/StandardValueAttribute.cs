@@ -1,4 +1,5 @@
-// Extracted VERBATIM from CaeGlobals/DynamicTypeDescriptor/DynamicTypeDescriptor.cs (class StandardValueAttribute).
+// Extracted from CaeGlobals/DynamicTypeDescriptor/DynamicTypeDescriptor.cs.
+// RC1 localization follows this attribute to its L3a assembly location.
 // The descriptor engine now lives in PrePoMax.PropertyMetadata. Keep this enum
 // attribute in CaeGlobals on both targets to preserve its identity without a cycle.
 using System;
@@ -38,10 +39,11 @@ namespace DynamicTypeDescriptor
                 {
                     if (Value != null)
                     {
-                        return Value.ToString();
+                        return Value is bool || Value.GetType().IsEnum
+                            ? CaeGlobals.UiLocalization.Text(Value.ToString()) : Value.ToString();
                     }
                 }
-                return m_DisplayName;
+                return CaeGlobals.UiLocalization.Text(m_DisplayName);
             }
             set
             {
@@ -80,7 +82,7 @@ namespace DynamicTypeDescriptor
         {
             get
             {
-                return m_Description;
+                return CaeGlobals.UiLocalization.Text(m_Description);
             }
             set
             {

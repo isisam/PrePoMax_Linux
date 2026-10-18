@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="../../build/SharedCore.props" />
+  <PropertyGroup>
+    <AssemblyName>NCalc</AssemblyName>
+    <RootNamespace>NCalc</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Antlr3.Runtime"><HintPath>Antlr3.Runtime.dll</HintPath><Private>true</Private></Reference>
+  </ItemGroup>
+</Project>

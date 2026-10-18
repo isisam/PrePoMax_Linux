@@ -45,6 +45,14 @@ namespace PrePoMax.Settings
 
         // Properties                                                                                                               
         [Category("General")]
+        [OrderedDisplayName(0, 10, "Language")]
+        [Description("Select the user interface language. Changes apply when settings are accepted.")]
+        public string Language
+        {
+            get { return _generalSettings.Language == "zh-TW" ? "繁體中文" : "English"; }
+            set { _generalSettings.Language = value == "繁體中文" ? "zh-TW" : "en"; }
+        }
+        [Category("General")]
         [OrderedDisplayName(0, 10, "Open last file")]
         [Description("When the program starts open the last file Saved/Opened.")]
         public bool OpenLastFile { get { return _generalSettings.OpenLastFile; } set { _generalSettings.OpenLastFile = value; } }
@@ -173,6 +181,7 @@ namespace PrePoMax.Settings
             else _splitPeriodicFaces = false;
             //
             _dctd = ProviderInstaller.Install(this);
+            _dctd.PopulateProperty(nameof(Language), new[] { "English", "繁體中文" });
             // Now lets display Yes/No instead of True/False
             _dctd.RenameBooleanPropertyToYesNo(nameof(OpenLastFile));
             _dctd.RenameBooleanPropertyToYesNo(nameof(SaveResultsInPmx));

@@ -1,4 +1,4 @@
-// PrePoMax - Copyright (C) 2016-2026 Matej Borovinšek
+﻿// PrePoMax - Copyright (C) 2016-2026 Matej Borovinšek
 //
 // Licensed under the terms defined in the LICENSE file located in the root directory of this source code.
 //
@@ -161,6 +161,10 @@ namespace PrePoMax
                 Application.EnableVisualStyles();
                 Application.SetCompatibleTextRenderingDefault(false);
                 Application.AddMessageFilter(new UserControls.NoBeepMessageFilter());
+                PrePoMax.L10n.UiTranslator.Install();
+                CaeGlobals.UiLocalization.TranslateText = PrePoMax.L10n.Translator.Translate;
+                CaeGlobals.UiLocalization.TranslateMessage = PrePoMax.L10n.Translator.Message;
+                CaeGlobals.UiLocalization.SetLanguage = PrePoMax.L10n.Translator.SetLanguage;
                 //
                 using (FrmMain mainForm = new FrmMain(cmdOptions))
                 {

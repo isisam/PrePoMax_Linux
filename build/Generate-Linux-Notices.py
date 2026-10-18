@@ -91,6 +91,13 @@ if quantum:
     text=download('https://raw.githubusercontent.com/QuantumConcepts/STLdotNET/9c6d0e36e84901106634f2145306fadfe6be2457/LICENSE.txt')
     add('QuantumConcepts-STLdotNET','1.3.1',quantum,text,'https://github.com/QuantumConcepts/STLdotNET; original 2013 AGPL-3.0 license; local STL/ sources included')
 project_files-=quantum
+for component, filename, license_file, version in (
+    ('NCalc-RCM', 'NCalc.dll', 'LICENSE', '1.3.8'),
+    ('ANTLR-runtime', 'Antlr3.Runtime.dll', 'ANTLR-LICENSE.txt', '3.1.2')):
+    if (app/filename).is_file():
+        add(component, version, {filename}, (repo/'ThirdParty/NCalc.RCM'/license_file).read_text(encoding='utf-8-sig'),
+            'RC1 ThirdParty/NCalc.RCM; NCalc source, ANTLR binary and original notices in corresponding-source archive')
+        project_files.discard(filename)
 add('PrePoMax-RCM','L2b',project_files,gpl,'Corresponding-source archive supplied alongside binaries')
 if (app/'ThreeMF.dll').exists():
     binding=(repo/'3MF/Lib3MF.cs').read_text(encoding='utf-8-sig').split('*/',1)[0]+'*/\n'

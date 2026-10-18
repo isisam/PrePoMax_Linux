@@ -1,4 +1,4 @@
-using PrePoMax.Forms;
+﻿using PrePoMax.Forms;
 using MessageBoxes = CaeGlobals.PortableMessageBoxes;
 using DialogResult = CaeGlobals.DialogAnswer;
 // PrePoMax - Copyright (C) 2016-2026 Matej Borovinšek
@@ -804,6 +804,9 @@ namespace PrePoMax
         }
         public void Clear()
         {
+            _journalBaseline = null;
+            _journalBaselineName = null;
+            _journalBaselineCommands = 0;
             _form.CloseAllForms();
             _form.SetTitle(Globals.ProgramName);
             OpenedFileName = null;
@@ -1075,6 +1078,7 @@ namespace PrePoMax
             }
             // Set user views
             _form.UpdateUserViewsThreadSafe(_model.UserViews.Keys.ToArray());
+            CaptureJournalBaseline(fileName);
         }
         private void ApplyCompatibility()
         {
@@ -3550,6 +3554,9 @@ namespace PrePoMax
         public void UndoHistory(RegenerateTypeEnum regenerateType)
         {
             if (!_commands.MoveBackForUndo(ref regenerateType)) return;
+            var journalBaseline = _journalBaseline;
+            var journalBaselineName = _journalBaselineName;
+            int journalBaselineCommands = _journalBaselineCommands;
             //
             ViewGeometryModelResults prevView = _currentView;
             Dictionary<string, bool>[] treeState = _form.GetStableTreeExpandCollapseState();
@@ -3565,6 +3572,9 @@ namespace PrePoMax
             _form.SetStableTreeExpandCollapseState(treeState);
             //
             _modelChanged = true;
+            _journalBaseline = journalBaseline;
+            _journalBaselineName = journalBaselineName;
+            _journalBaselineCommands = journalBaselineCommands;
         }
         public void RedoHistory()
         {
@@ -19120,6 +19130,7 @@ namespace PrePoMax
             // Called on property Settings Set when the user changes the setting values
 
             // General settings
+            UiLocalization.SetLanguage?.Invoke(_settings.General.Language);
             CaeMesh.Globals.EdgeAngle = _settings.General.EdgeAngle;
             _form.SetShowAllProperties(_settings.General.ShowAllProperties);
             // Graphics settings
@@ -20291,6 +20302,7 @@ namespace PrePoMax
         #region Results  ###########################################################################################################
         public PythonEngineResult RunPythonScriptCommand(string script, string fileName = null, string[] arguments = null)
         {
+            script = PrepareJournalReplay(script, fileName);
             CRunPythonScript comm = new CRunPythonScript(script, fileName, arguments);
             int numOfCommandsBefore = _commands.NumOfCommandsExecutedWithoutRecording;
             try

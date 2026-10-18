@@ -244,6 +244,9 @@ namespace PrePoMax.Forms
                     lvi = lvSettings.Items.Add(entry.Key);
                     lvi.Tag = entry.Value;
                 }
+                // The designer's 27-pixel column clips English category names.
+                // Use the actual navigation width for both language choices.
+                colName.Width = Math.Max(27, lvSettings.ClientSize.Width - SystemInformation.VerticalScrollBarWidth - 4);
             }
             // Open previously shown settings
             if (_previousSettings != null)

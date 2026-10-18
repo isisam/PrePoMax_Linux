@@ -12,6 +12,7 @@ namespace PrePoMax.Forms
     public class FrmCompositeLayup : UserControls.FrmProperties, IFormBase, IFormItemSetDataParent, IFormHighlight
     {
         private readonly Controller _controller;
+        private readonly Action<int[]> _highlightPly;
         private FeModel _model;
         private string _oldName;
         private CompositeLayupEditorData _data;
@@ -25,9 +26,11 @@ namespace PrePoMax.Forms
 
         // Passing null permits constructing, filling and reading the form in a headless STA test.
         // No control in this constructor shows a window or constructs the main VTK form.
-        public FrmCompositeLayup(Controller controller)
+        public FrmCompositeLayup(Controller controller) : this(controller, null) { }
+        public FrmCompositeLayup(Controller controller, Action<int[]> highlightPly)
         {
             _controller = controller;
+            _highlightPly = highlightPly ?? (controller == null ? (Action<int[]>)null : controller.HighlightCompositePly);
             Text = "Composite Layup";
             ClientSize = new Size(980, 780);
             MinimumSize = new Size(960, 760);
@@ -43,6 +46,8 @@ namespace PrePoMax.Forms
             gbProperties.Dock = DockStyle.Fill;
             gbProperties.Text = "Layup properties";
             propertyGrid.Dock = DockStyle.Fill;
+            propertyGrid.AccessibleName = "Composite layup properties";
+            propertyGrid.AccessibleDescription = "Name, region, rectangular coordinate system, stacking axis, symmetry and boundary tolerance.";
             var middle = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1 };
             middle.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 73));
             middle.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 27));
@@ -54,6 +59,8 @@ namespace PrePoMax.Forms
             plyBody.RowStyles.Add(new RowStyle(SizeType.Absolute, 62));
             plyGroup.Controls.Add(plyBody);
             _grid = new DataGridView { Dock = DockStyle.Fill, AllowUserToAddRows = false, AllowUserToDeleteRows = false,
+                Name = "plyGrid", AccessibleName = "Composite plies, bottom to top",
+                AccessibleDescription = "Edit ply name, material, thickness with length units, angle with angle units, and optional positive integer mesh-band count.",
                 AllowUserToOrderColumns = false, MultiSelect = false, SelectionMode = DataGridViewSelectionMode.FullRowSelect,
                 AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill, RowHeadersWidth = 32, BackgroundColor = SystemColors.Window };
             _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "PlyName", HeaderText = "Name", FillWeight = 115 });
@@ -67,14 +74,26 @@ namespace PrePoMax.Forms
             foreach (DataGridViewColumn column in _grid.Columns)
             {
                 column.SortMode = DataGridViewColumnSortMode.NotSortable;
+                string headerText = column.HeaderText;
+                column.HeaderCell = new PlyHeaderCell(column.Name == "Thickness" ? "Positive thickness; accepts model length units, for example 0.05 cm."
+                    : column.Name == "Angle" ? "Ply angle; accepts degrees or radians."
+                    : column.Name == "Elements" ? "Optional positive integer number of existing mesh bands; does not generate elements."
+                    : column.Name == "Material" ? "Choose an existing model material." : "Unique ply name.");
+                column.HeaderCell.Value = headerText;
                 column.HeaderCell.Style.Alignment = DataGridViewContentAlignment.BottomCenter;
             }
+            _grid.EditingControlShowing += (s, e) => {
+                e.Control.AccessibleName = _grid.CurrentCell.OwningColumn.HeaderText + " for ply " + (_grid.CurrentCell.RowIndex + 1);
+                e.Control.AccessibleDescription = _grid.CurrentCell.OwningColumn.HeaderCell.AccessibilityObject.Description;
+            };
             plyBody.Controls.Add(_grid, 0, 0);
             var tools = new FlowLayoutPanel { Dock = DockStyle.Fill, WrapContents = true };
             plyBody.Controls.Add(tools, 0, 1);
             foreach (string action in new[] { "Add", "Insert", "Delete", "Move up", "Move down", "Duplicate", "Reverse" })
             {
-                var button = new Button { Text = action, AutoSize = true, MinimumSize = new Size(65, 25), CausesValidation = false };
+                var button = new Button { Name = "btnPly" + action.Replace(" ", ""), Text = action,
+                    AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Padding = new Padding(6, 0, 6, 0),
+                    UseCompatibleTextRendering = true, MinimumSize = new Size(65, 25), CausesValidation = false };
                 button.Click += (s, e) => EditTable(action);
                 tools.Controls.Add(button);
             }
@@ -86,7 +105,7 @@ namespace PrePoMax.Forms
             plotGroup.Controls.Add(scroll);
             middle.Controls.Add(plotGroup, 1, 0);
             var validation = new GroupBox { Text = "Validation (updated after every edit)", Dock = DockStyle.Fill };
-            _summary = new TextBox { Multiline = true, ReadOnly = true, ScrollBars = ScrollBars.Vertical, Dock = DockStyle.Fill };
+            _summary = new TextBox { Name = "LayupValidation", Tag = "L10n", Multiline = true, ReadOnly = true, ScrollBars = ScrollBars.Vertical, Dock = DockStyle.Fill };
             validation.Controls.Add(_summary);
             body.Controls.Add(validation, 0, 2);
             btnCancel.Location = new Point(893, 744);
@@ -107,7 +126,7 @@ namespace PrePoMax.Forms
                     RefreshValidation();
                 }
             };
-            _grid.SelectionChanged += (s, e) => Highlight();
+            _grid.CurrentCellChanged += (s, e) => Highlight();
             _grid.DataError += (s, e) => {
                 e.ThrowException = false;
                 _summary.Text = "The table contains an invalid value: " + e.Exception.Message;
@@ -175,6 +194,9 @@ namespace PrePoMax.Forms
                 cell.ErrorText = "";
                 cell.Style.BackColor = SystemColors.Window;
                 _propertyItemChanged = true;
+                // EndEdit may precede the focus-change validation. Refresh after parsing the
+                // committed value too, otherwise the summary/OK state lags behind by one edit.
+                RefreshValidation();
             }
             catch (Exception ex)
             {
@@ -254,6 +276,7 @@ namespace PrePoMax.Forms
         protected override void OnHideOrClose()
         {
             ItemSetDataEditor.SelectionForm?.Hide();
+            _controller?.SetSelectByToOff();
             base.OnHideOrClose();
         }
         private void ShowHideSelection()
@@ -280,12 +303,14 @@ namespace PrePoMax.Forms
         {
             if (_loading || !Visible || _closing || _controller == null) return;
             _controller.ClearSelectionHistory();
+            // An invalid edited stack must also erase the previous valid ply highlight.
+            if (_expanded == null) _highlightPly(new int[0]);
             int index = _grid.CurrentRow?.Index ?? -1;
             if (_expanded != null && index >= 0 && index < _data.Layup.Plies.Count)
             {
                 var ids = _expanded[index].ElementIds.AsEnumerable();
                 if (_data.Layup.Symmetric) ids = ids.Concat(_expanded[_expanded.Count - 1 - index].ElementIds);
-                _controller.HighlightCompositePly(ids.Distinct().ToArray());
+                _highlightPly(ids.Distinct().ToArray());
             }
             else if (_data?.Layup.RegionType == RegionTypeEnum.Selection && _data.Layup.CreationData != null)
             {
@@ -302,6 +327,21 @@ namespace PrePoMax.Forms
         {
             bool mode = _controller.Settings.Pre.GeometrySelectMode == GeometrySelectModeEnum.SelectId;
             return IsSelectionGeometryBased() && _data.Layup.CreationData != null ? _data.Layup.CreationData.IsGeometryIdBased(mode) : mode;
+        }
+
+        private sealed class PlyHeaderCell : DataGridViewColumnHeaderCell
+        {
+            private readonly string _description;
+            public PlyHeaderCell(string description) { _description = description; }
+            public override object Clone() { return new PlyHeaderCell(_description); }
+            protected override AccessibleObject CreateAccessibilityInstance() { return new HeaderAccessibleObject(this); }
+            private sealed class HeaderAccessibleObject : DataGridViewColumnHeaderCellAccessibleObject
+            {
+                private readonly PlyHeaderCell _header;
+                public HeaderAccessibleObject(PlyHeaderCell header) : base(header) { _header = header; }
+                public override string Name { get { return _header.OwningColumn?.HeaderText; } set { base.Name = value; } }
+                public override string Description { get { return _header._description; } }
+            }
         }
 
         private class StackPlot : Control
@@ -333,7 +373,8 @@ namespace PrePoMax.Forms
                             e.Graphics.DrawLine(pen, 0, bottom, Width, bottom);
                     }
                 }
-                TextRenderer.DrawText(e.Graphics, Layup.Symmetric ? "Symmetric — dashed midplane" : "Bottom → top", Font,
+                TextRenderer.DrawText(e.Graphics, PrePoMax.L10n.Translator.Translate(
+                    Layup.Symmetric ? "Symmetric — dashed midplane" : "Bottom → top"), Font,
                     new Rectangle(0, Height - 23, Width, 22), Color.DarkSlateGray, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
             }
         }
