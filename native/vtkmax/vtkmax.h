@@ -83,6 +83,10 @@ VM_API int32_t vm_fit(vm_view* v);
 VM_API int32_t vm_standard_view(vm_view* v, int32_t view);
 /* position, focal point, view-up; each output has 3 doubles. */
 VM_API int32_t vm_camera(vm_view* v, double* position, double* focal, double* up);
+VM_API int32_t vm_camera_scale(vm_view* v, double* scale);
+VM_API int32_t vm_set_camera(vm_view* v, const double* position, const double* focal, const double* up, double scale);
+VM_API int32_t vm_scalar_bar(vm_view* v, int32_t visible, const char* title);
+VM_API int32_t vm_write_png_scaled(vm_view* v, const char* path, int32_t transparent, int32_t magnification);
 VM_API int32_t vm_rotate(vm_view* v, double azimuth, double elevation);
 VM_API int32_t vm_zoom(vm_view* v, double factor);
 VM_API int32_t vm_render(vm_view* v);

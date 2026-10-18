@@ -96,6 +96,11 @@ public sealed class Viewport : IDisposable
         double[] result = new double[3]; Check(Native.vm_project(Handle, [x, y, z], result)); return result;
     }
     public void WritePng(string path) => Check(Native.vm_write_png(Handle, path));
+    public void WritePng(string path, bool transparent, int magnification) => Check(Native.vm_write_png_scaled(Handle,path,transparent?1:0,magnification));
+    public double ParallelScale { get { Check(Native.vm_camera_scale(Handle,out var scale));return scale; } }
+    public void SetCamera(double[] position,double[] focal,double[] up,double scale)
+    { if(position.Length!=3||focal.Length!=3||up.Length!=3)throw new ArgumentException("Camera vectors must have 3 values");Check(Native.vm_set_camera(Handle,position,focal,up,scale)); }
+    public void ScalarBar(bool visible,string? title=null) => Check(Native.vm_scalar_bar(Handle,visible?1:0,title));
     public void ProcessEvents() => Check(Native.vm_process_events(Handle));
     public int X11Connection { get { int fd = Native.vm_x11_connection(Handle); Check(fd); return fd; } }
     public PickResult LastPick { get { Check(Native.vm_last_pick(Handle, out var r)); return r; } }
@@ -108,6 +113,10 @@ public sealed class Viewport : IDisposable
 
 internal static class Native
 {
+    [DllImport("vtkmax", CallingConvention=CallingConvention.Cdecl)] internal static extern int vm_camera_scale(IntPtr view,out double scale);
+    [DllImport("vtkmax", CallingConvention=CallingConvention.Cdecl)] internal static extern int vm_set_camera(IntPtr view,double[] position,double[] focal,double[] up,double scale);
+    [DllImport("vtkmax", CallingConvention=CallingConvention.Cdecl)] internal static extern int vm_scalar_bar(IntPtr view,int visible,[MarshalAs(UnmanagedType.LPUTF8Str)]string? title);
+    [DllImport("vtkmax", CallingConvention=CallingConvention.Cdecl)] internal static extern int vm_write_png_scaled(IntPtr view,[MarshalAs(UnmanagedType.LPUTF8Str)]string path,int transparent,int magnification);
     private const string Lib = "vtkmax";
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)] internal delegate void SelectionCallback(ref PickResult result, IntPtr user);
     [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)] internal static extern int vm_selection_handler(IntPtr view, SelectionCallback? callback, IntPtr user);

@@ -51,7 +51,7 @@ namespace {
 thread_local std::string error;
 void require(bool ok, const char* text) { if (!ok) throw std::invalid_argument(text); }
 int nodes_per_cell(int t) {
-    switch(t) { case 5:return 3; case 9:return 4; case 22:return 6; case 23:return 8;
+    switch(t) { case 1:return 1; case 5:return 3; case 9:return 4; case 22:return 6; case 23:return 8;
     case 10:return 4; case 12:return 8; case 13:return 6; case 24:return 10;
     case 25:return 20; case 26:return 15; default:return -1; }
 }
@@ -318,6 +318,20 @@ int32_t vm_camera(vm_view* v,double* position,double* focal,double* up) {
 int32_t vm_perspective(vm_view* v,int32_t enabled) {
     TRY {VIEW;v->renderer->GetActiveCamera()->SetParallelProjection(!enabled);v->renderer->ResetCameraClippingRange();return 0;} CATCH
 }
+int32_t vm_camera_scale(vm_view* v,double* scale) {
+    TRY {VIEW;require(scale,"null scale");*scale=v->renderer->GetActiveCamera()->GetParallelScale();return 0;} CATCH
+}
+int32_t vm_set_camera(vm_view* v,const double* position,const double* focal,const double* up,double scale) {
+    TRY {VIEW;require(position&&focal&&up&&std::isfinite(scale)&&scale>0,"invalid camera");
+        for(int i=0;i<3;++i)require(std::isfinite(position[i])&&std::isfinite(focal[i])&&std::isfinite(up[i]),"nonfinite camera");
+        double direction[3];vtkMath::Subtract(position,focal,direction);double cross[3];vtkMath::Cross(direction,up,cross);
+        require(vtkMath::Norm(direction)>0&&vtkMath::Norm(cross)>0,"degenerate camera");
+        auto c=v->renderer->GetActiveCamera();c->SetPosition(position);c->SetFocalPoint(focal);c->SetViewUp(up);c->SetParallelScale(scale);
+        v->renderer->ResetCameraClippingRange();return 0;} CATCH
+}
+int32_t vm_scalar_bar(vm_view* v,int32_t visible,const char* title) {
+    TRY {VIEW;v->bar->SetVisibility(visible!=0);if(title)v->bar->SetTitle(title);return 0;} CATCH
+}
 int32_t vm_animate_standard_begin(vm_view* v,int32_t view) {
     TRY {VIEW;v->animation_start->DeepCopy(v->renderer->GetActiveCamera());
         if(vm_standard_view(v,view)<0)return -1;
@@ -410,8 +424,13 @@ int32_t vm_pick(vm_view* v,int32_t x,int32_t y,vm_pick_result* r) {
     } CATCH
 }
 int32_t vm_write_png(vm_view* v,const char* path) {
+    return vm_write_png_scaled(v,path,0,1);
+}
+int32_t vm_write_png_scaled(vm_view* v,const char* path,int32_t transparent,int32_t magnification) {
     TRY {VIEW;require(path&&*path,"empty PNG path");v->window->Render();v->rendered=true;
-        vtkNew<vtkWindowToImageFilter> capture;capture->SetInput(v->window);capture->ReadFrontBufferOff();capture->SetInputBufferTypeToRGB();
+        require(magnification>=1&&magnification<=8,"PNG magnification outside 1..8");
+        vtkNew<vtkWindowToImageFilter> capture;capture->SetInput(v->window);capture->ReadFrontBufferOff();capture->SetScale(magnification);
+        if(transparent)capture->SetInputBufferTypeToRGBA();else capture->SetInputBufferTypeToRGB();
         vtkNew<vtkPNGWriter> writer;writer->SetFileName(path);writer->SetInputConnection(capture->GetOutputPort());writer->Write();
         require(writer->GetErrorCode()==0,"PNG write failed");return 0;} CATCH
 }

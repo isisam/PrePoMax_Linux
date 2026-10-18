@@ -11,7 +11,7 @@ using Avalonia.Input;
 namespace PrePoMax.Avalonia;
 public sealed class MainWindow : Window
 {
-    private readonly IViewportHost viewport = Environment.GetEnvironmentVariable("VTKMAX_EMBED") == "x11" ? new VtkMaxView() : new GenericVtkView();
+    private readonly VtkMaxView viewport = new();
     private readonly TreeView tree = new() { Margin = new Thickness(8) };
     private readonly TextBlock status = new() { Text = "Open an INP or PMX model", Margin = new Thickness(12, 8) };
     private ViewerModel? model;
@@ -161,7 +161,7 @@ public sealed class MainWindow : Window
                     height = viewport.Bounds.Height, scale=RenderScaling, lastPick, runtime = Environment.Version.ToString(),
                     origin=viewport.Control.TranslatePoint(new Point(0,0),this),
                     pumpCount=viewport is VtkMaxView native ? native.PumpCount : 0,
-                    focus=viewport.Control.IsFocused
+                    focus=viewport.HasViewportFocus
                 }, new JsonSerializerOptions { IncludeFields = true }));
                 File.Move(Path.Combine(output,"state.tmp"),Path.Combine(output,"state.json"),true);
                 if (File.Exists(Path.Combine(output, "capture")))

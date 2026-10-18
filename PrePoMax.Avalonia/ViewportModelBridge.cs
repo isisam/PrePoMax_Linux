@@ -1,0 +1,48 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+using CaeGlobals;
+using PrePoMax.Viewer;
+using vtkControl;
+namespace PrePoMax.Avalonia;
+
+internal static class ViewportModelBridge
+{
+    public static void Load(VtkMaxView viewport, ViewerModel model)
+    {
+        viewport.Clear();
+        var mesh=model.Model.Mesh;
+        foreach(var part in mesh.Parts.Values)
+        {
+            var elements=part.Labels.Select(id=>mesh.Elements[id]).ToArray();
+            var ids=elements.SelectMany(e=>e.NodeIds).Distinct().Order().ToArray();
+            var map=ids.Select((id,index)=>(id,index)).ToDictionary(p=>p.id,p=>p.index);
+            var data=new vtkMaxActorData { Name=part.Name, IsAPart=true, Pickable=true, Color=part.Color };
+            data.Geometry.Nodes=new(){Ids=ids,Coor=ids.Select(id=>{var n=mesh.Nodes[id];return new[]{n.X,n.Y,n.Z};}).ToArray()};
+            data.Geometry.Cells=new(){Ids=elements.Select(e=>e.Id).ToArray(),Types=elements.Select(e=>e.GetVtkCellType()).ToArray(),
+                CellNodeIds=elements.Select(e=>e.GetVtkNodeIds().Select(id=>map[id]).ToArray()).ToArray()};
+            viewport.AddCells(data);
+        }
+        viewport.Standard(0);
+    }
+    public static void Contour(VtkMaxView viewport,ViewerModel model,string field,double scale)
+    {
+        var values=model.Contours[field];
+        var spectrum=new vtkMaxColorSpectrum();spectrum.SetUserMinMax(values.Min(),values.Max()==values.Min()?values.Min()+1:values.Max());
+        spectrum.MinMaxType=vtkColorSpectrumMinMaxType.Manual;spectrum.NumberOfColors=12;
+        viewport.SetScalarBarColorSpectrum(spectrum);viewport.SetScalarBarText(field,"","","","");
+        var map=model.NodeIds.Select((id,i)=>(id,i)).ToDictionary(p=>p.id,p=>p.i);
+        foreach(var actor in viewport.GetVtkMaxActorData())
+        {
+            var indices=actor.Geometry.Nodes.Ids.Select(id=>map[id]).ToArray();
+            viewport.UpdateActorScalarField(actor.Name,indices.Select(i=>(float)values[i]).ToArray(),null!,null!,true);
+            viewport.SetDeformation(actor.Name,model.Displacement==null?null:indices.SelectMany(i=>model.Displacement.Skip(3*i).Take(3)).ToArray(),scale);
+        }
+        viewport.SetZoomToFit(false);
+    }
+    public static void Deform(VtkMaxView viewport,ViewerModel model,double scale)
+    {
+        var map=model.NodeIds.Select((id,i)=>(id,i)).ToDictionary(p=>p.id,p=>p.i);
+        foreach(var actor in viewport.GetVtkMaxActorData())
+            viewport.SetDeformation(actor.Name,model.Displacement==null?null:actor.Geometry.Nodes.Ids.SelectMany(id=>model.Displacement.Skip(3*map[id]).Take(3)).ToArray(),scale);
+        viewport.SetZoomToFit(false);
+    }
+}
