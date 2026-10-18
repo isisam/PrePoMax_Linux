@@ -117,6 +117,7 @@ public sealed partial class MainWindow : Window, IMainView
     private async Task Open(string path)
     {
         if(loading)return;loading=true;mainView.Loading=true;progressBar.IsVisible=true;
+        var previousController=mainView.Controller;
         try
         {
             IProgress<string> progress=new Progress<string>(s=>{status.Text=s;Log(s);});
@@ -155,7 +156,7 @@ public sealed partial class MainWindow : Window, IMainView
             status.Text=$"{Path.GetFileName(path)} | {model!.NodeIds.Length:N0} nodes | {model.ElementIds.Length:N0} elements";
             if((Environment.GetEnvironmentVariable("PPM_L2C_EVIDENCE")=="1"||Environment.GetEnvironmentVariable("PPM_L2B_EVIDENCE")=="1")&&Program.Arguments.Contains("--evidence"))Evidence();
         }
-        catch(Exception e){Log(e.ToString());status.Text="Open failed: "+e.Message;}
+        catch(Exception e){mainView.Controller=previousController;Log(e.ToString());status.Text="Open failed: "+e.Message;}
         finally{loading=false;mainView.Loading=false;progressBar.IsVisible=false;}
     }
     private async Task ChooseFile()
@@ -214,7 +215,7 @@ public sealed partial class MainWindow : Window, IMainView
                     origin=viewport.Control.TranslatePoint(new Point(0,0),this),
                     pumpCount=viewport.PumpCount,
                     focus=viewport.HasViewportFocus, status=status.Text, log=messages.Text, actors=viewport.GetVtkMaxActorData().Length,
-                    nodes=model.NodeIds.Length,elements=model.ElementIds.Length,step=model.ResultsStep,increment=model.ResultsIncrement,time=model.ResultsTime,
+                    nodes=model.NodeIds.Length,elements=model.ElementIds.Length,controllerNodes=mainView.Controller.Model.Mesh?.Nodes.Count??0,step=model.ResultsStep,increment=model.ResultsIncrement,time=model.ResultsTime,
                     fields=model.Contours.ToDictionary(p=>p.Key,p=>new{min=p.Value.Min(),max=p.Value.Max()}),
                     language=ShellLocale.Chinese?"zh-TW":"en", units=units.Text
                 }, new JsonSerializerOptions { IncludeFields = true }));
@@ -234,6 +235,7 @@ public sealed partial class MainWindow : Window, IMainView
                     if(op=="png")viewport.RenderToPNG(c.GetProperty("path").GetString()!);
                     if(op=="edges")viewport.EdgesVisibility=c.GetProperty("visible").GetBoolean()?vtkEdgesVisibility.ElementEdges:vtkEdgesVisibility.NoEdges;
                     if(op=="save"){await SavePmxTo(c.GetProperty("path").GetString()!);File.WriteAllText(Path.Combine(output,"save-done"),"done");}
+                    if(op=="open")await Open(c.GetProperty("path").GetString()!);
                     if(op=="language"){ShellLocale.Chinese=c.GetProperty("chinese").GetBoolean();BuildMenu();}
                     if(op=="benchmark"){double fps=await viewport.BenchmarkFramesAsync();File.WriteAllText(Path.Combine(output,"fps.json"),JsonSerializer.Serialize(new{fps,frames=30,warmup=5,backend="Avalonia generic",renderer=viewport.View!.GlInfo}));}
                     if(op=="run"){if(c.TryGetProperty("threads",out var count))threads.Value=count.GetInt32();await RunAnalysis(c.GetProperty("directory").GetString());File.WriteAllText(Path.Combine(output,"analysis-done"),"done");}

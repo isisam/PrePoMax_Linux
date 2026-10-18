@@ -11,12 +11,12 @@ shutil.copy2(repo.parent/'logs/L2b/dcb/dcb.frd',data/'dcb.frd')
 u=c.WinDLL('user32',use_last_error=True)
 u.CreateDesktopW.argtypes=[c.c_wchar_p,c.c_wchar_p,c.c_void_p,c.c_uint32,c.c_uint32,c.c_void_p];u.CreateDesktopW.restype=c.c_void_p
 u.CloseDesktop.argtypes=[c.c_void_p]
-desktop_name='PPM_L2b_Capture_'+str(os.getpid())
+desktop_name='PPM_L2c_Capture_'+str(os.getpid())
 desktop=u.CreateDesktopW(desktop_name,None,None,0,0x01ff,None)
 if not desktop:raise c.WinError(c.get_last_error())
 try:
     startup=sp.STARTUPINFO();startup.lpDesktop=desktop_name;startup.dwFlags|=sp.STARTF_USESHOWWINDOW;startup.wShowWindow=0
-    cmd=[str(runtime/'PrePoMax.com'),'--script',str(repo/'tests/L2b/windows_dcb.py'),'-g','No','-x','Yes','-w',str(data),'--report',str(data/'run.json'),'--noSettingsSave','--timeout','300']
+    cmd=[str(runtime/'PrePoMax.com'),'--script',str(repo/'tests/L2c/windows_dcb.py'),'-g','No','-x','Yes','-w',str(data),'--report',str(data/'run.json'),'--noSettingsSave','--timeout','300']
     with (logs/'windows-hidden-capture.log').open('wb') as log:
         log.write(b'git rev: '+sp.check_output(['git','rev-parse','HEAD'],cwd=repo,creationflags=0x08000000)+b'git status --short:\n'+sp.check_output(['git','status','--short'],cwd=repo,creationflags=0x08000000))
         log.write(('desktop='+desktop_name+'; never switched\ncommand='+repr(cmd)+'\n').encode());log.flush()

@@ -24,7 +24,8 @@ header='git rev: '+sp.check_output(['git.exe','-C',sp.check_output(['wslpath','-
 env={**os.environ,'PPM_L2C_EVIDENCE':'1','LD_LIBRARY_PATH':str(out/'app'),'LP_NUM_THREADS':'4','DOTNET_PROCESSOR_COUNT':'4'}
 with (case/'gui.log').open('w') as log:
     log.write(header);log.flush()
-    p=sp.Popen(['dotnet',str(out/'src/PrePoMax.Avalonia/bin/Release/net10.0/PrePoMax.Avalonia.dll'),str(model),'--frd',str(frd),'--evidence',str(case)],stdout=log,stderr=sp.STDOUT,env=env,start_new_session=True)
+    launch=[str(out/'app/run.sh')] if env.get('PPM_USE_PACKAGED_SHELL')=='1' else ['dotnet',str(out/'src/PrePoMax.Avalonia/bin/Release/net10.0/PrePoMax.Avalonia.dll')]
+    p=sp.Popen(launch+[str(model),'--frd',str(frd),'--evidence',str(case)],stdout=log,stderr=sp.STDOUT,env=env,start_new_session=True)
     try:
         wait(lambda:(case/'ready').exists());s=wait(state);assert s['actors']>0,s
         if analysis:
@@ -37,6 +38,9 @@ with (case/'gui.log').open('w') as log:
             print('PASS actual shell analysis: release-source Linux ccx_fat, 1/4 threads, nice 19, streamed log, automatic FRD S/U load');sys.exit(0)
         assert s['increment']==70,s
         command(op='benchmark');wait(lambda:(case/'fps.json').exists());assert json.loads((case/'fps.json').read_text())['fps']>0
+        command(op='open',path=str(case/'missing.pmx'))
+        failed=wait(lambda:(s if (s:=state()) and s['status'].startswith('Open failed:') else None))
+        assert failed['controllerNodes']==failed['nodes']==11580,'Failed open must preserve the controller behind the displayed model'
         command(op='save',path=str(case/'saved.pmx'));wait(lambda:(case/'save-done').exists());assert (case/'saved.pmx').stat().st_size>1000
         command(op='language',chinese=True);assert wait(state)['language']=='zh-TW';command(op='language',chinese=False)
         command(op='front');command(op='png',path=str(case/'mesh.png'));wait(lambda:(case/'mesh.png').exists());command(op='edges',visible=False)

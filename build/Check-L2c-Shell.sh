@@ -6,3 +6,7 @@ out=${1:-/root/ppm-l2c}
 export DOTNET_PROCESSOR_COUNT=4 LP_NUM_THREADS=4 OMP_NUM_THREADS=1
 xvfb-run -a -s '-screen 0 1600x1100x24' nice -n 19 python3 "$repo/tests/L2c/shell_checks.py" "$out" "$repo/../logs/L2c/shell" "$repo/../logs/L2c/comparison/dcb.pmx" "$repo/../logs/L2c/comparison/dcb.frd"
 nice -n 19 "$repo/../logs/L2c/headless-linux/prepomax-headless" inspect "$repo/../logs/L2c/shell/saved.pmx"
+for extension in inp frd;do
+    xvfb-run -a -s '-screen 0 1600x1100x24' nice -n 19 python3 "$repo/tests/L2c/shell_checks.py" "$out" "$repo/../logs/L2c/shell-$extension" "$repo/../logs/L2c/comparison/dcb.$extension" "$repo/../logs/L2c/comparison/dcb.frd"
+    nice -n 19 "$repo/../logs/L2c/headless-linux/prepomax-headless" inspect "$repo/../logs/L2c/shell-$extension/saved.pmx"
+done

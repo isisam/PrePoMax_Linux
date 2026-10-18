@@ -3,6 +3,7 @@ from pathlib import Path
 import json,sys
 from PIL import Image,ImageDraw
 root=Path(sys.argv[1]);w=json.loads((root/'windows-view.json').read_text());l=json.loads((root/'Linux/results.json').read_text())
+assert w['explicitSharedLegendRanges'], 'Windows must use the same explicit global nodal range as the shell'
 assert w['step']==l['step'] and w['increment']==l['increment'] and abs(w['time']-l['time'])<1e-9
 for field,key in [('S (Mises)','S'),('U (magnitude)','U')]:
     assert w[key]==[l['fields'][field]['min'],l['fields'][field]['max']],field
