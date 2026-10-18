@@ -1,0 +1,218 @@
+[
+  {
+    "file": "cpython-layout.py",
+    "url": "https://raw.githubusercontent.com/python/cpython/v3.12.10/PC/layout/main.py",
+    "sha256": "64f8003e62c8b9de7ff2d752eb9096283fbb1bf6682746aea03566648dcda156",
+    "bytes": 20475
+  },
+  {
+    "file": "cpython-license.rst",
+    "url": "https://raw.githubusercontent.com/python/cpython/v3.12.10/Doc/license.rst",
+    "sha256": "341832873fd316a37927e79385093fbbfd40a467428480835fe435a80cadf4e5",
+    "bytes": 54130
+  },
+  {
+    "file": "CPython-3.12.10-LICENSE.txt",
+    "url": "https://raw.githubusercontent.com/python/cpython/v3.12.10/LICENSE",
+    "sha256": "3b2f81fe21d181c499c59a256c8e1968455d6689d269aa85373bfb6af41da3bf",
+    "bytes": 13936
+  },
+  {
+    "file": "Tcl-8.6.15-license.terms",
+    "url": "https://raw.githubusercontent.com/python/cpython-bin-deps/tcltk-8.6.15.2/amd64/tcllicense.terms",
+    "sha256": "41613eabfc08921a7da9c4bfd7f3ce5d5406f55214b253d89f392ed86eebeb8f",
+    "bytes": 2295
+  },
+  {
+    "file": "Tk-8.6.15-license.terms",
+    "url": "https://raw.githubusercontent.com/python/cpython-bin-deps/tcltk-8.6.15.2/amd64/tklicense.terms",
+    "sha256": "0d1e4405f6273f091732764ed89b57066be63ce64869be6c71ea337dc4f2f9b5",
+    "bytes": 2307
+  },
+  {
+    "file": "libffi-3.4.4-LICENSE.txt",
+    "url": "https://raw.githubusercontent.com/python/cpython-source-deps/libffi-3.4.4/LICENSE",
+    "sha256": "2c9c2acb9743e6b007b91350475308aee44691d96aa20eacef8e199988c8c388",
+    "bytes": 1132
+  },
+  {
+    "file": "bzip2-1.0.8-LICENSE.txt",
+    "url": "https://raw.githubusercontent.com/python/cpython-source-deps/bzip2-1.0.8/LICENSE",
+    "sha256": "c6dbbf828498be844a89eaa3b84adbab3199e342eb5cb2ed2f0d4ba7ec0f38a3",
+    "bytes": 1896
+  },
+  {
+    "file": "xz-5.2.5-COPYING.txt",
+    "url": "https://raw.githubusercontent.com/python/cpython-source-deps/xz-5.2.5/COPYING",
+    "sha256": "bcb02973ef6e87ea73d331b3a80df7748407f17efdb784b61b47e0e610d3bb5c",
+    "bytes": 2775
+  },
+  {
+    "file": "OpenSSL-3.0.16-LICENSE.txt",
+    "url": "https://raw.githubusercontent.com/openssl/openssl/openssl-3.0.16/LICENSE.txt",
+    "sha256": "7d5450cb2d142651b8afa315b5f238efc805dad827d91ba367d8516bc9d49e7a",
+    "bytes": 10175
+  },
+  {
+    "file": "zlib-1.3.1-LICENSE.txt",
+    "url": "https://raw.githubusercontent.com/python/cpython-source-deps/zlib-1.3.1/LICENSE",
+    "sha256": "845efc77857d485d91fb3e0b884aaa929368c717ae8186b66fe1ed2495753243",
+    "bytes": 1002
+  },
+  {
+    "file": "expat-headers.h",
+    "url": "https://raw.githubusercontent.com/python/cpython/v3.12.10/Modules/expat/expat.h",
+    "sha256": "7c16a5cf0eea844ae579db083b8d75f23a71859cac77e3c4cb7a8fa3b7621685",
+    "bytes": 44120
+  },
+  {
+    "file": "expat-COPYING.txt",
+    "url": "https://raw.githubusercontent.com/python/cpython/v3.12.10/Modules/expat/COPYING",
+    "sha256": "122f2c27000472a201d337b9b31f7eb2b52d091b02857061a8880371612d9534",
+    "bytes": 1144
+  },
+  {
+    "file": "mpdecimal.h",
+    "url": "https://raw.githubusercontent.com/python/cpython/v3.12.10/Modules/_decimal/libmpdec/mpdecimal.h",
+    "sha256": "ea0b9c6b296c13aed6ecaa50b463e39a9c1bdc059b84f50507fd8247b2e660f9",
+    "bytes": 41684
+  },
+  {
+    "file": "Hacl_Hash_MD5.h",
+    "url": "https://raw.githubusercontent.com/python/cpython/v3.12.10/Modules/_hacl/Hacl_Hash_MD5.h",
+    "sha256": "9a02e2a6e163515ea0228a859d5e55c1f57b11fae5908c42f9f9814ce9bca230",
+    "bytes": 2223
+  },
+  {
+    "file": "libtommath-LICENSE.txt",
+    "url": "https://raw.githubusercontent.com/tcltk/tcl/core-8-6-15/libtommath/LICENSE",
+    "sha256": "2fa64b163659f41965c9815882a8296d3d03ff546b76153e11445f9bdecf955a",
+    "bytes": 1257
+  },
+  {
+    "file": "libffi-8.dll",
+    "url": "https://raw.githubusercontent.com/python/cpython-bin-deps/libffi-3.4.4/amd64/libffi-8.dll",
+    "sha256": "eff52743773eb550fcc6ce3efc37c85724502233b6b002a35496d828bd7b280a",
+    "bytes": 39696
+  },
+  {
+    "file": "tcl86t.dll",
+    "url": "https://raw.githubusercontent.com/python/cpython-bin-deps/tcltk-8.6.15.2/amd64/bin/tcl86t.dll",
+    "sha256": "a308beae8555cff5ac2aff7eaf0aef40b5fe173f047e246dc49da9a4d3ef62f9",
+    "bytes": 1839896
+  },
+  {
+    "file": "tk86t.dll",
+    "url": "https://raw.githubusercontent.com/python/cpython-bin-deps/tcltk-8.6.15.2/amd64/bin/tk86t.dll",
+    "sha256": "20f4876506bce7f89e53570e64fd1dce30a64548326b45f372871c7019560df4",
+    "bytes": 1589528
+  },
+  {
+    "file": "blake2-impl.h",
+    "url": "https://raw.githubusercontent.com/python/cpython/v3.12.10/Modules/_blake2/impl/blake2.h",
+    "sha256": "2f6c9d0ecf70be474f2853b52394993625a32960e0a64eae147ef97a3a5c1460",
+    "bytes": 5793
+  },
+  {
+    "file": "sqlite3.h",
+    "url": "https://raw.githubusercontent.com/python/cpython-source-deps/sqlite-3.49.1.0/sqlite3.h",
+    "sha256": "88da6f1963bc192dfa18a3a48b423cf1fbbb04f903202efe9a78e3a597473e18",
+    "bytes": 658960
+  },
+  {
+    "file": "libffi-ffi.h",
+    "url": "https://raw.githubusercontent.com/python/cpython-bin-deps/libffi-3.4.4/amd64/include/ffi.h",
+    "sha256": "4447b1ef9668bd9384d3cbd0364e4d9f2d7e2d1830b6ecccd7a0609e9c2608b0",
+    "bytes": 14293
+  },
+  {
+    "file": "OpenSSL-3.0.16-NOTICE.md",
+    "url": "https://raw.githubusercontent.com/openssl/openssl/openssl-3.0.16/README.md",
+    "bytes": 6328,
+    "sha256": "f8f614a6589d7c7ee2ba2bd5f3fd87afe3c89012fd79f31f82cb4e50edbaefe9"
+  },
+  {
+    "file": "libtommath-tommath.h",
+    "url": "https://raw.githubusercontent.com/tcltk/tcl/core-8-6-15/libtommath/tommath.h",
+    "bytes": 30401,
+    "sha256": "e82868a72e0bbbcc828b54f6eda8703bf6fb07c17edd5d0865c9c1edb7565ee9"
+  },
+  {
+    "file": "Hacl_Hash_SHA1.h",
+    "url": "https://raw.githubusercontent.com/python/cpython/v3.12.10/Modules/_hacl/Hacl_Hash_SHA1.h",
+    "bytes": 2234,
+    "sha256": "5640295c790d56b1b4df147d6a6c58803b1845cd7d93365bf7cc7b75ba3cacd5"
+  },
+  {
+    "file": "Hacl_Hash_SHA2.h",
+    "url": "https://raw.githubusercontent.com/python/cpython/v3.12.10/Modules/_hacl/Hacl_Hash_SHA2.h",
+    "bytes": 6903,
+    "sha256": "093d7693084af0999d2a13d207311d74b5bdfdc9c08447ed4a979e3f7505ae6b"
+  },
+  {
+    "file": "Hacl_Hash_SHA3.h",
+    "url": "https://raw.githubusercontent.com/python/cpython/v3.12.10/Modules/_hacl/Hacl_Hash_SHA3.h",
+    "bytes": 3700,
+    "sha256": "d8d4d14bbc3a561a4e590d9b18b326e6a8095efb12423edbd949cf3c00953621"
+  },
+  {
+    "file": "blake2module.c",
+    "url": "https://raw.githubusercontent.com/python/cpython/v3.12.10/Modules/_blake2/blake2module.c",
+    "bytes": 4110,
+    "sha256": "a4e055a699b4fd003aec2df2977cfeab73974ca8abda7aaf88c914dc12b38e9b"
+  },
+  {
+    "file": "blake2b-ref.c",
+    "url": "https://raw.githubusercontent.com/python/cpython/v3.12.10/Modules/_blake2/impl/blake2b-ref.c",
+    "bytes": 10033,
+    "sha256": "07b257d44e9cc2d95d4911629c92138feafd16d63fef0a5fa7b38914dfd82349"
+  },
+  {
+    "file": "blake2s-ref.c",
+    "url": "https://raw.githubusercontent.com/python/cpython/v3.12.10/Modules/_blake2/impl/blake2s-ref.c",
+    "bytes": 9851,
+    "sha256": "9715c00d0f11587a139b07fa26678e6d26e44d3d4910b96158d158da2b022bfb"
+  },
+  {
+    "file": "CC0-1.0.txt",
+    "url": "https://raw.githubusercontent.com/spdx/license-list-data/v3.26.0/text/CC0-1.0.txt",
+    "bytes": 7048,
+    "sha256": "a2010f343487d3f7618affe54f789f5487602331c0a8d03f49e9a7c547cf0499"
+  },
+  {
+    "file": "FStar_UInt128_Verified.h",
+    "url": "https://raw.githubusercontent.com/python/cpython/v3.12.10/Modules/_hacl/include/krml/FStar_UInt128_Verified.h",
+    "sha256": "455e94f24a0900deda7e6e36f4714e4253d32cea077f97e23f90c569a717bc48",
+    "bytes": 9342
+  },
+  {
+    "file": "FStar_UInt_8_16_32_64.h",
+    "url": "https://raw.githubusercontent.com/python/cpython/v3.12.10/Modules/_hacl/include/krml/FStar_UInt_8_16_32_64.h",
+    "sha256": "65decdb74c24049aa19430462a51219250cfc65d8c162778e42df88b3142fa42",
+    "bytes": 3026
+  },
+  {
+    "file": "fstar_uint128_struct_endianness.h",
+    "url": "https://raw.githubusercontent.com/python/cpython/v3.12.10/Modules/_hacl/include/krml/fstar_uint128_struct_endianness.h",
+    "sha256": "fe57e1bc5ce3224d106e36cb8829b5399c63a68a70b0ccd0c91d82a4565c8869",
+    "bytes": 1649
+  },
+  {
+    "file": "target.h",
+    "url": "https://raw.githubusercontent.com/python/cpython/v3.12.10/Modules/_hacl/include/krml/internal/target.h",
+    "sha256": "d16a59f37a1d4982626870e370889eb9d332a9ad035661b8062f549fc734d061",
+    "bytes": 10653
+  },
+  {
+    "file": "lowstar_endianness.h",
+    "url": "https://raw.githubusercontent.com/python/cpython/v3.12.10/Modules/_hacl/include/krml/lowstar_endianness.h",
+    "sha256": "3734c7942bec9a434e16df069fa45bdcb84b130f14417bc5f7bfe8546272d9f5",
+    "bytes": 7757
+  },
+  {
+    "file": "Apache-2.0.txt",
+    "url": "https://raw.githubusercontent.com/spdx/license-list-data/v3.26.0/text/Apache-2.0.txt",
+    "sha256": "074e6e32c86a4c0ef8b3ed25b721ca23aca83df277cd88106ef7177c354615ff",
+    "bytes": 10280
+  }
+]

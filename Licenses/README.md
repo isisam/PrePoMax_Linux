@@ -61,3 +61,7 @@ publish a written offer with the release. The versions currently shipped are lis
 Gmsh is the one component shipped as a modified binary, so its corresponding source is the branch
 named under "Gmsh build" above rather than an upstream release, and that branch has to stay
 published for as long as the binary is conveyed.
+
+## Python notices (RC1b)
+
+The CPython 3.12.10 runtime and its dependencies are covered by the version-matched notices, 40-binary audit and source provenance in [supplementary/Python/README.md](supplementary/Python/README.md).

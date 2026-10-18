@@ -1,0 +1,848 @@
+{
+  "python_version": "3.12.10",
+  "provenance": "Official CPython v3.12.10 PCbuild dependency pins + shipped file versions + runtime queries; all Tcl/Tk/libffi PE sections match official cpython-bin-deps.",
+  "binary_hash_matches": [
+    {
+      "file": "Python/DLLs/libffi-8.dll",
+      "upstream_binary": "https://raw.githubusercontent.com/python/cpython-bin-deps/libffi-3.4.4/amd64/libffi-8.dll",
+      "upstream_sha256": "eff52743773eb550fcc6ce3efc37c85724502233b6b002a35496d828bd7b280a",
+      "shipped_sha256": "eff52743773eb550fcc6ce3efc37c85724502233b6b002a35496d828bd7b280a",
+      "whole_file_match": true,
+      "all_pe_sections_match": true,
+      "explanation": "Exact whole file"
+    },
+    {
+      "file": "Python/DLLs/tcl86t.dll",
+      "upstream_binary": "https://raw.githubusercontent.com/python/cpython-bin-deps/tcltk-8.6.15.2/amd64/bin/tcl86t.dll",
+      "upstream_sha256": "a308beae8555cff5ac2aff7eaf0aef40b5fe173f047e246dc49da9a4d3ef62f9",
+      "shipped_sha256": "b894e0c9a7d2b56f9f202de5044221cfc0938cbd9ffaca6b6793bba486e28081",
+      "whole_file_match": false,
+      "all_pe_sections_match": true,
+      "explanation": "All PE sections are byte-identical; signed-file envelope/checksum differs."
+    },
+    {
+      "file": "Python/DLLs/tk86t.dll",
+      "upstream_binary": "https://raw.githubusercontent.com/python/cpython-bin-deps/tcltk-8.6.15.2/amd64/bin/tk86t.dll",
+      "upstream_sha256": "20f4876506bce7f89e53570e64fd1dce30a64548326b45f372871c7019560df4",
+      "shipped_sha256": "3883976d6270c44cf43b0f4e3b925259a36c42f586680a93dfe6a3fdfb5b4939",
+      "whole_file_match": false,
+      "all_pe_sections_match": true,
+      "explanation": "All PE sections are byte-identical; signed-file envelope/checksum differs."
+    }
+  ],
+  "files": [
+    {
+      "file": "Python/concrt140.dll",
+      "machine": "0x8664",
+      "version": "14.44.35211.0",
+      "imports": [
+        "MSVCP140.dll",
+        "VCRUNTIME140_1.dll",
+        "VCRUNTIME140.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll",
+        "api-ms-win-crt-heap-l1-1-0.dll",
+        "api-ms-win-crt-math-l1-1-0.dll",
+        "api-ms-win-crt-string-l1-1-0.dll",
+        "api-ms-win-crt-stdio-l1-1-0.dll",
+        "KERNEL32.dll"
+      ],
+      "sha256": "2405355f0a58067b258f8df33c327e3a3d716eaac5a3a5aebb757842d85bd376",
+      "notices": [
+        "../../Microsoft-runtime-NOTICE.txt"
+      ]
+    },
+    {
+      "file": "Python/DLLs/_asyncio.pyd",
+      "machine": "0x8664",
+      "version": "3.12.10150.1013",
+      "imports": [
+        "python312.dll",
+        "VCRUNTIME140.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll",
+        "KERNEL32.dll"
+      ],
+      "sha256": "c77de90cad749087a0c5dc5e19d78d24f6ef44e7e5ac19b8420cfc0cea62395d",
+      "notices": [
+        "CPython-3.12.10-LICENSE.txt",
+        "CPython-3.12.10-stdlib-notices.rst"
+      ]
+    },
+    {
+      "file": "Python/DLLs/_bz2.pyd",
+      "machine": "0x8664",
+      "version": "3.12.10150.1013",
+      "imports": [
+        "python312.dll",
+        "VCRUNTIME140.dll",
+        "api-ms-win-crt-stdio-l1-1-0.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll",
+        "api-ms-win-crt-heap-l1-1-0.dll",
+        "KERNEL32.dll"
+      ],
+      "sha256": "65f610646d10d5babea080e060d244b546ec52c54012e5e937dc72dcc2e2e7bc",
+      "notices": [
+        "CPython-3.12.10-LICENSE.txt",
+        "CPython-3.12.10-stdlib-notices.rst",
+        "bzip2-1.0.8-LICENSE.txt"
+      ]
+    },
+    {
+      "file": "Python/DLLs/_ctypes.pyd",
+      "machine": "0x8664",
+      "version": "3.12.10150.1013",
+      "imports": [
+        "libffi-8.dll",
+        "ole32.dll",
+        "OLEAUT32.dll",
+        "KERNEL32.dll",
+        "python312.dll",
+        "VCRUNTIME140.dll",
+        "api-ms-win-crt-stdio-l1-1-0.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll",
+        "api-ms-win-crt-string-l1-1-0.dll"
+      ],
+      "sha256": "0e56107a891100535f2da79d85a5ae65ff1227b4765bd108f8593ac1a1110d81",
+      "notices": [
+        "CPython-3.12.10-LICENSE.txt",
+        "CPython-3.12.10-stdlib-notices.rst"
+      ]
+    },
+    {
+      "file": "Python/DLLs/_decimal.pyd",
+      "machine": "0x8664",
+      "version": "3.12.10150.1013",
+      "imports": [
+        "python312.dll",
+        "VCRUNTIME140.dll",
+        "api-ms-win-crt-convert-l1-1-0.dll",
+        "api-ms-win-crt-math-l1-1-0.dll",
+        "api-ms-win-crt-stdio-l1-1-0.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll",
+        "api-ms-win-crt-string-l1-1-0.dll",
+        "api-ms-win-crt-locale-l1-1-0.dll",
+        "api-ms-win-crt-heap-l1-1-0.dll",
+        "KERNEL32.dll"
+      ],
+      "sha256": "aeacfead2befcc0768063a037bb64bd32109ae09cb144e5f571b04dd7965db9d",
+      "notices": [
+        "CPython-3.12.10-LICENSE.txt",
+        "CPython-3.12.10-stdlib-notices.rst",
+        "mpdecimal-2.5.1-LICENSE.txt"
+      ]
+    },
+    {
+      "file": "Python/DLLs/_elementtree.pyd",
+      "machine": "0x8664",
+      "version": "3.12.10150.1013",
+      "imports": [
+        "KERNEL32.dll",
+        "python312.dll",
+        "VCRUNTIME140.dll",
+        "api-ms-win-crt-string-l1-1-0.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll"
+      ],
+      "sha256": "5009a9a53c03ef8387443b5cf6ce08e5c3a79727466a0b931c5bbca915bf89ca",
+      "notices": [
+        "CPython-3.12.10-LICENSE.txt",
+        "CPython-3.12.10-stdlib-notices.rst",
+        "expat-2.7.1-COPYING.txt"
+      ]
+    },
+    {
+      "file": "Python/DLLs/_hashlib.pyd",
+      "machine": "0x8664",
+      "version": "3.12.10150.1013",
+      "imports": [
+        "libcrypto-3.dll",
+        "python312.dll",
+        "VCRUNTIME140.dll",
+        "api-ms-win-crt-string-l1-1-0.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll",
+        "KERNEL32.dll"
+      ],
+      "sha256": "03d233dbace599168eaffec823de6ed7beec8c2a4ebfe9b8a3d8e042a59af3ba",
+      "notices": [
+        "CPython-3.12.10-LICENSE.txt",
+        "CPython-3.12.10-stdlib-notices.rst"
+      ]
+    },
+    {
+      "file": "Python/DLLs/_lzma.pyd",
+      "machine": "0x8664",
+      "version": "3.12.10150.1013",
+      "imports": [
+        "python312.dll",
+        "VCRUNTIME140.dll",
+        "api-ms-win-crt-heap-l1-1-0.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll",
+        "KERNEL32.dll"
+      ],
+      "sha256": "e3deecc1f59a3b811c608861decd84de1e8df8bafd5e2b39188861318c5a38cf",
+      "notices": [
+        "CPython-3.12.10-LICENSE.txt",
+        "CPython-3.12.10-stdlib-notices.rst",
+        "xz-5.2.5-COPYING.txt"
+      ]
+    },
+    {
+      "file": "Python/DLLs/_msi.pyd",
+      "machine": "0x8664",
+      "version": "3.12.10150.1013",
+      "imports": [
+        "Cabinet.dll",
+        "msi.dll",
+        "RPCRT4.dll",
+        "KERNEL32.dll",
+        "python312.dll",
+        "VCRUNTIME140.dll",
+        "api-ms-win-crt-stdio-l1-1-0.dll",
+        "api-ms-win-crt-filesystem-l1-1-0.dll",
+        "api-ms-win-crt-string-l1-1-0.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll",
+        "api-ms-win-crt-heap-l1-1-0.dll"
+      ],
+      "sha256": "b49332bae154ebdd8c3d5e7ddfdde336d9c47f91ba028dc67bafb2420b3dbb5c",
+      "notices": [
+        "CPython-3.12.10-LICENSE.txt",
+        "CPython-3.12.10-stdlib-notices.rst"
+      ]
+    },
+    {
+      "file": "Python/DLLs/_multiprocessing.pyd",
+      "machine": "0x8664",
+      "version": "3.12.10150.1013",
+      "imports": [
+        "WS2_32.dll",
+        "KERNEL32.dll",
+        "python312.dll",
+        "VCRUNTIME140.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll"
+      ],
+      "sha256": "2c636df7059cb0dd7e978dd735c7c5c8ddb09cf94754cf9e232296b96c5c545a",
+      "notices": [
+        "CPython-3.12.10-LICENSE.txt",
+        "CPython-3.12.10-stdlib-notices.rst"
+      ]
+    },
+    {
+      "file": "Python/DLLs/_overlapped.pyd",
+      "machine": "0x8664",
+      "version": "3.12.10150.1013",
+      "imports": [
+        "WS2_32.dll",
+        "KERNEL32.dll",
+        "python312.dll",
+        "VCRUNTIME140.dll",
+        "api-ms-win-crt-string-l1-1-0.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll"
+      ],
+      "sha256": "662126ff80c3a1b4cedf74074029c12ae4743e6d3b37376e39ac70aacb7d4d3c",
+      "notices": [
+        "CPython-3.12.10-LICENSE.txt",
+        "CPython-3.12.10-stdlib-notices.rst"
+      ]
+    },
+    {
+      "file": "Python/DLLs/_queue.pyd",
+      "machine": "0x8664",
+      "version": "3.12.10150.1013",
+      "imports": [
+        "python312.dll",
+        "VCRUNTIME140.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll",
+        "KERNEL32.dll"
+      ],
+      "sha256": "48e76e0ad63f6932b4a77b5819f41c1e7595636ca8d9e824f0943a14b8bb5035",
+      "notices": [
+        "CPython-3.12.10-LICENSE.txt",
+        "CPython-3.12.10-stdlib-notices.rst"
+      ]
+    },
+    {
+      "file": "Python/DLLs/_socket.pyd",
+      "machine": "0x8664",
+      "version": "3.12.10150.1013",
+      "imports": [
+        "WS2_32.dll",
+        "IPHLPAPI.DLL",
+        "RPCRT4.dll",
+        "KERNEL32.dll",
+        "python312.dll",
+        "VCRUNTIME140.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll",
+        "api-ms-win-crt-stdio-l1-1-0.dll",
+        "api-ms-win-crt-string-l1-1-0.dll"
+      ],
+      "sha256": "3efa4636cf9e350856f6927d67a4c2564bf9bd2758a00bbf17d3aece5b60016d",
+      "notices": [
+        "CPython-3.12.10-LICENSE.txt",
+        "CPython-3.12.10-stdlib-notices.rst"
+      ]
+    },
+    {
+      "file": "Python/DLLs/_sqlite3.pyd",
+      "machine": "0x8664",
+      "version": "3.12.10150.1013",
+      "imports": [
+        "python312.dll",
+        "sqlite3.dll",
+        "VCRUNTIME140.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll",
+        "api-ms-win-crt-string-l1-1-0.dll",
+        "KERNEL32.dll"
+      ],
+      "sha256": "64b51df2805c58b023a875e8ae3be7ac7f61ef664f32ca6c90f6315da47ef0bc",
+      "notices": [
+        "CPython-3.12.10-LICENSE.txt",
+        "CPython-3.12.10-stdlib-notices.rst"
+      ]
+    },
+    {
+      "file": "Python/DLLs/_ssl.pyd",
+      "machine": "0x8664",
+      "version": "3.12.10150.1013",
+      "imports": [
+        "WS2_32.dll",
+        "CRYPT32.dll",
+        "libcrypto-3.dll",
+        "libssl-3.dll",
+        "KERNEL32.dll",
+        "python312.dll",
+        "VCRUNTIME140.dll",
+        "api-ms-win-crt-stdio-l1-1-0.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll",
+        "api-ms-win-crt-string-l1-1-0.dll"
+      ],
+      "sha256": "0bc527d2dbc50009f43b2ed5d5982c4f63f4b647647ffa9eda612dcda80f6040",
+      "notices": [
+        "CPython-3.12.10-LICENSE.txt",
+        "CPython-3.12.10-stdlib-notices.rst"
+      ]
+    },
+    {
+      "file": "Python/DLLs/_tkinter.pyd",
+      "machine": "0x8664",
+      "version": "3.12.10150.1013",
+      "imports": [
+        "tcl86t.dll",
+        "tk86t.dll",
+        "KERNEL32.dll",
+        "python312.dll",
+        "VCRUNTIME140.dll",
+        "api-ms-win-crt-stdio-l1-1-0.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll",
+        "api-ms-win-crt-string-l1-1-0.dll"
+      ],
+      "sha256": "ed2f7b2c9984032cfb046923b45bb745f6e819730c086e559777665b45e8390e",
+      "notices": [
+        "CPython-3.12.10-LICENSE.txt",
+        "CPython-3.12.10-stdlib-notices.rst"
+      ]
+    },
+    {
+      "file": "Python/DLLs/_uuid.pyd",
+      "machine": "0x8664",
+      "version": "3.12.10150.1013",
+      "imports": [
+        "RPCRT4.dll",
+        "python312.dll",
+        "VCRUNTIME140.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll",
+        "KERNEL32.dll"
+      ],
+      "sha256": "acce4f281d7ffb2dec0997527faf25b1df62ad7bd3032c568ddcf65c90edc867",
+      "notices": [
+        "CPython-3.12.10-LICENSE.txt",
+        "CPython-3.12.10-stdlib-notices.rst"
+      ]
+    },
+    {
+      "file": "Python/DLLs/_wmi.pyd",
+      "machine": "0x8664",
+      "version": "3.12.10150.1013",
+      "imports": [
+        "PROPSYS.dll",
+        "OLEAUT32.dll",
+        "KERNEL32.dll",
+        "python312.dll",
+        "VCRUNTIME140_1.dll",
+        "VCRUNTIME140.dll",
+        "api-ms-win-crt-string-l1-1-0.dll",
+        "api-ms-win-crt-heap-l1-1-0.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll",
+        "ole32.dll"
+      ],
+      "sha256": "a980f1e7a29842bd946863fc2693fbeb555a9dc0f9e1630dfed9a2fcdef3ece2",
+      "notices": [
+        "CPython-3.12.10-LICENSE.txt",
+        "CPython-3.12.10-stdlib-notices.rst"
+      ]
+    },
+    {
+      "file": "Python/DLLs/_zoneinfo.pyd",
+      "machine": "0x8664",
+      "version": "3.12.10150.1013",
+      "imports": [
+        "python312.dll",
+        "VCRUNTIME140.dll",
+        "api-ms-win-crt-string-l1-1-0.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll",
+        "KERNEL32.dll"
+      ],
+      "sha256": "76f1439cda82ab6976df6ba505c4079444703f6d44d8b0259ce59c0ff4279fb4",
+      "notices": [
+        "CPython-3.12.10-LICENSE.txt",
+        "CPython-3.12.10-stdlib-notices.rst"
+      ]
+    },
+    {
+      "file": "Python/DLLs/libcrypto-3.dll",
+      "machine": "0x8664",
+      "version": "3.0.16.0",
+      "imports": [
+        "WS2_32.dll",
+        "ADVAPI32.dll",
+        "USER32.dll",
+        "bcrypt.dll",
+        "KERNEL32.dll",
+        "VCRUNTIME140.dll",
+        "api-ms-win-crt-stdio-l1-1-0.dll",
+        "api-ms-win-crt-convert-l1-1-0.dll",
+        "api-ms-win-crt-string-l1-1-0.dll",
+        "api-ms-win-crt-time-l1-1-0.dll",
+        "api-ms-win-crt-utility-l1-1-0.dll",
+        "api-ms-win-crt-heap-l1-1-0.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll",
+        "api-ms-win-crt-filesystem-l1-1-0.dll",
+        "api-ms-win-crt-environment-l1-1-0.dll"
+      ],
+      "sha256": "ccfffddcd3defb8d899026298af9af43bc186130f8483d77e97c93233d5f27d7",
+      "notices": [
+        "CPython-3.12.10-LICENSE.txt",
+        "CPython-3.12.10-stdlib-notices.rst",
+        "OpenSSL-3.0.16-LICENSE.txt",
+        "OpenSSL-3.0.16-NOTICE.md"
+      ]
+    },
+    {
+      "file": "Python/DLLs/libffi-8.dll",
+      "machine": "0x8664",
+      "version": null,
+      "imports": [
+        "KERNEL32.dll",
+        "VCRUNTIME140.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll"
+      ],
+      "sha256": "eff52743773eb550fcc6ce3efc37c85724502233b6b002a35496d828bd7b280a",
+      "notices": [
+        "CPython-3.12.10-LICENSE.txt",
+        "CPython-3.12.10-stdlib-notices.rst",
+        "libffi-3.4.4-LICENSE.txt"
+      ]
+    },
+    {
+      "file": "Python/DLLs/libssl-3.dll",
+      "machine": "0x8664",
+      "version": "3.0.16.0",
+      "imports": [
+        "libcrypto-3.dll",
+        "KERNEL32.dll",
+        "VCRUNTIME140.dll",
+        "api-ms-win-crt-time-l1-1-0.dll",
+        "api-ms-win-crt-string-l1-1-0.dll",
+        "api-ms-win-crt-utility-l1-1-0.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll",
+        "api-ms-win-crt-filesystem-l1-1-0.dll",
+        "api-ms-win-crt-convert-l1-1-0.dll",
+        "api-ms-win-crt-stdio-l1-1-0.dll"
+      ],
+      "sha256": "007142039f04d04e0ed607bda53de095e5bc6a8a10d26ecedde94ea7d2d7eefe",
+      "notices": [
+        "CPython-3.12.10-LICENSE.txt",
+        "CPython-3.12.10-stdlib-notices.rst",
+        "OpenSSL-3.0.16-LICENSE.txt",
+        "OpenSSL-3.0.16-NOTICE.md"
+      ]
+    },
+    {
+      "file": "Python/DLLs/pyexpat.pyd",
+      "machine": "0x8664",
+      "version": "3.12.10150.1013",
+      "imports": [
+        "KERNEL32.dll",
+        "python312.dll",
+        "VCRUNTIME140.dll",
+        "api-ms-win-crt-stdio-l1-1-0.dll",
+        "api-ms-win-crt-heap-l1-1-0.dll",
+        "api-ms-win-crt-convert-l1-1-0.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll",
+        "api-ms-win-crt-utility-l1-1-0.dll",
+        "api-ms-win-crt-environment-l1-1-0.dll"
+      ],
+      "sha256": "d615e193d1affcdbfe504e90d3621cbdcff94bf72b79d899126534507fd6d27a",
+      "notices": [
+        "CPython-3.12.10-LICENSE.txt",
+        "CPython-3.12.10-stdlib-notices.rst",
+        "expat-2.7.1-COPYING.txt"
+      ]
+    },
+    {
+      "file": "Python/DLLs/select.pyd",
+      "machine": "0x8664",
+      "version": "3.12.10150.1013",
+      "imports": [
+        "WS2_32.dll",
+        "python312.dll",
+        "VCRUNTIME140.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll",
+        "KERNEL32.dll"
+      ],
+      "sha256": "d4d7181b11db0bd22a6cd5cda6f8583d1f5c77615fd0a6ca33350619d6e0438a",
+      "notices": [
+        "CPython-3.12.10-LICENSE.txt",
+        "CPython-3.12.10-stdlib-notices.rst"
+      ]
+    },
+    {
+      "file": "Python/DLLs/sqlite3.dll",
+      "machine": "0x8664",
+      "version": "3.49.1.0",
+      "imports": [
+        "KERNEL32.dll",
+        "VCRUNTIME140.dll",
+        "api-ms-win-crt-math-l1-1-0.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll",
+        "api-ms-win-crt-time-l1-1-0.dll",
+        "api-ms-win-crt-heap-l1-1-0.dll",
+        "api-ms-win-crt-string-l1-1-0.dll",
+        "api-ms-win-crt-utility-l1-1-0.dll"
+      ],
+      "sha256": "8daa45684bf6688fca28d956b2e8942f2fa98f656675ce68e6d61dd869848a7a",
+      "notices": [
+        "CPython-3.12.10-LICENSE.txt",
+        "CPython-3.12.10-stdlib-notices.rst",
+        "SQLite-3.49.1-public-domain.txt"
+      ]
+    },
+    {
+      "file": "Python/DLLs/tcl86t.dll",
+      "machine": "0x8664",
+      "version": "8.6.2.15",
+      "imports": [
+        "KERNEL32.dll",
+        "ADVAPI32.dll",
+        "NETAPI32.dll",
+        "USER32.dll",
+        "USERENV.dll",
+        "WS2_32.dll",
+        "api-ms-win-crt-stdio-l1-1-0.dll",
+        "api-ms-win-crt-utility-l1-1-0.dll",
+        "api-ms-win-crt-string-l1-1-0.dll",
+        "api-ms-win-crt-convert-l1-1-0.dll",
+        "api-ms-win-crt-math-l1-1-0.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll",
+        "api-ms-win-crt-environment-l1-1-0.dll",
+        "api-ms-win-crt-time-l1-1-0.dll",
+        "api-ms-win-crt-heap-l1-1-0.dll",
+        "zlib1.dll",
+        "VCRUNTIME140.dll"
+      ],
+      "sha256": "b894e0c9a7d2b56f9f202de5044221cfc0938cbd9ffaca6b6793bba486e28081",
+      "notices": [
+        "CPython-3.12.10-LICENSE.txt",
+        "CPython-3.12.10-stdlib-notices.rst",
+        "Tcl-8.6.15-license.terms",
+        "libtommath-LICENSE.txt"
+      ]
+    },
+    {
+      "file": "Python/DLLs/tk86t.dll",
+      "machine": "0x8664",
+      "version": "8.6.2.15",
+      "imports": [
+        "KERNEL32.dll",
+        "ADVAPI32.dll",
+        "GDI32.dll",
+        "USER32.dll",
+        "api-ms-win-crt-math-l1-1-0.dll",
+        "api-ms-win-crt-stdio-l1-1-0.dll",
+        "api-ms-win-crt-string-l1-1-0.dll",
+        "api-ms-win-crt-convert-l1-1-0.dll",
+        "api-ms-win-crt-time-l1-1-0.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll",
+        "api-ms-win-crt-utility-l1-1-0.dll",
+        "SHELL32.dll",
+        "COMDLG32.dll",
+        "ole32.dll",
+        "COMCTL32.dll",
+        "IMM32.dll",
+        "VCRUNTIME140.dll"
+      ],
+      "sha256": "3883976d6270c44cf43b0f4e3b925259a36c42f586680a93dfe6a3fdfb5b4939",
+      "notices": [
+        "CPython-3.12.10-LICENSE.txt",
+        "CPython-3.12.10-stdlib-notices.rst",
+        "Tk-8.6.15-license.terms"
+      ]
+    },
+    {
+      "file": "Python/DLLs/unicodedata.pyd",
+      "machine": "0x8664",
+      "version": "3.12.10150.1013",
+      "imports": [
+        "python312.dll",
+        "VCRUNTIME140.dll",
+        "api-ms-win-crt-string-l1-1-0.dll",
+        "api-ms-win-crt-stdio-l1-1-0.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll",
+        "KERNEL32.dll"
+      ],
+      "sha256": "208ee1cd3cbad0828433ca7246b05be2b1ff5569983d27d296c0b38888585488",
+      "notices": [
+        "CPython-3.12.10-LICENSE.txt",
+        "CPython-3.12.10-stdlib-notices.rst"
+      ]
+    },
+    {
+      "file": "Python/DLLs/winsound.pyd",
+      "machine": "0x8664",
+      "version": "3.12.10150.1013",
+      "imports": [
+        "WINMM.dll",
+        "KERNEL32.dll",
+        "USER32.dll",
+        "python312.dll",
+        "VCRUNTIME140.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll"
+      ],
+      "sha256": "100e8d676777603c7258daf9b2f23ef001f09f1596d8708de359326fff72bddd",
+      "notices": [
+        "CPython-3.12.10-LICENSE.txt",
+        "CPython-3.12.10-stdlib-notices.rst"
+      ]
+    },
+    {
+      "file": "Python/DLLs/zlib1.dll",
+      "machine": "0x8664",
+      "version": "1.3.1.0",
+      "imports": [
+        "KERNEL32.dll",
+        "msvcrt.dll"
+      ],
+      "sha256": "a3a9487dd7a27be0296731513a5c1d9005bd3acf5861ccbe0aabca3984f51c4f",
+      "notices": [
+        "CPython-3.12.10-LICENSE.txt",
+        "CPython-3.12.10-stdlib-notices.rst",
+        "zlib-1.3.1-LICENSE.txt"
+      ]
+    },
+    {
+      "file": "Python/msvcp140.dll",
+      "machine": "0x8664",
+      "version": "14.44.35211.0",
+      "imports": [
+        "VCRUNTIME140.dll",
+        "VCRUNTIME140_1.dll",
+        "api-ms-win-crt-heap-l1-1-0.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll",
+        "api-ms-win-crt-string-l1-1-0.dll",
+        "api-ms-win-crt-locale-l1-1-0.dll",
+        "api-ms-win-crt-stdio-l1-1-0.dll",
+        "api-ms-win-crt-filesystem-l1-1-0.dll",
+        "api-ms-win-crt-time-l1-1-0.dll",
+        "api-ms-win-crt-environment-l1-1-0.dll",
+        "api-ms-win-crt-math-l1-1-0.dll",
+        "api-ms-win-crt-convert-l1-1-0.dll",
+        "api-ms-win-crt-utility-l1-1-0.dll",
+        "KERNEL32.dll"
+      ],
+      "sha256": "0f885b509a685d2bbfa652fed26b5fb31d88fbdab0a978c641d1c7b8aa460aa9",
+      "notices": [
+        "../../Microsoft-runtime-NOTICE.txt"
+      ]
+    },
+    {
+      "file": "Python/msvcp140_1.dll",
+      "machine": "0x8664",
+      "version": "14.44.35211.0",
+      "imports": [
+        "MSVCP140.dll",
+        "VCRUNTIME140.dll",
+        "api-ms-win-crt-heap-l1-1-0.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll",
+        "KERNEL32.dll"
+      ],
+      "sha256": "bfad5aef4c63a669e3c140655cdfdf395b6c979b400a447bd5dcb65ed8826c3d",
+      "notices": [
+        "../../Microsoft-runtime-NOTICE.txt"
+      ]
+    },
+    {
+      "file": "Python/msvcp140_2.dll",
+      "machine": "0x8664",
+      "version": "14.44.35211.0",
+      "imports": [
+        "MSVCP140.dll",
+        "VCRUNTIME140.dll",
+        "VCRUNTIME140_1.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll",
+        "api-ms-win-crt-math-l1-1-0.dll",
+        "api-ms-win-crt-heap-l1-1-0.dll",
+        "api-ms-win-crt-string-l1-1-0.dll",
+        "api-ms-win-crt-stdio-l1-1-0.dll",
+        "api-ms-win-crt-locale-l1-1-0.dll",
+        "KERNEL32.dll"
+      ],
+      "sha256": "3ea06f0ee098b4823cb79599df3780e7f23cce52c19aac31d2a0d47efe33a5e9",
+      "notices": [
+        "../../Microsoft-runtime-NOTICE.txt"
+      ]
+    },
+    {
+      "file": "Python/msvcp140_atomic_wait.dll",
+      "machine": "0x8664",
+      "version": "14.44.35211.0",
+      "imports": [
+        "MSVCP140.dll",
+        "VCRUNTIME140_1.dll",
+        "VCRUNTIME140.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll",
+        "api-ms-win-crt-heap-l1-1-0.dll",
+        "api-ms-win-crt-locale-l1-1-0.dll",
+        "ADVAPI32.dll",
+        "KERNEL32.dll"
+      ],
+      "sha256": "640b2aefced484d0368eea5bdd06addd0658a3a70a49256e560d6923b404a479",
+      "notices": [
+        "../../Microsoft-runtime-NOTICE.txt"
+      ]
+    },
+    {
+      "file": "Python/msvcp140_codecvt_ids.dll",
+      "machine": "0x8664",
+      "version": "14.44.35211.0",
+      "imports": [
+        "VCRUNTIME140.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll",
+        "KERNEL32.dll"
+      ],
+      "sha256": "f2069a52880ec885ee7f0511186100eb7fada0411a2b4948fafea7735b878a18",
+      "notices": [
+        "../../Microsoft-runtime-NOTICE.txt"
+      ]
+    },
+    {
+      "file": "Python/python312.dll",
+      "machine": "0x8664",
+      "version": "3.12.10150.1013",
+      "imports": [
+        "VERSION.dll",
+        "WS2_32.dll",
+        "api-ms-win-core-path-l1-1-0.dll",
+        "bcrypt.dll",
+        "ADVAPI32.dll",
+        "KERNEL32.dll",
+        "VCRUNTIME140.dll",
+        "api-ms-win-crt-stdio-l1-1-0.dll",
+        "api-ms-win-crt-environment-l1-1-0.dll",
+        "api-ms-win-crt-heap-l1-1-0.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll",
+        "api-ms-win-crt-locale-l1-1-0.dll",
+        "api-ms-win-crt-string-l1-1-0.dll",
+        "api-ms-win-crt-convert-l1-1-0.dll",
+        "api-ms-win-crt-math-l1-1-0.dll",
+        "api-ms-win-crt-time-l1-1-0.dll",
+        "api-ms-win-crt-process-l1-1-0.dll",
+        "api-ms-win-crt-conio-l1-1-0.dll",
+        "api-ms-win-crt-filesystem-l1-1-0.dll"
+      ],
+      "sha256": "5e866f11342518512b8af5d78efff7604fc170d20d567f383d90bbd49eb01f8f",
+      "notices": [
+        "CPython-3.12.10-LICENSE.txt",
+        "CPython-3.12.10-stdlib-notices.rst",
+        "zlib-1.3.1-LICENSE.txt",
+        "HACL-CPython-3.12.10-LICENSE.txt",
+        "BLAKE2-CPython-3.12.10-NOTICES.txt",
+        "CC0-1.0.txt",
+        "KaRaMeL-CPython-3.12.10-NOTICES.txt",
+        "Apache-2.0.txt"
+      ]
+    },
+    {
+      "file": "Python/vccorlib140.dll",
+      "machine": "0x8664",
+      "version": "14.44.35211.0",
+      "imports": [
+        "KERNEL32.dll",
+        "VCRUNTIME140_1.dll",
+        "VCRUNTIME140.dll",
+        "api-ms-win-crt-stdio-l1-1-0.dll",
+        "api-ms-win-crt-runtime-l1-1-0.dll",
+        "api-ms-win-crt-heap-l1-1-0.dll",
+        "api-ms-win-crt-string-l1-1-0.dll",
+        "MSVCP140.dll",
+        "ole32.dll",
+        "OLEAUT32.dll",
+        "api-ms-win-core-winrt-string-l1-1-0.dll",
+        "api-ms-win-core-winrt-error-l1-1-0.dll",
+        "api-ms-win-core-winrt-l1-1-0.dll",
+        "api-ms-win-crt-math-l1-1-0.dll"
+      ],
+      "sha256": "19839407c3fdbc824e5bce189bf68ddf8097f12ec28b757797ffa0415c144ddd",
+      "notices": [
+        "../../Microsoft-runtime-NOTICE.txt"
+      ]
+    },
+    {
+      "file": "Python/vcruntime140.dll",
+      "machine": "0x8664",
+      "version": "14.44.35211.0",
+      "imports": [
+        "api-ms-win-crt-runtime-l1-1-0.dll",
+        "api-ms-win-crt-string-l1-1-0.dll",
+        "api-ms-win-crt-heap-l1-1-0.dll",
+        "api-ms-win-crt-stdio-l1-1-0.dll",
+        "api-ms-win-crt-convert-l1-1-0.dll",
+        "KERNEL32.dll"
+      ],
+      "sha256": "d5e4d9a3e835fa679450145d6a7d94e36573a509317111904d9b3712c30d9066",
+      "notices": [
+        "../../Microsoft-runtime-NOTICE.txt"
+      ]
+    },
+    {
+      "file": "Python/vcruntime140_1.dll",
+      "machine": "0x8664",
+      "version": "14.44.35211.0",
+      "imports": [
+        "api-ms-win-crt-runtime-l1-1-0.dll",
+        "api-ms-win-crt-string-l1-1-0.dll",
+        "api-ms-win-crt-heap-l1-1-0.dll",
+        "VCRUNTIME140.dll",
+        "KERNEL32.dll"
+      ],
+      "sha256": "1f2d41c4aa5db0bc33ebf7b66d72943a817d7ce6cbe880502a9403823633093f",
+      "notices": [
+        "../../Microsoft-runtime-NOTICE.txt"
+      ]
+    },
+    {
+      "file": "Python/vcruntime140_threads.dll",
+      "machine": "0x8664",
+      "version": "14.44.35211.0",
+      "imports": [
+        "api-ms-win-crt-runtime-l1-1-0.dll",
+        "api-ms-win-crt-heap-l1-1-0.dll",
+        "api-ms-win-crt-time-l1-1-0.dll",
+        "VCRUNTIME140.dll",
+        "KERNEL32.dll"
+      ],
+      "sha256": "219915cf20822f34d5e7c1fdd4e21ae7f3396881096c51036225fb8f84b47afa",
+      "notices": [
+        "../../Microsoft-runtime-NOTICE.txt"
+      ]
+    }
+  ],
+  "site_packages": "Only README.txt; no pip or other third-party Python packages shipped.",
+  "other_payload": "python.cat is Microsoft/Python signing catalog metadata, not executable code; all .py files are CPython standard library. Windows API imports are OS components. No Tix DLL or Tix library is shipped."
+}

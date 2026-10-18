@@ -1,0 +1,6 @@
+Microsoft Visual C++ runtime components. Copyright Microsoft Corporation.
+VC14 x64 runtime files are app-local copies from the installed VS 2022 Build Tools redistributable CRT directory (14.44.35112).
+VC90 and VC100 runtime files are retained from the upstream application payload. The private VC90 descriptor supplies the assembly identity requested by the VTK/ActiViz native DLLs.
+Redistributed as runtime components of this application under the applicable Microsoft Visual Studio licence terms.
+https://visualstudio.microsoft.com/license-terms/vs2022-ga-diagnosticbuildtools/
+https://learn.microsoft.com/cpp/windows/redistributing-visual-cpp-files

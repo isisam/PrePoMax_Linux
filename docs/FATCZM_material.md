@@ -13,6 +13,10 @@ values["constants"][5] = 0.002  # actual layer thickness, in mm in this example
 pmx.model.materials.replace("USERFATCZM", properties=pmx.create.user_material(**values))
 ```
 
+The **FATCZM preset** property is read-only. Adding **Fatigue CZM (FATCZM)**
+sets it to True; importing a 26-constant `USERFATCZM...` block also recognizes
+the preset. Edit DEPVAR separately on **Properties**, and constants on **Data points**.
+
 The preset has 26 constants and DEPVAR 6. Defaults reproduce the **IM7 ENF
 energy-driver example**, not a calibrated material prediction. Order is taken
 from `ccx_fat/fatczm.f` (constant map and `umat_fatczm`) and
@@ -79,7 +83,9 @@ The fatigue law is `dD/dN = a * F^b / (1-D)^g`; gamma -1 multiplies the rate by
 - A name starting with `USERFATCZMPC` requires Dint = 0.999999, matching the generator.
   The UMAT actually treats **any Dint ≥ 0.5** as fully separated; the PC suffix is
   a generator convention, not the solver's pre-crack switch. For opening inserts
-  choose constant 19 = 0 deliberately (DCB/MMB); the ENF preset uses 1.
+  set **both constant 5 = 0.999999 and constant 19 = 0** (DCB/MMB); the ENF preset uses 1.
+  Changing constant 19 alone leaves a default interface intact. Verify an opening
+  pre-crack with a one-element check: D = 1 and zero opening reaction.
 - CalculiX 2.21 reads `n/8+1` data lines: a FATCZM constant count must **not** be
   divisible by 8. Generic FATCZM data need at least the generator's 19 baseline
   constants; append a dummy zero when necessary. Optional bridging constants

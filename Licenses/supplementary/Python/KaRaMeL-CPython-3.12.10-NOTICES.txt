@@ -1,0 +1,25 @@
+Modules/_hacl/include/krml/FStar_UInt128_Verified.h
+/*
+  Copyright (c) INRIA and Microsoft Corporation. All rights reserved.
+  Licensed under the Apache 2.0 License.
+*/
+
+Modules/_hacl/include/krml/FStar_UInt_8_16_32_64.h
+/*
+  Copyright (c) INRIA and Microsoft Corporation. All rights reserved.
+  Licensed under the Apache 2.0 License.
+*/
+
+Modules/_hacl/include/krml/fstar_uint128_struct_endianness.h
+/* Copyright (c) INRIA and Microsoft Corporation. All rights reserved.
+   Licensed under the Apache 2.0 License. */
+
+Modules/_hacl/include/krml/internal/target.h
+/* Copyright (c) INRIA and Microsoft Corporation. All rights reserved.
+   Licensed under the Apache 2.0 License. */
+
+Modules/_hacl/include/krml/lowstar_endianness.h
+/* Copyright (c) INRIA and Microsoft Corporation. All rights reserved.
+   Licensed under the Apache 2.0 License. */
+
+Full terms: Apache-2.0.txt
