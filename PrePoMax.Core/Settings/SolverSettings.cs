@@ -107,7 +107,7 @@ namespace PrePoMax
         }
         public void Reset()
         {
-            _workDirectory = null;
+            _workDirectory = CreateDefaultWorkDirectory();
             _usePmxFolderAsWorkDirectory = false;
             _numCPUs = 1;
             _calculixExe = null;
@@ -122,8 +122,19 @@ namespace PrePoMax
         [OnDeserialized]
         private void OnDeserialized(StreamingContext context)
         {
+            // Migrate unset work directories from earlier first-run settings, while
+            // retaining explicitly configured paths and the PMX-folder preference.
+            if (string.IsNullOrWhiteSpace(_workDirectory))
+                _workDirectory = CreateDefaultWorkDirectory();
             // A saved matrix solver is an existing user choice, including in older settings files.
             SetBundledCalculixDefault(false);
+        }
+        private static string CreateDefaultWorkDirectory()
+        {
+            string directory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                                            "Documents", "PrePoMax-RCM", "Work");
+            Directory.CreateDirectory(directory);
+            return directory;
         }
         private void SetBundledCalculixDefault(bool resetMatrixSolver)
         {
