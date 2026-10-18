@@ -129,16 +129,17 @@ public sealed partial class MainWindow : Window, IMainView
                         {var result=FrdFileReader.Read(Path.GetFullPath(path))??throw new InvalidDataException("FRD read failed");controller.Model.Properties.ModelSpace=ModelSpaceEnum.ThreeD;controller.Model.SetMesh(result.Mesh);}
                         else throw new ArgumentException("Expected .pmx, .inp or .frd");
                         if(error!=null)throw new InvalidDataException("PMX read failed",error);
-                        return new ViewerModel(controller.Model);
+                        return controller;
                     }
                     finally{CoreHost.FileReadError=previous;}
                 });
-                model=loaded;modelPath=path;ViewportModelBridge.Load(viewport,loaded);RefreshTree();
-                if (loaded.PlyWarning != null) Log("Model requires repair; ply colouring unavailable: " + loaded.PlyWarning);
-                Log($"OPEN path={path} nodes={loaded.NodeIds.Length} elements={loaded.ElementIds.Length} controllerCommands={mainView.Controller.GetActiveCommandCount()}");
+                await SelectModelPropertiesIfNeeded(loaded);
+                model=new ViewerModel(loaded.Model);modelPath=path;ViewportModelBridge.Load(viewport,model);RefreshTree();
+                if (model.PlyWarning != null) Log("Model requires repair; ply colouring unavailable: " + model.PlyWarning);
+                Log($"OPEN path={path} nodes={model.NodeIds.Length} elements={model.ElementIds.Length} controllerCommands={mainView.Controller.GetActiveCommandCount()}");
                 int flag=Array.IndexOf(Program.Arguments,"--frd");
                 string frd=extension==".frd"?path:flag>=0&&flag+1<Program.Arguments.Length?Program.Arguments[flag+1]:Path.ChangeExtension(path,".frd");
-                if(File.Exists(frd))try{await loaded.LoadResultsAsync(frd,progress);}catch(Exception e){Log("Mesh loaded; "+e.Message);}
+                if(File.Exists(frd))try{await model.LoadResultsAsync(frd,progress);}catch(Exception e){Log("Mesh loaded; "+e.Message);}
             }
             RefreshTree();
             status.Text=$"{Path.GetFileName(path)} | {model!.NodeIds.Length:N0} nodes | {model.ElementIds.Length:N0} elements";

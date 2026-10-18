@@ -25,7 +25,7 @@ public sealed class StepFormSession : EntityFormSession
             StaticStep x when x.GetType() == typeof(StaticStep) => new ViewStaticStep(x),
             BoundaryDisplacementStep x => new ViewBoundaryDisplacementStep(x),
             FrequencyStep x => new ViewFrequencyStep(x), BuckleStep x => new ViewBuckleStep(x),
-            ModalDynamicsStep x => new ViewModalDynamicsStep(x), SteadyStateDynamicsStep x => new ViewSteadyStateDynamicsStep(x),
+            ModalDynamicsStep x => new ViewModalDynamics(x), SteadyStateDynamicsStep x => new ViewSteadyStateDynamics(x),
             _ => throw new NotSupportedException(step.GetType().Name)
         };
         controls = step.StepControls.Parameters.Select(Wrap).ToList();
@@ -46,7 +46,7 @@ public sealed class StepFormSession : EntityFormSession
     public void FatiguePreset(int jumps)
     {
         if (jumps < 1 || jumps > int.MaxValue - 10) throw new CaeException("The number of jumps must be a positive integer with room for 10 extra increments.");
-        if (step.GetType() != typeof(StaticStep)) throw new NotSupportedException("The fatigue preset requires a static step.");
+        if (this.step.GetType() != typeof(StaticStep)) throw new NotSupportedException("The fatigue preset requires a static step.");
         var step = (StaticStep)this.step;
         // Only existing typed Windows fields; the CalculiX writer is unchanged.
         step.Nlgeom = false; step.SolverType = SolverTypeEnum.Spooles;
