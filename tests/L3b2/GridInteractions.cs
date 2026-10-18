@@ -6,10 +6,12 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.Threading;
 using CaeGlobals;
 using CaeModel;
 using PrePoMax;
+using PrePoMax.PropertyViews;
 using PrePoMax.Avalonia;
 
 internal static class GridInteractions
@@ -89,6 +91,38 @@ public sealed class GridTestApp : Application
                 options.Children.OfType<CheckBox>().Single(c => c.Content?.ToString() == "None").IsChecked = true;
                 Check(fixture.Flags == ExampleFlags.None, "zero flag clears all bits");
                 Check(DescriptorPropertyGrid.Display("\t\u200bVisible") == "Visible", "ordering prefixes stripped for display");
+                var controller = new Controller(new NullMainView()); controller.New();
+                foreach (string type in MaterialFormSession.AvailableProperties)
+                {
+                    var session = new MaterialFormSession(controller);
+                    var editor = new EntityEditorWindow(session); editor.Show();
+                    void Click(string button) => editor.Buttons[button].RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                    editor.MaterialType.SelectedItem = type; Click("Add property");
+                    Check(session.Pages.Count == 1 && string.IsNullOrEmpty(editor.Error.Text), "material add: " + type);
+                    var view = session.Pages[0].View;
+                    bool user = view is ViewUserMaterial, plastic = view is ViewPlastic;
+                    bool scalarOnly = view is ViewElasticWithDensity or ViewSlipWear;
+                    Check(editor.RowSelector.IsVisible == (user || plastic), "material normal table mode: " + type);
+                    editor.MaterialTemperature.IsChecked = true;
+                    Check(session.TemperatureDependent && editor.RowSelector.IsVisible == !scalarOnly, "material temperature table mode: " + type);
+                    if (view is ViewThermalExpansion)
+                        Check(!editor.Properties.Editors.ContainsKey("ThermalExpansion") && editor.Properties.Editors.ContainsKey("ZeroTemperature"), "thermal expansion zero-temperature metadata retained");
+                    if (!scalarOnly && !user)
+                    {
+                        Check(editor.DataProperties.Editors.ContainsKey("TemperatureEq"), "temperature column shown: " + type);
+                        int count = session.Pages[0].DataRows!.Count;
+                        Click("Add data row"); Check(session.Pages[0].DataRows!.Count == count + 1, "add data row: " + type);
+                        Click("Remove data row"); Check(session.Pages[0].DataRows!.Count == count, "remove data row: " + type);
+                    }
+                    editor.MaterialTemperature.IsChecked = false;
+                    if (plastic) Check(!editor.DataProperties.Editors.ContainsKey("TemperatureEq"), "plastic normal mode hides temperature column");
+                    if (user && ((ViewUserMaterial)view).Fatczm)
+                    {
+                        Check(session.Pages[0].DataRows!.Count == 26, "FATCZM fixed 26 rows: " + type);
+                        Click("Remove data row"); Check(session.Pages[0].DataRows!.Count == 26 && !string.IsNullOrEmpty(editor.Error.Text), "FATCZM refuses row removal: " + type);
+                    }
+                    editor.Close();
+                }
                 File.WriteAllText(GridInteractions.Output, JsonSerializer.Serialize(new { passed = true, checks, real_controls = true, entity_acceptance = false }, new JsonSerializerOptions { WriteIndented = true }));
             }
             catch (Exception error) { File.WriteAllText(GridInteractions.Output, JsonSerializer.Serialize(new { passed = false, checks, error = error.ToString() })); Environment.ExitCode = 1; }

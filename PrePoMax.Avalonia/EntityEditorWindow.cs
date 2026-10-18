@@ -18,6 +18,7 @@ public sealed class EntityEditorWindow : Window
     public ComboBox RowSelector { get; } = new() { MinWidth = 230, HorizontalAlignment = HorizontalAlignment.Stretch };
     public TextBox MaterialName { get; } = new();
     public TextBox MaterialDescription { get; } = new() { AcceptsReturn = true, MinHeight = 45 };
+    public CheckBox MaterialTemperature { get; } = new() { Content = "Temperature dependent" };
     public TextBlock Error { get; } = new() { Foreground = Brushes.OrangeRed, TextWrapping = TextWrapping.Wrap };
     public Dictionary<string, Button> Buttons { get; } = [];
     public ComboBox MaterialType { get; } = new() { ItemsSource = MaterialFormSession.AvailableProperties, SelectedIndex = 1 };
@@ -44,12 +45,17 @@ public sealed class EntityEditorWindow : Window
         {
             MaterialName.Text = material.Draft.Name;
             MaterialDescription.Text = ((CaeModel.Material)material.Draft).Description;
-            var temperature = new CheckBox { Content = "Temperature dependent", IsChecked = ((CaeModel.Material)material.Draft).TemperatureDependent };
+            MaterialTemperature.IsChecked = material.TemperatureDependent;
             MaterialName.TextChanged += (_, _) => { if (!preparing) dirty = true; };
             MaterialDescription.TextChanged += (_, _) => { if (!preparing) dirty = true; };
-            temperature.IsCheckedChanged += (_, _) => { ((CaeModel.Material)material.Draft).TemperatureDependent = temperature.IsChecked == true; dirty = true; };
+            MaterialTemperature.IsCheckedChanged += (_, _) =>
+            {
+                if (preparing) return;
+                if (!Flush()) { preparing = true; MaterialTemperature.IsChecked = material.TemperatureDependent; preparing = false; return; }
+                material.TemperatureDependent = MaterialTemperature.IsChecked == true; dirty = true; ShowPage();
+            };
             header.Children.Add(new TextBlock { Text = "Name" }); header.Children.Add(MaterialName);
-            header.Children.Add(new TextBlock { Text = "Description" }); header.Children.Add(MaterialDescription); header.Children.Add(temperature);
+            header.Children.Add(new TextBlock { Text = "Description" }); header.Children.Add(MaterialDescription); header.Children.Add(MaterialTemperature);
             var tools = new WrapPanel { Orientation = Orientation.Horizontal };
             tools.Children.Add(MaterialType);
             tools.Children.Add(Button("Add property", () => { if (!Flush()) return; material.AddProperty((string)MaterialType.SelectedItem!); dirty = true; ReloadPages(session.Pages.Count - 1); }));
@@ -125,7 +131,7 @@ public sealed class EntityEditorWindow : Window
             if (selecting) return;
             if (!DataProperties.CommitPending()) { selecting = true; RowSelector.SelectedIndex = acceptedRow; selecting = false; return; }
             acceptedRow = RowSelector.SelectedIndex;
-            DataProperties.SelectedObject = page?.DataRows is { } rows && acceptedRow >= 0 ? rows[acceptedRow] : null;
+            DataProperties.SelectedObject = page?.DataRows is { } rows && acceptedRow >= 0 ? DataRow(rows[acceptedRow]!) : null;
         };
         Properties.PropertyChanged += Changed; DataProperties.PropertyChanged += Changed;
         void Changed(string name)
@@ -150,17 +156,21 @@ public sealed class EntityEditorWindow : Window
     }
     private void ShowPage()
     {
-        page = PageSelector.SelectedItem as FormPage; Properties.SelectedObject = page?.View;
+        page = PageSelector.SelectedItem as FormPage;
+        bool showScalar = Session is not MaterialFormSession material || page == null || material.ShowScalar(page.View);
+        Properties.SelectedObject = showScalar ? page?.View : null; Properties.IsVisible = showScalar;
         var data = page?.DataRows;
         string Label(object row, int index) => row is UserMaterialDataPoint um ? $"{index + 1}. {um.Name} — {um.Description}" : "Row " + (index + 1);
         selecting = true; RowSelector.ItemsSource = data?.Cast<object>().Select(Label).ToArray(); RowSelector.SelectedIndex = data?.Count > 0 ? 0 : -1;
         acceptedRow = RowSelector.SelectedIndex; selecting = false;
-        DataProperties.SelectedObject = data?.Count > 0 ? data[0] : null;
-        bool showRows = data != null;
-        propertyArea.RowDefinitions[0].Height = page?.View is ViewUserMaterial ? new GridLength(210) : new GridLength(1, GridUnitType.Star);
+        DataProperties.SelectedObject = data?.Count > 0 ? DataRow(data[0]!) : null;
+        bool showRows = data != null && (Session is not MaterialFormSession m || page != null && m.ShowRows(page.View));
+        propertyArea.RowDefinitions[0].Height = !showScalar ? new GridLength(0) : page?.View is ViewUserMaterial ? new GridLength(210) : new GridLength(1, GridUnitType.Star);
         RowSelector.IsVisible = showRows; DataProperties.IsVisible = showRows; dataTools.IsVisible = showRows; propertyArea.Children[1].IsVisible = showRows;
         propertyArea.RowDefinitions[4].Height = showRows ? new GridLength(1, GridUnitType.Star) : new GridLength(0);
     }
+    private object DataRow(object row) => Session is MaterialFormSession material && row is TempDataPoint
+        ? new MaterialRowDescriptor(row, material.TemperatureDependent) : row;
     public bool Flush() => Properties.CommitPending() && DataProperties.CommitPending();
     private bool submitting;
     private async Task<bool> Submit()

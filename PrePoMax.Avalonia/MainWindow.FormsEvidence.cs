@@ -35,6 +35,7 @@ public sealed partial class MainWindow
         if (op == "form-page") { editor.PageSelector.SelectedIndex = c.GetProperty("index").GetInt32(); return; }
         if (op == "form-row") { editor.RowSelector.SelectedIndex = c.GetProperty("index").GetInt32(); return; }
         if (op == "form-material-type") { editor.MaterialType.SelectedItem = c.GetProperty("value").GetString(); return; }
+        if (op == "form-temperature") { editor.MaterialTemperature.IsChecked = c.GetProperty("value").GetBoolean(); return; }
         if (op == "form-click") { editor.Buttons[c.GetProperty("button").GetString()!].RaiseEvent(new RoutedEventArgs(Button.ClickEvent)); return; }
         if (op == "form-ids") { editor.SelectionPanel!.IdInput.Text = c.GetProperty("value").GetString(); return; }
         if (op == "form-selection") { editor.SelectionPanel!.Buttons[c.GetProperty("button").GetString()!].RaiseEvent(new RoutedEventArgs(Button.ClickEvent)); return; }

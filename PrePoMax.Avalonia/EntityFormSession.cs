@@ -38,6 +38,17 @@ public sealed class MaterialFormSession : EntityFormSession
 {
     private readonly Material material;
     private readonly List<ViewMaterialProperty> properties;
+    public bool TemperatureDependent
+    {
+        get => material.TemperatureDependent;
+        set
+        {
+            material.TemperatureDependent = value;
+            foreach (var view in properties.OfType<ViewThermalExpansion>()) view.SetTemperatureDependence(value);
+        }
+    }
+    public bool ShowScalar(object view) => !TemperatureDependent || view is not (ViewDensity or ViewElastic or ViewElasticEngineeringConstants or ViewElasticLamina or ViewThermalConductivity or ViewSpecificHeat);
+    public bool ShowRows(object view) => view is ViewPlastic or ViewUserMaterial || TemperatureDependent && view is ViewDensity or ViewElastic or ViewElasticEngineeringConstants or ViewElasticLamina or ViewThermalExpansion or ViewThermalConductivity or ViewSpecificHeat;
     public override string Kind => "Material";
     public override NamedClass Draft => material;
     public override IReadOnlyList<FormPage> Pages => properties.Select(v => new FormPage(v.Name, v,
@@ -77,11 +88,11 @@ public sealed class MaterialFormSession : EntityFormSession
             "Fatigue CZM pre-crack" => UserMaterial.CreateFatczm(true),
             _ => throw new NotSupportedException(type)
         };
-        if (type != "Fatigue CZM pre-crack" && properties.Any(v => v.Name == Wrap(p).Name)) return;
-        // FrmMaterial replaces the previous elasticity choice when adding another one.
+        if (properties.Any(v => v.Name == Wrap(p).Name)) throw new CaeException("This material property has already been added.");
+        // FrmMaterial refuses a second elasticity/density choice and retains the draft.
         bool Elasticity(MaterialProperty x) => x is Elastic or ElasticEngineeringConstants or ElasticLamina or UserMaterial or ElasticWithDensity;
-        if (Elasticity(p)) properties.RemoveAll(v => Elasticity(v.GetBase()));
-        if (p is Density or ElasticWithDensity) properties.RemoveAll(v => v is ViewDensity || (p is Density && v is ViewElasticWithDensity));
+        if (Elasticity(p) && properties.Any(v => Elasticity(v.GetBase()))) throw new CaeException("A material can contain only one elastic property.");
+        if (p is Density or ElasticWithDensity && properties.Any(v => v is ViewDensity or ViewElasticWithDensity)) throw new CaeException("A material can contain only one density.");
         properties.Add(Wrap(p));
     }
     public void RemoveProperty(int index) => properties.RemoveAt(index);
@@ -94,10 +105,12 @@ public sealed class MaterialFormSession : EntityFormSession
     {
         CheckName(Controller.GetMaterialNames(), "material");
         var result = new Material(material.Name) { Description = material.Description, TemperatureDependent = material.TemperatureDependent };
-        int density = 0;
+        int density = 0, elasticity = 0;
         foreach (var v in properties)
         {
             var p = v.GetBase(); p.CheckEquations();
+            if (p is Elastic or ElasticEngineeringConstants or ElasticLamina or UserMaterial or ElasticWithDensity && ++elasticity > 1)
+                throw new CaeException("A material can contain only one elastic property.");
             if (p is UserMaterial um) um.CheckMaterialName(material.Name);
             if (p is Density or ElasticWithDensity && ++density > 1) throw new CaeException("A material can contain only one density.");
             if (v is ViewDensity vd && vd.DataPoints.Any(r => r.Density.Value <= 0)) throw new CaeException("The density must be larger than 0.");

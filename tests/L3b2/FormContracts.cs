@@ -33,6 +33,7 @@ internal static class FormContracts
             foreach (string name in new[] { "CaeGlobals", "CaeMesh", "CaeModel", "PrePoMax.ViewModels" }) {
                 string p = Path.Combine(args[0], name + ".dll"); if (!File.Exists(p)) p = Path.Combine(args[0], "lib", name + ".dll"); assemblies.Add(Assembly.LoadFrom(p));
             }
+            if (args.Length == 4 && args[2] == "--apply") return ApplyContracts.Run(args[0], args[3], args[1]);
             var views = new SortedDictionary<string, object>();
             object Make(string model, string view, params object[] values) { var result = New("PrePoMax." + view, New("CaeModel." + model, values)); views[view] = result; return result; }
             Make("Density", "ViewDensity", new object[] { new double[][] { new double[] { 1, 0 } } });
