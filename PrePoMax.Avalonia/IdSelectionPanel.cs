@@ -64,7 +64,8 @@ public sealed class IdSelectionPanel : UserControl, IDisposable
         // legacy temporary-actor callback is not a valid Avalonia connectivity path.
         Add("Undo last", () => c.Selection.RemoveLast(true));
         Add("OK selection", () => ItemSetData.ItemIds = c.GetSelectionIds());
-        root.Children.Add(tools); root.Children.Add(Status); Content = root; UpdateStatus();
+        root.Children.Add(tools); root.Children.Add(Status); Content = root;
+        ItemSetData.ItemIds = c.GetSelectionIds(); UpdateStatus();
         Mode.SelectionChanged+=(_,_)=>Execute(()=>
         {
             var by=modes[(string)Mode.SelectedItem!];

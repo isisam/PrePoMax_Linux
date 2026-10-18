@@ -76,10 +76,13 @@ public sealed partial class MainWindow
         {
             var c = mainView.Controller; NamedClass entity = session.Draft;
             viewport.RemoveActors(["__form_reference_point","__selection_faces"]);
+            highlightedFaces=[];highlightedNodes=[];highlightedElements=[];highlightedPoint=null;
             if (entity is Section section && section.RegionType is RegionTypeEnum.PartName or RegionTypeEnum.ElementSetName)
                 entity = section.RegionType == RegionTypeEnum.PartName ? c.Model.Mesh.Parts[section.RegionName] : c.Model.Mesh.ElementSets[section.RegionName];
+            else if (entity is Section selectedSection && selectedSection.RegionType == RegionTypeEnum.Selection)
+                entity = new FeElementSet("selection", CompositeLayupExpansion.ResolveRegion(c.Model, selectedSection));
             if (entity is BoundaryCondition bc && bc.RegionType == RegionTypeEnum.NodeSetName) entity = c.Model.Mesh.NodeSets[bc.RegionName];
-            else if (entity is BoundaryCondition surfaceBc && surfaceBc.RegionType == RegionTypeEnum.SurfaceName) entity = c.GetSurfaceNodeSet(surfaceBc.RegionName);
+            else if (entity is BoundaryCondition surfaceBc && surfaceBc.RegionType == RegionTypeEnum.SurfaceName) entity = c.Model.Mesh.Surfaces[surfaceBc.RegionName];
             else if (entity is BoundaryCondition pointBc && pointBc.RegionType == RegionTypeEnum.ReferencePointName) entity = c.GetModelReferencePoint(pointBc.RegionName);
             if (entity is Load load && load.RegionType == RegionTypeEnum.NodeSetName) entity = c.Model.Mesh.NodeSets[load.RegionName];
             else if (entity is Load surfaceLoad && surfaceLoad.RegionType == RegionTypeEnum.SurfaceName) entity = c.Model.Mesh.Surfaces[surfaceLoad.RegionName];
@@ -94,7 +97,7 @@ public sealed partial class MainWindow
                 viewport.ClearSelection();
                 var marker = new vtkMaxActorData { Name = "__form_reference_point", Pickable = false, Layer = vtkRendererLayer.Selection, Color = System.Drawing.Color.Yellow };
                 marker.Geometry.Nodes = new() { Ids = [0], Coor = [[point.X.Value, point.Y.Value, point.Z.Value]] };
-                viewport.AddPoints(marker); SetStatus(point.Name + ": reference point"); return;
+                viewport.AddPoints(marker);highlightedPoint=[point.X.Value,point.Y.Value,point.Z.Value]; SetStatus(point.Name + ": reference point"); return;
             }
             SelectTreeEntity(new TreeEntry("draft", entity.Name, session.Kind, ViewGeometryModelResults.Model, entity));
         }

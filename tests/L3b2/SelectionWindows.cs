@@ -13,7 +13,7 @@ using CaeGlobals;
 using PrePoMax;
 using vtkControl;
 
-static class SelectionWindows
+static partial class SelectionWindows
 {
     const BindingFlags All = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
     static object Call(object obj, string name, params object[] args) => obj.GetType().GetMethod(name, All).Invoke(obj,args);
@@ -23,11 +23,13 @@ static class SelectionWindows
         try
         {
             CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
-            var c = new Controller(new NullMainView()); c.Open(args[0]);
+            if(args[0]=="--regions")return Regions(args[1],args[2]);
+            var host=new SelectionHost();var c = new Controller(host); c.Open(args[0]);
             using (var form = new Form { ClientSize = new System.Drawing.Size(1000,700), ShowInTaskbar = false })
             using (var view = new vtkControl.vtkControl { Dock = DockStyle.Fill })
             {
                 form.Controls.Add(view); form.Show(); Application.DoEvents();
+                host.View=view;
                 view.Controller_GetVolumeGridData = c.GetVolumeGridData;
                 view.Controller_GetCellFaceActorData = c.GetCellFaceActorData;
                 var parts = new List<object>(); long actor = 0;
@@ -64,10 +66,65 @@ static class SelectionWindows
                     camera=new {position,focal=center,up,scale,width=view.ClientSize.Width,height=view.ClientSize.Height},
                     geometry=new {point=target.Coor,element,edge,face}, private_desktop=true, semantics="real Windows vtkControl, volume provider, six planes fed unchanged to Linux" };
                 File.WriteAllText(args[1],Json.Serialize(result),new UTF8Encoding(false));
+                if(args.Length>2)Replay(c,view,args[2]);
                 Console.WriteLine("PASS Windows frustum snapshot: "+args[0]);
             }
             return 0;
         }
         catch(Exception error){Console.Error.WriteLine(error);return 1;}
     }
+    static void Replay(Controller c,vtkControl.vtkControl view,string folder)
+    {
+        var events=(object[])Json.DeserializeObject(File.ReadAllText(Path.Combine(folder,"events.json")));
+        var results=new List<object>();string name=null;vtkSelectOperation operation=vtkSelectOperation.None;
+        view.RenderingOn=true;view.UserPick=true;view.SetSelectionDistance(7);
+        double[] pickedPoint=null;string[] pickedActors=null;
+        view.OnMouseLeftButtonUpSelection+=(point,direction,planes,inside,ignored,names)=>{pickedPoint=point;pickedActors=names;c.SelectPointOrArea(point,direction,planes,inside,operation,names);};
+        foreach(var item in events.Cast<Dictionary<string,object>>())
+        {
+            if(item.ContainsKey("command"))
+            {
+                var command=(Dictionary<string,object>)item["command"];
+                if((string)command["op"]=="form-camera")
+                {
+                    double[] V(string key)=>((object[])command[key]).Select(Convert.ToDouble).ToArray();
+                    view.SetViewParameters(false,V("position"),V("focal"),V("up"),Convert.ToDouble(command["scale"]));continue;
+                }
+                if((string)command["op"]=="form-selection"&&(string)command["button"]=="Undo last")
+                {
+                    c.Selection.RemoveLast(true);var fUndo=(Dictionary<string,object>)item["form"];
+                    var expectedUndo=((object[])fUndo["selection"]).Select(Convert.ToInt32).OrderBy(x=>x).ToArray();var actualUndo=c.GetSelectionIds().OrderBy(x=>x).ToArray();
+                    results.Add(new{name,by=c.SelectBy.ToString(),operation="Undo",ids=actualUndo,expected=expectedUndo,equal=actualUndo.SequenceEqual(expectedUndo)});continue;
+                }
+            }
+            if(!item.ContainsKey("real_x11"))continue;
+            var f=(Dictionary<string,object>)item["form"];var gesture=(Dictionary<string,object>)item["real_x11"];
+            string current=(string)f["name"];
+            if(current!=name){c.Selection=new Selection();c.SelectItem=(string)f["kind"]=="NodeSet"?vtkSelectItem.Node:(string)f["kind"]=="ElementSet"?vtkSelectItem.Element:vtkSelectItem.Surface;name=current;}
+            var by=(vtkSelectBy)Enum.Parse(typeof(vtkSelectBy),(string)f["selectBy"]);
+            if(by.IsGeometryBased()!=c.SelectBy.IsGeometryBased())c.ClearSelectionHistoryAndCallSelectionChanged();
+            c.SelectBy=by;view.SelectBy=by;c.SelectAngle=Convert.ToDouble(f["selectAngle"]);
+            var mode=(GeometrySelectModeEnum)Enum.Parse(typeof(GeometrySelectModeEnum),(string)f["geometryMode"]);
+            if(mode!=c.GeometrySelectMode){c.GeometrySelectMode=mode;c.ClearSelectionHistoryAndCallSelectionChanged();}
+            var modifiers=((object[])gesture["modifiers"]).Cast<string>().ToArray();
+            bool shift=modifiers.Contains("Shift_L"),ctrl=modifiers.Contains("Control_L");operation=ctrl?(shift?vtkSelectOperation.Intersect:vtkSelectOperation.Subtract):shift?vtkSelectOperation.Add:vtkSelectOperation.None;
+            bool box=gesture["rect"]!=null;var r=((object[])(box?gesture["rect"]:gesture["pixel"])).Select(Convert.ToInt32).ToArray();
+            view.Pick(r[0],r[1],box,box?r[2]:r[0],box?r[3]:r[1]);
+            var actual=c.GetSelectionIds().OrderBy(x=>x).ToArray();var expected=((object[])f["selection"]).Select(Convert.ToInt32).OrderBy(x=>x).ToArray();
+            results.Add(new {name,by=by.ToString(),operation=operation.ToString(),pixel=r,pickedPoint,pickedActors,ids=actual,expected,equal=actual.SequenceEqual(expected)});
+        }
+        bool passed=results.Count>0&&results.All(r=>(bool)r.GetType().GetProperty("equal").GetValue(r));
+        File.WriteAllText(Path.Combine(folder,"windows-e2e-comparison.json"),Json.Serialize(new {passed,results,real_activiz=true,same_camera=true}),new UTF8Encoding(false));
+        if(!passed)throw new Exception("Windows/Linux end-to-end membership differs: "+folder);
+    }
+}
+sealed class SelectionHost:NullMainView
+{
+    public vtkControl.vtkControl View;
+    public override double GetSelectionPrecision()=>View.GetSelectionPrecision();
+    public override void GetGeometryPickProperties(double[] p,out int element,out int[] edge,out int[] face,string[] names=null)
+    {try{View.SetSelectableActorsFilter(names);View.GetGeometryPickProperties(p,out element,out edge,out face);}finally{View.SetSelectableActorsFilter(null);}}
+    public override void GetPointAndCellIdsInsideFrustum(double[][] planes,string[] names,out int[] nodes,out int[] cells)
+    {try{View.SetSelectableActorsFilter(names);View.GetPointAndCellIdsInsideFrustum(planes,out nodes,out cells);}finally{View.SetSelectableActorsFilter(null);}}
+    public override void GetClosestCellsOnParts(double[] point,string[] names,out double[] distances,out double[][] normals)=>View.GetClosestCellsOnActors(point,names,out distances,out normals);
 }

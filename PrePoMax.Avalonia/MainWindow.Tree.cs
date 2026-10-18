@@ -118,6 +118,7 @@ public sealed partial class MainWindow
     private void SelectTreeEntity(TreeEntry entry)
     {
         viewport.RemoveActors(["__selection_faces"]);
+        highlightedFaces=[];highlightedNodes=[];highlightedElements=[];highlightedPoint=null;
         if(entry.Entity==null || DisplayedMesh is not {} mesh)return;
         if(entry.Kind=="ResultField")
         { if(entry.Caption=="S")Contour("S (Mises)");else if(entry.Caption=="U")Contour("U (magnitude)");return; }
@@ -133,9 +134,12 @@ public sealed partial class MainWindow
         if(ids.Length==0){viewport.ClearSelection();return;}
         bool nodes=entry.Entity is FeNodeSet;
         viewport.Execute(v=>{v.Highlight(ids.Select(id=>(long)id).ToArray(),nodes);v.Render();});
+        if(nodes)highlightedNodes=ids.Order().ToArray();else highlightedElements=ids.Order().ToArray();
         SetStatus(entry.Caption+": "+ids.Length+(nodes?" nodes":" elements"));
     }
     private int[] highlightedFaces=[];
+    private int[] highlightedNodes=[],highlightedElements=[];
+    private double[]? highlightedPoint;
     private void HighlightSurfaceFaces(FeSurface surface)
     {
         var c=mainView.Controller;var mesh=c.Model.Mesh;viewport.ClearSelection();highlightedFaces=[];

@@ -27,7 +27,8 @@ public sealed partial class MainWindow
             rows = editor.RowSelector.Items.Cast<object>().Select(v => v.ToString()).ToArray(), properties = Describe(editor.Properties), data = Describe(editor.DataProperties),
             error = editor.Error.Text, errors = editor.Properties.Errors, dataErrors = editor.DataProperties.Errors,
             selection = editor.SelectionPanel?.ItemSetData.ItemIds, selectionStatus = editor.SelectionPanel?.Status.Text,
-            selectBy=mainView.Controller.SelectBy.ToString(),selectAngle=mainView.Controller.SelectAngle,geometryMode=mainView.Controller.GeometrySelectMode.ToString(),highlightedFaces,
+            selectBy=mainView.Controller.SelectBy.ToString(),selectAngle=mainView.Controller.SelectAngle,geometryMode=mainView.Controller.GeometrySelectMode.ToString(),highlightedFaces,highlightedNodes,highlightedElements,highlightedPoint,
+            facePreview=viewport.GetVtkMaxActorData().Where(a=>a.Name=="__selection_faces").Select(a=>new {xyz=a.Geometry.Nodes.Coor,cells=a.Geometry.Cells.CellNodeIds}),
             history=mainView.Controller.Selection.Nodes.Select(n=>new {type=n.GetType().Name,mouse=n is CaeGlobals.SelectionNodeMouse m?new {by=m.SelectBy.ToString(),m.Angle,m.PickedPoint,m.PlaneParameters,m.CompletelyInside}:null}) };
     }
     private void FormsEvidenceCommand(string op, JsonElement c)

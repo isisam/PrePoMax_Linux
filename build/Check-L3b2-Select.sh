@@ -26,6 +26,9 @@ case "$phase" in
     ;;
   forms)
     root=/root/ppm-l3b2/src/tests/L3b2
+    mkdir -p "$logs/fixtures"
+    [[ -f "$logs/fixtures/M2a.pmx" ]] || cp "$repo/../logs/M2b_acceptance/M2b_layup.pmx" "$logs/fixtures/M2a.pmx"
+    cmp "$repo/../logs/M2b_acceptance/M2b_layup.pmx" "$logs/fixtures/M2a.pmx"
     nice -n 19 dotnet build "$root/FormContracts.csproj" -f net10.0 -c Release -p:CoreTargetFrameworks=net8.0 -m:1
     nice -n 19 dotnet build "$root/GridInteractions.csproj" -c Release -p:CoreTargetFrameworks=net8.0 -m:1
     xvfb-run -a nice -n 19 dotnet "$root/bin/Release/net10.0/FormContracts.dll" "$app" "$logs/contracts-linux.json"

@@ -29,6 +29,7 @@ public sealed class BoundaryFormSession : EntityFormSession, IIdSelectionSession
         bc = source?.DeepClone() ?? (displacement ? new DisplacementRotation(name, region!, type, twoD, false, 0) : new FixedBC(name, region!, type, twoD));
         if (source?.CreationData != null && (!c.Model.IsBoundaryConditionRegionValid(bc) || !c.Model.RegionValid(bc)))
         { bc.CreationData = null; bc.CreationIds = null; bc.RegionType = RegionTypeEnum.Selection; MarkChanged(); }
+        if (source?.CreationData != null) bc.RegionType = RegionTypeEnum.Selection;
         if (bc is FixedBC fixedBc)
         {
             var v = new ViewFixedBC(fixedBc); v.PopulateDropDownLists(c.GetUserNodeSetNames(), c.GetUserSurfaceNames(), c.GetModelReferencePointNames()); view = v;
@@ -90,6 +91,7 @@ public sealed class LoadFormSession : EntityFormSession, IIdSelectionSession
         };
         if (source?.CreationData != null && (!c.Model.IsLoadRegionValid(load) || !c.Model.RegionValid(load)))
         { load.CreationData = null; load.CreationIds = null; load.RegionType = RegionTypeEnum.Selection; MarkChanged(); }
+        if (source?.CreationData != null) load.RegionType = RegionTypeEnum.Selection;
         if (load is CLoad cl)
         {
             var v = new ViewCLoad(cl); v.PopulateDropDownLists(c.GetUserNodeSetNames(), c.GetModelReferencePointNames(), c.GetAmplitudeNames(), c.GetModelCoordinateSystemNames()); view = v;

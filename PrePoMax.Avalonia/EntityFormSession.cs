@@ -153,13 +153,19 @@ public sealed class MaterialFormSession : EntityFormSession
     }
 }
 
-public sealed class SectionFormSession : EntityFormSession
+public sealed class SectionFormSession : EntityFormSession, IIdSelectionSession
 {
     private readonly SolidSection section;
     public ViewSolidSection View { get; }
     public override string Kind => "Section";
     public override NamedClass Draft => section;
     public override IReadOnlyList<FormPage> Pages => [new("Solid Section", View)];
+    public vtkSelectItem SelectItem => vtkSelectItem.Part;
+    public int[] Ids => section.CreationIds ?? [];
+    public Selection? CreationData => section.CreationData;
+    public bool SelectionVisible => section.RegionType == RegionTypeEnum.Selection;
+    public void SelectionChanged(int[] ids, Selection selection)
+    { section.CreationIds = ids; section.CreationData = selection.DeepCopy(true, false); }
     public SectionFormSession(Controller c, SolidSection? source = null) : base(c, source?.Name)
     {
         if (source == null && c.GetMaterialNames().Length == 0) throw new CaeException("There is no material defined for the solid section definition.");
@@ -167,6 +173,7 @@ public sealed class SectionFormSession : EntityFormSession
             c.GetModelPartNames().FirstOrDefault() ?? "", RegionTypeEnum.PartName, 1, c.Model.Properties.ModelSpace.IsTwoD());
         if (source?.CreationData != null && (!c.Model.IsSectionRegionValid(section) || !c.Model.RegionValid(section)))
         { section.CreationData = null; section.CreationIds = null; section.RegionType = RegionTypeEnum.Selection; MarkChanged(); }
+        if (source?.CreationData != null) section.RegionType = RegionTypeEnum.Selection;
         View = new ViewSolidSection(section);
         View.PopulateDropDownLists(c.GetMaterialNames(), c.GetModelPartNames(), null!, c.GetUserElementSetNames(), null!, null!);
     }
@@ -182,6 +189,9 @@ public sealed class SectionFormSession : EntityFormSession
             RegionTypeEnum.PartName => Controller.Model.Mesh.Parts.TryGetValue(section.RegionName, out var p) && p.PartType == (twoD ? CaeMesh.PartType.Shell : CaeMesh.PartType.Solid),
             RegionTypeEnum.ElementSetName => Controller.Model.Mesh.ElementSets.TryGetValue(section.RegionName, out var e) &&
                 (twoD ? Controller.AreElementsAllShellElements(e.Labels) : Controller.AreElementsAllSolidElements3D(e.Labels)),
+            RegionTypeEnum.Selection => section.CreationData != null && (twoD || section.CreationData.IsGeometryBased()) && SelectionElements().Length > 0 && (twoD
+                ? Controller.AreElementsAllShellElements(SelectionElements())
+                : Controller.AreElementsAllSolidElements3D(SelectionElements())),
             _ => false
         };
         if (!compatible) throw new CaeException("The section type and the section region are not compatible.");
@@ -203,6 +213,7 @@ public sealed class SectionFormSession : EntityFormSession
             }
         }
     }
+    private int[] SelectionElements() => CompositeLayupExpansion.ResolveRegion(Controller.Model, section);
     protected override void Publish()
     {
         if (OriginalName == null) Controller.AddSectionCommand(section.DeepClone());
