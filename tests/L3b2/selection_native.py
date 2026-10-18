@@ -62,4 +62,5 @@ tolerance=dict(passed=all(max(case['plane_relative_error'])<=1e-9 for r in recei
         normal_max_absolute_error=max(abs(a-b) for w,n in zip(case['windows_planes'],case['native_planes']) for a,b in zip(w[3:],n[3:]))) for case in r['cases']] for name,r in receipts.items()})
 (logs/'plane-tolerance.json').write_text(json.dumps(tolerance,indent=2),encoding='utf-8')
 print(json.dumps({n:dict(semantic=r['semantic_passed'],display=r['display_passed'],geometry=r['geometry']['membership_equal'],counts=[(len(x['points']),len(x['cells'])) for x in r['cases']]) for n,r in receipts.items()}))
-raise SystemExit(0 if result['passed'] else 1)
+print('Strict raw plane tolerance <= 1e-9:', tolerance['passed'])
+raise SystemExit(0 if result['passed'] and tolerance['passed'] else 1)

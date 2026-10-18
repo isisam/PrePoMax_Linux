@@ -16,7 +16,7 @@ using vtkControl;
 static partial class SelectionWindows
 {
     const BindingFlags All = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
-    static object Call(object obj, string name, params object[] args) => obj.GetType().GetMethod(name, All).Invoke(obj,args);
+    static object Call(object obj, string name, params object[] args) => obj.GetType().GetMethods(All).Single(m=>m.Name==name&&m.GetParameters().Length==args.Length).Invoke(obj,args);
     static readonly JavaScriptSerializer Json = new JavaScriptSerializer { MaxJsonLength = int.MaxValue };
     [STAThread] static int Main(string[] args)
     {
@@ -47,6 +47,16 @@ static partial class SelectionWindows
                 var position=new[]{center[0]+span,center[1]+span,center[2]+span};
                 double scale=span*.65; var up=new[]{0d,1d,0d};
                 view.SetViewParameters(false,position,center,up,scale); Application.DoEvents();
+                var renderer=view.GetType().GetField("_renderer",All).GetValue(view);
+                var camera=Call(renderer,"GetActiveCamera");object[] clipping={0d,0d};
+                camera.GetType().GetMethods().Single(m=>m.Name=="GetClippingRange"&&m.GetParameters().Length==2).Invoke(camera,clipping);
+                // FinishViewChange calls AdjustCameraDistanceAndClipping, which changes
+                // both position and focal point. Replay the resulting camera, not the
+                // requested inputs; otherwise the two pickers use different near/far planes.
+                var actualPosition=(double[])Call(camera,"GetPosition");
+                var actualFocal=(double[])Call(camera,"GetFocalPoint");
+                var actualUp=(double[])Call(camera,"GetViewUp");
+                var actualScale=(double)Call(camera,"GetParallelScale");
                 var cases=new List<object>();
                 var rectangles=new[]{new[]{0,0,999,699},new[]{200,200,600,450},new[]{400,300,450,350},new[]{1,1,3,3}};
                 int index=0;
@@ -63,7 +73,9 @@ static partial class SelectionWindows
                 view.RenderingOn=false;
                 view.GetGeometryPickProperties(target.Coor,out var element,out var edge,out var face);
                 var result=new { passed=true, fixture=Path.GetFullPath(args[0]), parts, cases,
-                    camera=new {position,focal=center,up,scale,width=view.ClientSize.Width,height=view.ClientSize.Height},
+                    clipping, rendererBounds=Call(renderer,"ComputeVisiblePropBounds"),
+                    requestedCamera=new {position,focal=center,up,scale},
+                    camera=new {position=actualPosition,focal=actualFocal,up=actualUp,scale=actualScale,width=view.ClientSize.Width,height=view.ClientSize.Height},
                     geometry=new {point=target.Coor,element,edge,face}, private_desktop=true, semantics="real Windows vtkControl, volume provider, six planes fed unchanged to Linux" };
                 File.WriteAllText(args[1],Json.Serialize(result),new UTF8Encoding(false));
                 if(args.Length>2)Replay(c,view,args[2]);
