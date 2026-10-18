@@ -96,6 +96,6 @@ with (out/'gui.log').open('w') as log:
         if '--dcb' not in sys.argv and '--audit-only' not in sys.argv:
             before=json.loads((out/'before.json').read_text());after=json.loads((out/'after.json').read_text());assert before['layups']==after['layups'] and all(l['Active'] for l in after['layups'])
         command(op='close');p.wait(timeout=30);assert p.returncode==0
-        (out/'acceptance.json').write_text(json.dumps(dict(passed=True,exit=0,forced=False,routed_controls=True,fixture=str(fixture),strict_edits='--audit-only' not in sys.argv and '--materials-only' not in sys.argv,partial_materials_sets='--materials-only' in sys.argv,unchanged_OK_no_commands=True),indent=2));print('PASS strict form UI '+str(fixture),flush=True)
+        (out/'acceptance.json').write_text(json.dumps(dict(passed=True,exit=0,forced=False,routed_controls=True,fixture=str(fixture),strict_edits='--audit-only' not in sys.argv and '--materials-only' not in sys.argv,partial_materials_sets='--materials-only' in sys.argv,strict_ui_edits_complete='--audit-only' not in sys.argv and '--materials-only' not in sys.argv,unchanged_OK_no_commands=True),indent=2));print(('PASS partial form operations ' if '--materials-only' in sys.argv else 'PASS form UI operations ')+str(fixture),flush=True)
     finally:
         if p.poll() is None:os.killpg(p.pid,signal.SIGTERM);p.wait(timeout=15)
