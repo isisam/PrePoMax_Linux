@@ -1,0 +1,8 @@
+PrePoMax-RCM 0.1.0-rc1f
+Based on upstream PrePoMax 3.0.0 RC2, commit 912fb3d08014f246d48bef14d62a2cba0fdf5bb0
+Windows x64; .NET Framework 4.8
+Integration source commit 2dc22344ae03b0be19811ca6036a372075f54c2f
+RC1b documentation/licence source commit f9d183c9026393dca46b9ea9e294dcad115d779e
+RC1c work-directory source commit a0b0b8a5b50d41177d332f17f32a087e2a9baee1
+RC1d language-default source commit f61cede4ad9410af4be1aaa998f4dff8c9d85805
+RC1e runtime-language result-toolbar source commit c47f8d4b977c4dddbdd331cb6caf5f09125de270

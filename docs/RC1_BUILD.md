@@ -28,7 +28,7 @@ NuGet DLL is not patched. The separate ANTLR runtime retains its identity.
 Assemble the runtime from the upstream Windows payload plus the Release x64
 output. Use tools/rc1/Package.py with --runtime, --source, --native and
 --output directories. It excludes development caches/settings/history,
-preserves the ccx_fat v1.1 executable exactly, keeps upstream Licenses and
+preserves the ccx_fat v1.1b executable exactly, keeps upstream Licenses and
 copies its corresponding-source archive. It redacts fixed-size historical
 diagnostic build/profile prefixes in unsigned native/managed binaries.
 Public names, numerical data and file sizes are preserved. Run all runtime

@@ -62,6 +62,6 @@ Gmsh is the one component shipped as a modified binary, so its corresponding sou
 named under "Gmsh build" above rather than an upstream release, and that branch has to stay
 published for as long as the binary is conveyed.
 
-## Python notices (RC1b)
+## Python dependency notices (RC1b)
 
-The CPython 3.12.10 runtime and its dependencies are covered by the version-matched notices, 40-binary audit and source provenance in [supplementary/Python/README.md](supplementary/Python/README.md).
+Version-matched notices for the complete Python DLL/pyd and standard-library payload are indexed in [supplementary/Python/README.md](supplementary/Python/README.md). This includes Tcl/Tk, OpenSSL, libffi, SQLite, bzip2, liblzma, zlib, Expat, libmpdec, HACL*, KaRaMeL, BLAKE2 and the Tcl LibTomMath notice; binary hashes and provenance are supplied alongside them.

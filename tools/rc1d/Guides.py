@@ -33,7 +33,7 @@ def picture(c,name,y,maxheight=305):
     c.drawImage(im,44+(W-88-dw)/2,y-dh,dw,dh,mask='auto');return y-dh-14
 EN=[
 ('Start here',[
-'PrePoMax-RCM 0.1.0-rc1d combines the Windows PrePoMax interface, a native CalculiX 2.21 solver with FATCZM, editable flat solid composite layups, and selectable Traditional Chinese. This guide assumes basic FEM knowledge, but no knowledge of our implementation.',
+'PrePoMax-RCM 0.1.0-rc1f combines the Windows PrePoMax interface, a native CalculiX 2.21 solver with FATCZM, editable flat solid composite layups, and selectable Traditional Chinese. This guide assumes basic FEM knowledge, but no knowledge of our implementation.',
 'The learning route is: unzip the complete folder, open an example, run its existing analysis, compare its text result, then make a new material or layup in a copy of the model. Keep the original examples as references.',
 'Use a Windows 10/11 x64 PC. Windows 10 version 1903 and later and Windows 11 include .NET Framework 4.8 or newer. Python and the native runtimes are supplied in the package; a separate Python, Visual Studio or Linux installation is not needed for the examples. If startup fails on a clean PC, install the Microsoft Visual C++ 2008 SP1 Redistributable (x64) to supply VC90. Clean-PC startup, viewport rendering, meshing and example execution remain to be confirmed.',
 'All dimensional example data use N, mm, MPa and seconds, with tonne as the consistent mass unit. FATCZM cycle count N is a state variable and is not the solver time coordinate. The demonstration alpha values are not calibrated material data.'
@@ -91,7 +91,7 @@ EN=[
 ],None)]
 ZH=[
 ('從這裡開始',[
-'PrePoMax-RCM 0.1.0-rc1d 整合 Windows 原生 PrePoMax、具 FATCZM 材料的 CalculiX 2.21 求解器、可編輯的平板實體複材疊層，以及可切換的繁體中文介面。本手冊假設您懂基本有限元素法，但不熟悉本程式。',
+'PrePoMax-RCM 0.1.0-rc1f 整合 Windows 原生 PrePoMax、具 FATCZM 材料的 CalculiX 2.21 求解器、可編輯的平板實體複材疊層，以及可切換的繁體中文介面。本手冊假設您懂基本有限元素法，但不熟悉本程式。',
 '建議學習順序：完整解壓縮、開啟範例、執行已有分析、對照文字基準值，再在模型副本中建立新材料或疊層。保留原始範例，作為操作與數值比較基準。',
 '請使用 Windows 10/11 x64。Windows 10 1903 以後與 Windows 11 已內建 .NET Framework 4.8 或更新版本；套件隨附 Python 與原生執行階段。執行範例不需要另外安裝 Python、Visual Studio 或 Linux。若乾淨電腦無法啟動，安裝 Microsoft Visual C++ 2008 SP1 Redistributable (x64) 可補齊 VC90；乾淨電腦的啟動、視窗繪圖、網格及範例執行仍待確認。',
 '範例採用 N、mm、MPa、秒；一致質量單位為 tonne。疲勞循環數 N 是狀態紀錄，不等於求解器時間。範例的 alpha 為示範縮放值，並非已校準的材料壽命參數。'
@@ -153,7 +153,7 @@ def make(lang,pages,filename):
     c.setAuthor('PrePoMax-RCM | Lota');c.setSubject('Student quick start, Windows RC1')
     for i,(title,texts,img) in enumerate(pages,1):
         c.setFillColor(navy);c.rect(0,H-116,W,116,fill=1,stroke=0)
-        c.setFillColor(HexColor('#80d5d3'));c.setFont(FONT,10);c.drawString(44,H-35,'PREPOMAX-RCM  /  STUDENT GUIDE  /  0.1.0-RC1d')
+        c.setFillColor(HexColor('#80d5d3'));c.setFont(FONT,10);c.drawString(44,H-35,'PREPOMAX-RCM  /  STUDENT GUIDE  /  0.1.0-RC1f')
         c.setFillColor(white);c.setFont(FONT,22);c.drawString(44,H-77,title)
         c.setFillColor(teal);c.roundRect(W-78,H-94,34,34,7,fill=1,stroke=0);c.setFillColor(white);c.setFont(FONT,14);c.drawCentredString(W-61,H-83,f'{i:02}')
         y=H-142

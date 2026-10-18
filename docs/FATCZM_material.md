@@ -21,7 +21,7 @@ The preset has 26 constants and DEPVAR 6. Defaults reproduce the **IM7 ENF
 energy-driver example**, not a calibrated material prediction. Order is taken
 from `ccx_fat/fatczm.f` (constant map and `umat_fatczm`) and
 `ccx_fat/gen_inp.py` (`write_deck` / `fat_mat`); numeric defaults match
-`ccx_fat_win64_v1.1/examples/PrePoMax_keyword_blocks.txt` and
+`ccx_fat_win64_v1.1b/examples/PrePoMax_keyword_blocks.txt` and
 `ENF_fatigue_min.inp`. `apply_patch.py` dispatches the `FATCZM` UMAT and installs
 the global increment bookkeeping. CalculiX strips `USER` for UMAT dispatch;
 the bookkeeping checks the full `USERFATCZM` prefix. Names are case sensitive.
