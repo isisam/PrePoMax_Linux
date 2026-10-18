@@ -5,6 +5,8 @@ from PIL import Image
 repo=Path(__file__).resolve().parents[2]
 out=Path(sys.argv[1]);case=Path(sys.argv[2]);case.mkdir(parents=True,exist_ok=True)
 model=Path(sys.argv[3]);frd=Path(sys.argv[4])
+analysis='--analysis' in sys.argv
+for stale in ('ready','state.json','command.json','save-done','analysis-done','fps.json'):(case/stale).unlink(missing_ok=True)
 def wait(fn,seconds=90):
     start=time.monotonic()
     while time.monotonic()-start<seconds:
@@ -24,14 +26,23 @@ with (case/'gui.log').open('w') as log:
     log.write(header);log.flush()
     p=sp.Popen(['dotnet',str(out/'src/PrePoMax.Avalonia/bin/Release/net10.0/PrePoMax.Avalonia.dll'),str(model),'--frd',str(frd),'--evidence',str(case)],stdout=log,stderr=sp.STDOUT,env=env,start_new_session=True)
     try:
-        wait(lambda:(case/'ready').exists());s=wait(state);assert s['actors']>0 and s['increment']==70,s
+        wait(lambda:(case/'ready').exists());s=wait(state);assert s['actors']>0,s
+        if analysis:
+            for threads in (1,4):
+                (case/'analysis-done').unlink(missing_ok=True)
+                command(op='run',directory=str(case/('analysis-'+str(threads))),threads=threads);wait(lambda:(case/'analysis-done').exists())
+                s=wait(lambda:(s if (s:=state()) and 'Analysis completed' in s['status'] and s['increment']>0 else None))
+                assert f'nice=19 threads={threads}' in s['log'] and 'SOLVER exit=0' in s['log']
+            command(op='close');p.wait(timeout=20);assert p.returncode==0
+            print('PASS actual shell analysis: release-source Linux ccx_fat, 1/4 threads, nice 19, streamed log, automatic FRD S/U load');sys.exit(0)
+        assert s['increment']==70,s
         command(op='save',path=str(case/'saved.pmx'));wait(lambda:(case/'save-done').exists());assert (case/'saved.pmx').stat().st_size>1000
         command(op='language',chinese=True);assert wait(state)['language']=='zh-TW';command(op='language',chinese=False)
         for field,name in [('S (Mises)','S'),('U (magnitude)','U')]:
             command(op='contour',field=field);command(op='front');command(op='png',path=str(case/(name+'.png')));wait(lambda:(case/(name+'.png')).exists())
         command(op='deform',scale=1);command(op='front');command(op='png',path=str(case/'U-deformed.png'));wait(lambda:(case/'U-deformed.png').exists())
         for name in ['S','U','U-deformed']:assert Image.open(case/(name+'.png')).getbbox()
-        s=wait(state);(case/'results.json').write_text(json.dumps(dict(nodes=11580,elements=5100,step=s['step'],increment=s['increment'],time=s['time'],fields=s['fields']),indent=2))
+        s=wait(state);(case/'results.json').write_text(json.dumps(dict(nodes=s['nodes'],elements=s['elements'],step=s['step'],increment=s['increment'],time=s['time'],fields=s['fields']),indent=2))
         # X11 screen captures include menus, controller tree, log and units, not only VTK pixels.
         sp.run(['import','-window','root',str(case/'shell.png')],check=True,timeout=20)
         command(op='close');p.wait(timeout=20);assert p.returncode==0

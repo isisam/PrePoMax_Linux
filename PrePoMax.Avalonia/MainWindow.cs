@@ -9,6 +9,7 @@ using Vtkmax.Interop;
 using System.Text.Json;
 using Avalonia.Input;
 using CaeGlobals;
+using CaeModel;
 using CaeResults;
 using vtkControl;
 
@@ -30,12 +31,12 @@ public sealed partial class MainWindow : Window, IMainView
     private PickResult lastPick = new() { NodeId = -1, ElementId = -1, FaceId = -1 };
     public MainWindow()
     {
-        Title = "PrePoMax RCM ? Linux shell (L2)"; Width = 1200; Height = 900; MinWidth = 850; MinHeight = 600;
+        Title = "PrePoMax RCM - Linux shell (L2)"; Width = 1280; Height = 900; MinWidth = 1000; MinHeight = 600;
         mainView=new ShellMainView(this,viewport){Loading=true};
         SettingsContainer.IsSaveDisabled=true;
         _=new Controller(this);mainView.Loading=false;
         KeyDown += (_, e) => { if (e.Key == Key.Q && e.KeyModifiers.HasFlag(KeyModifiers.Control)) { e.Handled = true; Close(); } };
-        Closed += (_, _) => {closing=true;};
+        Closed += (_, _) => {closing=true;solverCancellation?.Cancel();};
         viewport.OperationFailed+=e=>Log("Viewport error: "+e.Message);
         var root = new DockPanel();
         BuildMenu();DockPanel.SetDock(menu, Dock.Top); root.Children.Add(menu);
@@ -43,7 +44,7 @@ public sealed partial class MainWindow : Window, IMainView
         AddButton(toolbar, "Open", async () => await ChooseFile());AddButton(toolbar,"Save PMX",async()=>await SavePmx());
         AddButton(toolbar, "Fit", () => viewport.SetZoomToFit(false));AddButton(toolbar, "Front", () => viewport.SetFrontBackView(false,true));
         AddButton(toolbar, "Rotate", () => viewport.Rotate(15, 5,0)); AddButton(toolbar, "+", () => viewport.SetZoomFactor(1.2));
-        AddButton(toolbar, "?", () => viewport.SetZoomFactor(1 / 1.2));AddButton(toolbar, "Edges", ToggleEdges);
+        AddButton(toolbar, "-", () => viewport.SetZoomFactor(1 / 1.2));AddButton(toolbar, "Edges", ToggleEdges);
         AddButton(toolbar, "Clear selection", () => viewport.ClearSelection());
         var pickMode=new ComboBox {ItemsSource=new[]{"Pick element","Pick node"},SelectedIndex=0,Width=140};
         pickMode.SelectionChanged+=(_,_)=>viewport.SelectItem=pickMode.SelectedIndex==1?vtkSelectItem.Node:vtkSelectItem.Element;toolbar.Children.Add(pickMode);
@@ -51,16 +52,17 @@ public sealed partial class MainWindow : Window, IMainView
         var resultsBar = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Margin = new Thickness(10, 4) };
         AddButton(resultsBar, "S (Mises)", () => Contour("S (Mises)"));AddButton(resultsBar, "U (magnitude)", () => Contour("U (magnitude)"));
         AddButton(resultsBar,"Undeformed",()=>{deformationScale=0;if(model!=null)ViewportModelBridge.Deform(viewport,model,0);});
-        var scaleBox = new NumericUpDown { Minimum = -1000, Maximum = 1000, Value = 1, Width = 85, Increment = 1 };
+        var scaleBox = new NumericUpDown { Minimum = -1000, Maximum = 1000, Value = 1, Width = 125, Increment = 1, FormatString="0.0" };
         resultsBar.Children.Add(new TextBlock { Text = "Deformation scale", VerticalAlignment = VerticalAlignment.Center }); resultsBar.Children.Add(scaleBox);
         AddButton(resultsBar,"Apply",()=>{deformationScale=(double)(scaleBox.Value??0);if(model!=null)ViewportModelBridge.Deform(viewport,model,deformationScale);});
         AddButton(resultsBar, "Animate front", () => viewport.SetFrontBackView(true,true));
+        resultsBar.Children.Add(threads);AddButton(resultsBar,"Run analysis",async()=>await RunAnalysis());AddButton(resultsBar,"Cancel",()=>solverCancellation?.Cancel());
         DockPanel.SetDock(resultsBar,Dock.Top);root.Children.Add(resultsBar);
         DockPanel.SetDock(progressBar,Dock.Top);root.Children.Add(progressBar);
         var statusPanel=new DockPanel();DockPanel.SetDock(units,Dock.Right);statusPanel.Children.Add(units);statusPanel.Children.Add(status);
         DockPanel.SetDock(statusPanel,Dock.Bottom);root.Children.Add(statusPanel);
-        var layout = new Grid { RowDefinitions=new RowDefinitions("*,5,170"),ColumnDefinitions = new ColumnDefinitions("270,5,*") };
-        var sidebar = new DockPanel();var heading=new TextBlock{Text="MODEL ? controller tree",Margin=new Thickness(10)};
+        var layout = new Grid { RowDefinitions=new RowDefinitions("*,5,170"),ColumnDefinitions = new ColumnDefinitions("330,5,*") };
+        var sidebar = new DockPanel();var heading=new TextBlock{Text="MODEL - controller tree",Margin=new Thickness(10)};
         DockPanel.SetDock(heading,Dock.Top);sidebar.Children.Add(heading);sidebar.Children.Add(tree);layout.Children.Add(sidebar);
         var vertical=new GridSplitter{ResizeDirection=GridResizeDirection.Columns};Grid.SetColumn(vertical,1);layout.Children.Add(vertical);
         Grid.SetColumn(viewport,2);layout.Children.Add(viewport);
@@ -79,7 +81,7 @@ public sealed partial class MainWindow : Window, IMainView
         menu.ItemsSource=new[]{
             new MenuItem{Header=ShellLocale.Text("File"),ItemsSource=new[]{L("Open",async()=>await ChooseFile()),L("Save",async()=>await SavePmx()),L("Export",async()=>await SavePng()),L("Exit",Close)}},
             new MenuItem{Header=ShellLocale.Text("View"),ItemsSource=new[]{L("Front",()=>viewport.SetFrontBackView(false,true)),L("Back",()=>viewport.SetFrontBackView(false,false)),L("Top",()=>viewport.SetTopBottomView(false,true)),L("Bottom",()=>viewport.SetTopBottomView(false,false)),L("Left",()=>viewport.SetLeftRightView(false,true)),L("Right",()=>viewport.SetLeftRightView(false,false)),Item("Isometric",()=>viewport.SetIsometricView(false,true)),L("Zoom to fit",()=>viewport.SetZoomToFit(false)),Item("Show / hide edges",ToggleEdges)}},
-            new MenuItem{Header=ShellLocale.Text("Language"),ItemsSource=new[]{Item("English",()=>{ShellLocale.Chinese=false;BuildMenu();}),Item("????",()=>{ShellLocale.Chinese=true;BuildMenu();})}}
+            new MenuItem{Header=ShellLocale.Text("Language"),ItemsSource=new[]{Item("English",()=>{ShellLocale.Chinese=false;BuildMenu();}),Item("\u7e41\u9ad4\u4e2d\u6587",()=>{ShellLocale.Chinese=true;BuildMenu();})}}
         };
     }
     private static MenuItem Item(string title, Action action) { var item = new MenuItem { Header = title }; item.Click += (_, _) => action(); return item; }
@@ -94,7 +96,7 @@ public sealed partial class MainWindow : Window, IMainView
         messages.CaretIndex=messages.Text.Length;
     }
     internal void SetStatus(string text)=>status.Text=text;
-    internal void UpdateUnits(UnitSystem unitSystem)=>units.Text="Units: "+unitSystem.UnitSystemType+" "+unitSystem.LengthUnitAbbreviation;
+    internal void UpdateUnits(UnitSystem unitSystem)=>units.Text="Units: "+unitSystem.UnitSystemType;
     internal void RefreshTree()
     {
         var controller=mainView.Controller;if(controller?.Model?.Mesh==null)return;
@@ -102,7 +104,7 @@ public sealed partial class MainWindow : Window, IMainView
         var parts=mesh.Parts.Values.Select(part=>{
             var row=new StackPanel{Orientation=Orientation.Horizontal,Spacing=4};
             var visible=new CheckBox{IsChecked=true,Content=part.Name};visible.IsCheckedChanged+=(_,_)=>{if(viewport.ContainsActor(part.Name)){if(visible.IsChecked==true)viewport.ShowActors([part.Name],true);else viewport.HideActors([part.Name],true);}};row.Children.Add(visible);
-            var alpha=new NumericUpDown{Minimum=0,Maximum=1,Increment=.1m,Value=(decimal)(part.Color.A/255d),Width=75};
+            var alpha=new NumericUpDown{Minimum=0,Maximum=1,Increment=.1m,Value=(decimal)(part.Color.A/255d),Width=110,FormatString="0.0"};
             alpha.ValueChanged+=(_,_)=>{if(viewport.ContainsActor(part.Name))viewport.UpdateActor(part.Name,part.Name,System.Drawing.Color.FromArgb((int)((alpha.Value??1)*255),part.Color));};
             row.Children.Add(alpha);return new TreeViewItem{Header=row};
         }).ToArray();
@@ -131,12 +133,13 @@ public sealed partial class MainWindow : Window, IMainView
                         if(extension==".pmx")controller.Open(Path.GetFullPath(path));
                         else if(extension==".inp")
                         {
+                            controller.Model.Properties.ModelSpace=ModelSpaceEnum.ThreeD;
                             var errors=controller.Model.ImportModelFromInpFileForViewing(Path.GetFullPath(path),s=>progress.Report(s),out _);
                             if(errors?.Count>0)throw new InvalidDataException(string.Join(Environment.NewLine,errors));
                             controller.ModelChanged=true;
                         }
                         else if(extension==".frd")
-                        {var result=FrdFileReader.Read(Path.GetFullPath(path))??throw new InvalidDataException("FRD read failed");controller.Model.SetMesh(result.Mesh);}
+                        {var result=FrdFileReader.Read(Path.GetFullPath(path))??throw new InvalidDataException("FRD read failed");controller.Model.Properties.ModelSpace=ModelSpaceEnum.ThreeD;controller.Model.SetMesh(result.Mesh);}
                         else throw new ArgumentException("Expected .pmx, .inp or .frd");
                         if(error!=null)throw new InvalidDataException("PMX read failed",error);
                         return new ViewerModel(controller.Model);
@@ -206,7 +209,7 @@ public sealed partial class MainWindow : Window, IMainView
                     origin=viewport.Control.TranslatePoint(new Point(0,0),this),
                     pumpCount=viewport.PumpCount,
                     focus=viewport.HasViewportFocus, status=status.Text, log=messages.Text, actors=viewport.GetVtkMaxActorData().Length,
-                    step=model.ResultsStep,increment=model.ResultsIncrement,time=model.ResultsTime,
+                    nodes=model.NodeIds.Length,elements=model.ElementIds.Length,step=model.ResultsStep,increment=model.ResultsIncrement,time=model.ResultsTime,
                     fields=model.Contours.ToDictionary(p=>p.Key,p=>new{min=p.Value.Min(),max=p.Value.Max()}),
                     language=ShellLocale.Chinese?"zh-TW":"en", units=units.Text
                 }, new JsonSerializerOptions { IncludeFields = true }));
@@ -226,6 +229,7 @@ public sealed partial class MainWindow : Window, IMainView
                     if(op=="png")viewport.RenderToPNG(c.GetProperty("path").GetString()!);
                     if(op=="save"){await SavePmxTo(c.GetProperty("path").GetString()!);File.WriteAllText(Path.Combine(output,"save-done"),"done");}
                     if(op=="language"){ShellLocale.Chinese=c.GetProperty("chinese").GetBoolean();BuildMenu();}
+                    if(op=="run"){if(c.TryGetProperty("threads",out var count))threads.Value=count.GetInt32();await RunAnalysis(c.GetProperty("directory").GetString());File.WriteAllText(Path.Combine(output,"analysis-done"),"done");}
                     if(op=="tooltip")ToolTip.SetIsOpen(viewport.Control,c.GetProperty("open").GetBoolean());
                     if(op=="menu") {if(c.GetProperty("open").GetBoolean())viewport.Control.ContextMenu!.Open(viewport.Control);else viewport.Control.ContextMenu!.Close();}
                     if(op=="close"){monitor.Stop();Close();}
