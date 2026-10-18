@@ -18,8 +18,11 @@ public sealed partial class VtkMaxView
     public void SetSelectableActorsFilter(string[]? names)
         => Native.SelectableFilter(names?.Where(actors.ContainsKey).Select(n=>actors[n].Id).ToArray());
     public bool IsBoxSelectionActive=>View?.BoxSelectionActive??false;
-    public double GetSelectionPrecision()=>Native.SelectionPrecision;
-    public void SetSelectionDistance(int distanceInPixels)=>Native.SelectionDistance(distanceInPixels);
+    public void GetClosestCellsOnActors(double[] point,string[] actorNames,out double[] distances,out double[][] normals)
+    {var result=Native.ClosestCells(point,actorNames.Select(n=>actors.TryGetValue(n,out var a)?a.Id:-1).ToArray());distances=result.Distances;normals=result.Normals;}
+    private int selectionDistance=7;
+    public double GetSelectionPrecision()=>View?.SelectionPrecision??0;
+    public void SetSelectionDistance(int distanceInPixels){selectionDistance=Math.Max(1,distanceInPixels);Execute(v=>v.SelectionDistance(selectionDistance));}
     public void GetPointAndCellIdsInsideFrustum(double[][] planes,out int[] pointIds,out int[] cellIds)
     {
         var ids=Native.FrustumSelect(planes);pointIds=ids.Points.Select(id=>checked((int)id)).ToArray();cellIds=ids.Cells.Select(id=>checked((int)id)).ToArray();

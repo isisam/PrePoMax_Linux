@@ -107,6 +107,9 @@ VM_API int32_t vm_last_pick(vm_view* v, vm_pick_result* result);
  * unselectable are always excluded (overlays/backing grids).
  */
 VM_API int32_t vm_actor_selectable(vm_view* v, int64_t actor_id, int32_t selectable);
+/* Selection actors render on a separate depth-cleared layer, sharing the base
+ * camera (vtkControl selection renderer). They never contribute to picking. */
+VM_API int32_t vm_actor_selection_layer(vm_view* v, int64_t actor_id, int32_t enabled);
 /* Windows visualization faces, before vtkMaxActor's triangle decomposition.
  * Element IDs may repeat per face; volume connectivity remains unchanged. */
 VM_API int32_t vm_actor_pick_geometry(vm_view* v, int64_t actor_id, int32_t np, const int64_t* node_ids,
@@ -117,6 +120,9 @@ VM_API int32_t vm_area_pick(vm_view* v, int32_t x1, int32_t y1, int32_t x2, int3
 VM_API int32_t vm_frustum_select(vm_view* v, const double* planes36);
 VM_API int32_t vm_selected_ids(vm_view* v, int32_t association, const int64_t** ids, int32_t* count);
 VM_API int32_t vm_geometry_pick(vm_view* v, const double* point, int64_t* element_id, int32_t unlimited_distance);
+/* Named-actor locator queries ignore visibility, as vtkControl regeneration does.
+ * Missing IDs have distance -1 and zero normal; count outputs are caller-owned. */
+VM_API int32_t vm_closest_cells(vm_view* v, const double* point, const int64_t* actors, int32_t count, double* distances, double* normals3);
 VM_API int32_t vm_selection_precision(vm_view* v, double* distance);
 VM_API int32_t vm_selection_distance(vm_view* v, int32_t pixels);
 VM_API int32_t vm_selection_mode(vm_view* v, int32_t enabled);

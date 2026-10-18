@@ -117,14 +117,16 @@ public sealed partial class MainWindow
     }
     private void SelectTreeEntity(TreeEntry entry)
     {
+        viewport.RemoveActors(["__selection_faces"]);
         if(entry.Entity==null || DisplayedMesh is not {} mesh)return;
         if(entry.Kind=="ResultField")
         { if(entry.Caption=="S")Contour("S (Mises)");else if(entry.Caption=="U")Contour("U (magnitude)");return; }
+        if(entry.Entity is FeSurface surface){HighlightSurfaceFaces(surface);return;}
         int[] ids=entry.Entity switch
         {
             BasePart p=>p.Labels,
-            FeNodeSet n=>n.Labels,
-            FeElementSet e=>e.Labels,
+            FeNodeSet n=>n.Labels??[],
+            FeElementSet e=>e.Labels??[],
             FeSurface s=>s.FaceIds?.Select(id=>id/10).Distinct().ToArray()??[],
             _=>[]
         };
@@ -132,6 +134,38 @@ public sealed partial class MainWindow
         bool nodes=entry.Entity is FeNodeSet;
         viewport.Execute(v=>{v.Highlight(ids.Select(id=>(long)id).ToArray(),nodes);v.Render();});
         SetStatus(entry.Caption+": "+ids.Length+(nodes?" nodes":" elements"));
+    }
+    private int[] highlightedFaces=[];
+    private void HighlightSurfaceFaces(FeSurface surface)
+    {
+        var c=mainView.Controller;var mesh=c.Model.Mesh;viewport.ClearSelection();highlightedFaces=[];
+        if(surface.Type==FeSurfaceType.Node)
+        {
+            var nodes=surface.CreatedFromNodeSetName??surface.NodeSetName;
+            if(nodes!=null&&mesh.NodeSets.TryGetValue(nodes,out var set))viewport.Execute(v=>{v.Highlight(set.Labels.Select(i=>(long)i).ToArray(),true);v.Render();});
+            return;
+        }
+        var ids=surface.FaceIds??[];
+        if(surface.CreatedFrom==FeSurfaceCreatedFrom.NodeSet)
+        {
+            // Same read-only membership calculation as FeMesh.CreateSurfaceFacesFromNodeSet.
+            if(!mesh.NodeSets.TryGetValue(surface.CreatedFromNodeSetName,out var source))return;
+            var selected=source.Labels.ToHashSet();var lookup=new HashSet<int>();var elements=new HashSet<int>();var free=new HashSet<int>();
+            foreach(var part in mesh.Parts.Values)
+            {
+                for(int i=0;i<part.Visualization.Cells.Length;++i)foreach(int node in part.Visualization.Cells[i])
+                    if(selected.Contains(node)){lookup.Add(node);elements.Add(part.Visualization.CellIds[i]);}
+                free.UnionWith(part.Visualization.GetFreeEdgeNodeIds());
+            }
+            bool edgeBased=lookup.All(free.Contains);
+            ids=elements.SelectMany(id=>mesh.Elements[id].GetFaceNamesAndAreasFromNodeSet(lookup,mesh.Nodes,edgeBased).Keys
+                .Select(face=>10*id+FeElement.VtkCellIdFromFaceName(face))).Distinct().ToArray();
+        }
+        if(ids.Length==0)return;
+        var cells=c.GetSurfaceCellsByFaceIds(ids,out _);mesh.GetSurfaceGeometry(cells,out var nodeIds,out var xyz,out var types,false);
+        var data=new vtkMaxActorData{Name="__selection_faces",Layer=vtkRendererLayer.Selection,Pickable=false,Color=System.Drawing.Color.FromArgb(255,255,195,25)};
+        data.Geometry.Nodes=new(){Ids=nodeIds,Coor=xyz};data.Geometry.Cells=new(){Ids=Enumerable.Range(0,cells.Length).ToArray(),Types=types,CellNodeIds=cells};
+        viewport.AddCells(data);highlightedFaces=ids.Order().ToArray();SetStatus(surface.Name+": "+ids.Length+" faces");
     }
     private void SelectPickedPart(PickResult pick)
     {

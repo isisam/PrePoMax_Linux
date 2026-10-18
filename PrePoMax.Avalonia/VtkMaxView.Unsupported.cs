@@ -11,7 +11,6 @@ public sealed partial class VtkMaxView
     void IViewport3D.SetNavigationSensitivity(double rotateSensitivity, double zoomSensitivity, bool invertZoom, bool smoothZoom) => throw Unsupported("SetNavigationSensitivity");
     void IViewport3D.SetTrackpadNavigation(bool enabled, bool useWheelFallback, bool twoFingerDragPans, double panSensitivity, bool invertX, bool invertY) => throw Unsupported("SetTrackpadNavigation");
     void IViewport3D.StartBoxZoom() => throw Unsupported("StartBoxZoom");
-    void IViewport3D.GetClosestCellsOnActors(double[] point, string[] actorNames, out double[] distances, out double[][] normals) => throw Unsupported("GetClosestCellsOnActors");
     void IViewport3D.SetAxisView(bool animate, double[] axis, bool zoomToFit = true) => throw Unsupported("SetAxisView");
     void IViewport3D.SetNormalView(bool animate) => throw Unsupported("SetNormalView");
     void IViewport3D.SetVerticalAxisView(bool animate, double[] axis, bool zoomToFit = true) => throw Unsupported("SetVerticalAxisView");

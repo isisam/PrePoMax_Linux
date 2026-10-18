@@ -8,6 +8,9 @@ export DOTNET_PROCESSOR_COUNT=4 LP_NUM_THREADS=1 OMP_NUM_THREADS=1 OPENBLAS_NUM_
 [[ $(df -PB1 /mnt/c | awk 'NR==2{print $4}') -ge 21474836480 ]]
 mkdir -p "$out/src" "$logs"
 rsync -a --exclude=.git --exclude=obj --exclude=bin --exclude=x64 --exclude=.vs --exclude=packages "$repo/" "$out/src/"
+# Source synchronization can coincide with an earlier compiler's output timestamp.
+# Force the shell compilation after the complete snapshot has been copied.
+touch "$out/src/PrePoMax.Avalonia/MainWindow.cs"
 if [[ ! -f "$out/native-select/build.ninja" ]]; then
   nice -n 19 cmake -S "$repo/native/vtkmax" -B "$out/native-select" -G Ninja \
     -DCMAKE_BUILD_TYPE=Release -DVTK_DIR=/root/ppm-l2b-vtk/install/lib/cmake/vtk-9.4

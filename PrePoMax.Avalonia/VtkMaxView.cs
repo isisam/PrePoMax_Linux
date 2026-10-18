@@ -32,7 +32,7 @@ public sealed partial class VtkMaxView : UserControl, IViewport3D, IViewportHost
     internal VtkMaxView(IViewportHost host)
     {
         this.host = host; Content = host.Control;
-        host.Ready += () => { Execute(v => v.SelectionMode(SelectBy is not (vtkSelectBy.Off or vtkSelectBy.Widget))); Ready?.Invoke(); };
+        host.Ready += () => { Execute(v => {v.SelectionMode(SelectBy is not (vtkSelectBy.Off or vtkSelectBy.Widget));v.SelectionDistance(selectionDistance);}); Ready?.Invoke(); };
         host.Picked += ReceivePick;
         DetachedFromVisualTree += (_,_) => animation?.Stop();
     }
@@ -86,6 +86,7 @@ public sealed partial class VtkMaxView : UserControl, IViewport3D, IViewportHost
         var actor=new Actor(this,++nextId,copy); actors.Add(copy.Name,actor);
         Change(v=>{v.AddActor(actor.Id,nodes,coords.SelectMany(p=>p).ToArray(),ids,types,offsets,cells.SelectMany(c=>c.Select(i=>(long)i)).ToArray());
             v.ActorStyle(actor.Id,true,actor.Color.R/255d,actor.Color.G/255d,actor.Color.B/255d,actor.Color.A/255d,edges!=vtkEdgesVisibility.NoEdges);
+            v.ActorSelectionLayer(actor.Id,copy.Layer!=vtkRendererLayer.Base);
             v.ActorSelectable(actor.Id,copy.Pickable && copy.Layer==vtkRendererLayer.Base);
             if(copy.ColorContours && g.Nodes.Values is { } values) ApplyScalars(v,actor,values);});
         return actor;
@@ -150,7 +151,13 @@ public sealed partial class VtkMaxView : UserControl, IViewport3D, IViewportHost
         if(SelectBy==vtkSelectBy.Default&&r.Hit!=0&&id>=0)Change(v=>v.ActorHighlight(r.ActorId,[id],SelectItem==vtkSelectItem.Node));
     }
     public void HighlightActor(string actorName) {var a=actors[actorName];Change(v=>v.ActorHighlight(a.Id,a.Data.Geometry.Cells.Ids.Select(i=>(long)i).ToArray()));}
-    public void ClearSelection(bool clearAllMouseSelection=true)=>Change(v=>v.Highlight([]));
+    public void ClearSelection(bool clearAllMouseSelection=true)
+    {
+        // Controller caches IViewportActor instances for reuse. Hide selection
+        // actors rather than destroying their native IDs, as vtkControl does.
+        foreach(var a in actors.Values.Where(a=>a.Data.Layer==vtkRendererLayer.Selection)){a.Visible=false;Style(a);}
+        Change(v=>v.Highlight([]));
+    }
     public void ClearCurrentMouseSelection()=>ClearSelection();
     public void ClearCurrentMouseSelection(bool render)=>ClearSelection();
     public void GetViewParameters(out double[] position,out double[] focalPoint,out double[] viewUp,out double parallelScale)

@@ -72,6 +72,7 @@ public sealed partial class MainWindow : Window, IMainView
         root.Children.Add(layout);Content=root;
         viewport.Ready+=async()=>{if(Program.Arguments.Length>0&&!Program.Arguments[0].StartsWith("--"))await Open(Program.Arguments[0]);};
         viewport.Picked+=Picked;
+        viewport.OnMouseLeftButtonUpSelection+=ViewportSelection;
         Log("Ready. Open a model to begin.");
     }
     private void BuildMenu()
@@ -216,7 +217,7 @@ public sealed partial class MainWindow : Window, IMainView
                     expectedElement = element.Id, world = new[] { x, y, z }, screen, width = viewport.Bounds.Width,
                     height = viewport.Bounds.Height, scale=RenderScaling, lastPick, runtime = Environment.Version.ToString(),
                     origin=viewport.Control.TranslatePoint(new Point(0,0),this), windowId=TryGetPlatformHandle()?.Handle.ToInt64()??0,
-                    pumpCount=viewport.PumpCount,
+                    pumpCount=viewport.PumpCount,nativeSequence=view.LastPick.Sequence,
                     focus=viewport.HasViewportFocus, status=status.Text, log=messages.Text, actors=viewport.GetVtkMaxActorData().Length,
                     nodes=model.NodeIds.Length,elements=model.ElementIds.Length,controllerNodes=mainView.Controller.Model.Mesh?.Nodes.Count??0,step=model.ResultsStep,increment=model.ResultsIncrement,time=model.ResultsTime,
                     fields=model.Contours.ToDictionary(p=>p.Key,p=>new{min=p.Value.Min(),max=p.Value.Max()}),

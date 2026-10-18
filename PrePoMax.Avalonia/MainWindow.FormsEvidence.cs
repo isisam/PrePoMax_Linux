@@ -26,10 +26,27 @@ public sealed partial class MainWindow
             pages = editor.Session.Pages.Select(p => p.Title).ToArray(), page = editor.PageSelector.SelectedIndex, row = editor.RowSelector.SelectedIndex,
             rows = editor.RowSelector.Items.Cast<object>().Select(v => v.ToString()).ToArray(), properties = Describe(editor.Properties), data = Describe(editor.DataProperties),
             error = editor.Error.Text, errors = editor.Properties.Errors, dataErrors = editor.DataProperties.Errors,
-            selection = editor.SelectionPanel?.ItemSetData.ItemIds, selectionStatus = editor.SelectionPanel?.Status.Text };
+            selection = editor.SelectionPanel?.ItemSetData.ItemIds, selectionStatus = editor.SelectionPanel?.Status.Text,
+            selectBy=mainView.Controller.SelectBy.ToString(),selectAngle=mainView.Controller.SelectAngle,geometryMode=mainView.Controller.GeometrySelectMode.ToString(),highlightedFaces,
+            history=mainView.Controller.Selection.Nodes.Select(n=>new {type=n.GetType().Name,mouse=n is CaeGlobals.SelectionNodeMouse m?new {by=m.SelectBy.ToString(),m.Angle,m.PickedPoint,m.PlaneParameters,m.CompletelyInside}:null}) };
     }
     private void FormsEvidenceCommand(string op, JsonElement c)
     {
+        if(op=="form-camera")
+        {
+            double[] Read(string key)=>c.GetProperty(key).EnumerateArray().Select(x=>x.GetDouble()).ToArray();
+            Width=1400;Height=1000;viewport.Width=c.GetProperty("width").GetInt32();viewport.Height=c.GetProperty("height").GetInt32();
+            viewport.SetViewParameters(false,Read("position"),Read("focal"),Read("up"),c.GetProperty("scale").GetDouble());return;
+        }
+        if(op=="form-membership")
+        {
+            var mesh=mainView.Controller.Model.Mesh;
+            File.WriteAllText(c.GetProperty("path").GetString()!,JsonSerializer.Serialize(new {
+                nodes=mesh.NodeSets.Values.Where(s=>s.Name.StartsWith("L3Select")).Select(s=>new{s.Name,ids=s.Labels.Order(),history=s.CreationData?.Nodes.Select(n=>n.GetType().Name)}),
+                elements=mesh.ElementSets.Values.Where(s=>s.Name.StartsWith("L3Select")).Select(s=>new{s.Name,ids=s.Labels.Order(),history=s.CreationData?.Nodes.Select(n=>n.GetType().Name)}),
+                surfaces=mesh.Surfaces.Values.Where(s=>s.Name.StartsWith("L3Select")).Select(s=>new{s.Name,ids=s.FaceIds?.Order(),s.Area,history=s.CreationData?.Nodes.Select(n=>n.GetType().Name)})
+            },new JsonSerializerOptions{WriteIndented=true}),new System.Text.UTF8Encoding(false));return;
+        }
         if (op == "form-export") { ExportInpTo(c.GetProperty("path").GetString()!); return; }
         if (op == "form-audit")
         {
@@ -47,6 +64,13 @@ public sealed partial class MainWindow
             File.WriteAllText(c.GetProperty("path").GetString()!, JsonSerializer.Serialize(audit, new JsonSerializerOptions { WriteIndented = true })); return;
         }
         var editor = activeEditor ?? throw new InvalidOperationException("No form is open");
+        if(op=="form-select-mode"){editor.SelectionPanel!.Mode.SelectedItem=c.GetProperty("value").GetString();return;}
+        if(op=="form-geometry-mode"){editor.SelectionPanel!.GeometryMode.SelectedIndex=c.GetProperty("index").GetInt32();return;}
+        if(op=="form-angle"){var angle=editor.SelectionPanel!.Angle;angle.Text=c.GetProperty("value").GetString();angle.RaiseEvent(new KeyEventArgs{RoutedEvent=InputElement.KeyDownEvent,Key=Key.Enter});return;}
+        if(op=="form-position")
+        {
+            editor.WindowStartupLocation=WindowStartupLocation.Manual;editor.Position=new global::Avalonia.PixelPoint(c.GetProperty("x").GetInt32(),c.GetProperty("y").GetInt32());return;
+        }
         if (op == "form-page") { editor.PageSelector.SelectedIndex = c.GetProperty("index").GetInt32(); return; }
         if (op == "form-row") { editor.RowSelector.SelectedIndex = c.GetProperty("index").GetInt32(); return; }
         if (op == "form-material-type") { editor.MaterialType.SelectedItem = c.GetProperty("value").GetString(); return; }

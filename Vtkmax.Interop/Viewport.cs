@@ -66,6 +66,7 @@ public sealed class Viewport : IDisposable
     }
     public void RemoveActor(long id) => Check(Native.vm_remove_actor(Handle, id));
     public void ActorSelectable(long id, bool selectable) => Check(Native.vm_actor_selectable(Handle, id, selectable ? 1 : 0));
+    public void ActorSelectionLayer(long id,bool selection)=>Check(Native.vm_actor_selection_layer(Handle,id,selection?1:0));
     public void ActorPickGeometry(long actor,long[] nodes,double[] xyz,long[] elements,int[] types,int[] offsets,long[] conn)
     {
         if(xyz.Length!=nodes.Length*3||types.Length!=elements.Length||offsets.Length!=elements.Length+1)throw new ArgumentException("Pick geometry lengths disagree.");
@@ -97,6 +98,13 @@ public sealed class Viewport : IDisposable
         Check(Native.vm_geometry_pick(Handle, point, out var element, unlimited ? 1 : 0)); return (element, SelectedIds(3), SelectedIds(4));
     }
     public double SelectionPrecision { get { Check(Native.vm_selection_precision(Handle, out double value)); return value; } }
+    public (double[] Distances,double[][] Normals) ClosestCells(double[] point,long[] actors)
+    {
+        if(point.Length!=3)throw new ArgumentException("Three coordinates required.");
+        var distances=new double[actors.Length];var normals=new double[3*actors.Length];
+        Check(Native.vm_closest_cells(Handle,point,actors,actors.Length,distances,normals));
+        return (distances,Enumerable.Range(0,actors.Length).Select(i=>distances[i]<0?null!:normals.Skip(3*i).Take(3).ToArray()).ToArray());
+    }
     public void SelectionDistance(int pixels) => Check(Native.vm_selection_distance(Handle, pixels));
     public void SelectionMode(bool enabled) => Check(Native.vm_selection_mode(Handle, enabled ? 1 : 0));
     public bool BoxSelectionActive { get { int value = Native.vm_box_selection_active(Handle); Check(value); return value != 0; } }
@@ -149,6 +157,8 @@ public sealed class Viewport : IDisposable
 
 internal static class Native
 {
+    [DllImport("vtkmax", CallingConvention=CallingConvention.Cdecl)] internal static extern int vm_actor_selection_layer(IntPtr view,long actor,int enabled);
+    [DllImport("vtkmax", CallingConvention=CallingConvention.Cdecl)] internal static extern int vm_closest_cells(IntPtr view,double[] point,long[] actors,int count,[Out]double[] distances,[Out]double[] normals);
     [DllImport("vtkmax", CallingConvention=CallingConvention.Cdecl)] internal static extern int vm_actor_pick_geometry(IntPtr view,long actor,int np,long[] nodes,double[] xyz,int nc,long[] elements,int[] types,int[] offsets,int nconn,long[] conn);
     [DllImport("vtkmax", CallingConvention=CallingConvention.Cdecl)] internal static extern int vm_actor_selectable(IntPtr view,long actor,int selectable);
     [DllImport("vtkmax", CallingConvention=CallingConvention.Cdecl)] internal static extern int vm_selectable_filter(IntPtr view,long[]? actors,int count);

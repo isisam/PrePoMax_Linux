@@ -65,7 +65,7 @@ namespace {
 thread_local std::string error;
 void require(bool ok, const char* text) { if (!ok) throw std::invalid_argument(text); }
 int nodes_per_cell(int t) {
-    switch(t) { case 1:return 1; case 5:return 3; case 9:return 4; case 22:return 6; case 23:return 8;
+    switch(t) { case 1:return 1; case 3:return 2; case 21:return 3; case 5:return 3; case 9:return 4; case 22:return 6; case 23:return 8;
     case 10:return 4; case 12:return 8; case 13:return 6; case 24:return 10;
     case 25:return 20; case 26:return 15; default:return -1; }
 }
@@ -80,7 +80,7 @@ struct actor_state {
     vtkNew<vtkUnstructuredGrid> pick_faces;
     std::vector<vtkIdType> surface_parent;
     vtkNew<vtkCellLocator> surface_locator;
-    bool selectable=true;
+    bool selectable=true,selection_layer=false;
     std::vector<int64_t> nodes, elements;
     std::unordered_map<int64_t, vtkIdType> node_map, element_map;
     std::vector<double> original;
@@ -88,6 +88,7 @@ struct actor_state {
 struct vm_view : actor_state {
     vtkSmartPointer<vtkOpenGLRenderWindow> window;
     vtkNew<vtkRenderer> renderer;
+    vtkNew<vtkRenderer> selection_renderer;
     vtkNew<vtkLookupTable> lut;
     vtkNew<vtkScalarBarActor> bar;
     vtkNew<vtkActor> highlight;
@@ -131,7 +132,9 @@ void triangulate_surface(actor_state* a) {
             cell->GetPoints()->GetPoint(5,p);cell->GetPoints()->GetPoint(7,q);double d2=vtkMath::Distance2BetweenPoints(p,q);
             triangles=d1<d2?std::vector<std::vector<int>>{{7,0,4},{7,4,6},{7,6,3},{5,4,1},{5,6,4},{5,2,6}}:
                                           std::vector<std::vector<int>>{{4,7,0},{4,5,7},{4,1,5},{6,5,2},{6,7,5},{6,3,7}};break;}
-        default:break;
+        default:{std::vector<vtkIdType> nodes;for(vtkIdType j=0;j<cell->GetNumberOfPoints();++j)nodes.push_back(cell->GetPointId(j));
+            a->surface->InsertNextCell(cell->GetCellType(),nodes.size(),nodes.data());
+            ids->InsertNextValue(static_cast<vtkIdType>(a->pick_faces->GetCellData()->GetGlobalIds()->GetTuple1(i)));a->surface_parent.push_back(i);break;}
         }
         for(auto& t:triangles){vtkIdType nodes[3];for(int j=0;j<3;++j)nodes[j]=cell->GetPointId(t[j]);
             a->surface->InsertNextCell(5,3,nodes);ids->InsertNextValue(static_cast<vtkIdType>(a->pick_faces->GetCellData()->GetGlobalIds()->GetTuple1(i)));a->surface_parent.push_back(i);}
@@ -164,7 +167,7 @@ int publish_pick(vm_view* v,vm_pick_result* r) {
     return r->hit;
 }
 bool selectable(vm_view* v, int64_t id, actor_state* a) {
-    return a->selectable && (v->filter_active ? v->filter.count(id)!=0 : a->actor->GetVisibility()!=0);
+    return a->selectable && !a->selection_layer && (v->filter_active ? v->filter.count(id)!=0 : a->actor->GetVisibility()!=0);
 }
 void draw_rubber_band(vm_view* v, int x1,int y1,int x2,int y2) {
     const double p[4][3]={{double(x1),double(y1),0},{double(x2),double(y1),0},
@@ -242,7 +245,9 @@ vm_view* vm_create_backend(int32_t backend,int32_t w,int32_t h) {
 #endif
         }
         v->window->SetOffScreenRendering(backend==1||backend==3); v->window->SetSize(w,h);
-        v->window->SetMultiSamples(0); v->window->AddRenderer(v->renderer);
+        v->window->SetMultiSamples(0);v->window->SetNumberOfLayers(2);v->window->AddRenderer(v->renderer);
+        v->selection_renderer->SetLayer(1);v->selection_renderer->SetActiveCamera(v->renderer->GetActiveCamera());
+        v->selection_renderer->InteractiveOff();v->window->AddRenderer(v->selection_renderer);
         v->renderer->SetBackground(0.075,0.09,0.13);
         v->mapper->SetInputData(v->grid); v->mapper->ScalarVisibilityOff();
         v->actor->SetMapper(v->mapper); v->actor->GetProperty()->SetColor(0.65,0.78,0.89);
@@ -257,7 +262,7 @@ vm_view* vm_create_backend(int32_t backend,int32_t w,int32_t h) {
         v->highlight->GetProperty()->SetColor(1.0,0.72,0.08);
         v->highlight->GetProperty()->SetRepresentationToWireframe();
         v->highlight->GetProperty()->SetLineWidth(4); v->highlight->GetProperty()->LightingOff();
-        v->renderer->AddActor(v->highlight); v->highlight->VisibilityOff();
+        v->selection_renderer->AddActor(v->highlight); v->highlight->VisibilityOff();
         v->rubber_points->SetNumberOfPoints(4);
         for(int i=0;i<4;++i)v->rubber_points->SetPoint(i,0,0,0);
         vtkNew<vtkPolyData> rectangle;rectangle->SetPoints(v->rubber_points);
@@ -265,7 +270,7 @@ vm_view* vm_create_backend(int32_t backend,int32_t w,int32_t h) {
         vtkNew<vtkPolyDataMapper2D> rectangle_mapper;rectangle_mapper->SetInputData(rectangle);
         v->rubber_band->SetMapper(rectangle_mapper);v->rubber_band->PickableOff();v->rubber_band->UseBoundsOff();
         v->rubber_band->GetProperty()->SetColor(.25,.85,1);v->rubber_band->GetProperty()->SetLineWidth(2);
-        v->rubber_band->VisibilityOff();v->renderer->AddViewProp(v->rubber_band);
+        v->rubber_band->VisibilityOff();v->selection_renderer->AddViewProp(v->rubber_band);
         if(backend==2) {
             v->window->OpenGLInitContext();
             v->interactor=vtkSmartPointer<vtkGenericRenderWindowInteractor>::New();
@@ -345,11 +350,11 @@ int32_t vm_add_actor(vm_view* v,int64_t id,int32_t np,const int64_t* ids,const d
 }
 int32_t vm_remove_actor(vm_view* v,int64_t id) {
     TRY {VIEW;require(id>0,"cannot remove default actor");auto m=find_actor(v,id);
-        v->renderer->RemoveActor(m->actor);v->actors.erase(id);v->highlight->VisibilityOff();return 0;} CATCH
+        v->renderer->RemoveActor(m->actor);v->selection_renderer->RemoveActor(m->actor);v->actors.erase(id);v->highlight->VisibilityOff();return 0;} CATCH
 }
 int32_t vm_actor_style(vm_view* v,int64_t id,int32_t visible,double r,double g,double b,double opacity,int32_t edges) {
     TRY {auto m=find_actor(v,id);for(double x:{r,g,b,opacity})require(std::isfinite(x)&&x>=0&&x<=1,"invalid color/opacity");
-        m->actor->SetVisibility(visible!=0);auto p=m->actor->GetProperty();p->SetColor(r,g,b);p->SetOpacity(opacity);p->SetEdgeVisibility(edges!=0);return 0;} CATCH
+        m->actor->SetVisibility(visible!=0);auto p=m->actor->GetProperty();p->SetColor(r,g,b);p->SetOpacity(opacity);p->SetEdgeVisibility(edges!=0&&!m->selection_layer);return 0;} CATCH
 }
 int32_t vm_deformation(vm_view* v,int64_t id,const double* u,int32_t count,double scale) {
     TRY {auto m=find_actor(v,id);require(std::isfinite(scale),"nonfinite deformation scale");
@@ -566,7 +571,15 @@ int32_t vm_x11_connection(vm_view* v) {
 }
 int32_t vm_last_pick(vm_view* v,vm_pick_result* r) {TRY {VIEW;require(r,"null pick output");*r=v->last;return 0;} CATCH}
 int32_t vm_actor_selectable(vm_view* v,int64_t id,int32_t enabled) {
-    TRY {find_actor(v,id)->selectable=enabled!=0;return 0;} CATCH
+    TRY {auto a=find_actor(v,id);a->selectable=enabled!=0;a->actor->SetPickable(a->selectable&&!a->selection_layer);return 0;} CATCH
+}
+int32_t vm_actor_selection_layer(vm_view* v,int64_t id,int32_t enabled) {
+    TRY {auto a=find_actor(v,id);bool layer=enabled!=0;if(a->selection_layer==layer)return 0;
+        (a->selection_layer?v->selection_renderer:v->renderer)->RemoveActor(a->actor);
+        a->selection_layer=layer;(layer?v->selection_renderer:v->renderer)->AddActor(a->actor);
+        a->actor->SetPickable(a->selectable&&!layer);a->actor->SetUseBounds(!layer);
+        if(layer)a->actor->GetProperty()->EdgeVisibilityOff();
+        a->actor->GetProperty()->SetLighting(!layer);a->actor->GetProperty()->SetPointSize(layer?8:1);a->actor->GetProperty()->SetLineWidth(layer?2:1);return 0;} CATCH
 }
 int32_t vm_actor_pick_geometry(vm_view* v,int64_t id,int32_t np,const int64_t* nodes,const double* xyz,
     int32_t nc,const int64_t* elements,const int32_t* types,const int32_t* offsets,int32_t nconn,const int64_t* conn) {
@@ -661,6 +674,7 @@ int32_t vm_geometry_pick(vm_view* v,const double* point,int64_t* element,int32_t
         if(!unlimited&&best>precision*precision)*element=-1; // vtkControl still returns the closest face properties.
         auto global=dataset->GetPointData()->GetGlobalIds();
         for(vtkIdType i=0;i<chosen->GetNumberOfPoints();++i)v->selected[4].push_back(static_cast<int64_t>(global->GetTuple1(chosen->GetPointId(i))));
+        if(*element<0)return 0; // Windows' cell-face callback rejects element -1, so its edge is null.
         double edge_best=VTK_DOUBLE_MAX;std::vector<vtkIdType> edge_ids;
         auto segment=[](const double* p,const double* a,const double* b){double ab[3],ap[3];vtkMath::Subtract(b,a,ab);vtkMath::Subtract(p,a,ap);
             double n=vtkMath::Dot(ab,ab),t=n>0?std::clamp(vtkMath::Dot(ap,ab)/n,0.0,1.0):0;double q[3];for(int k=0;k<3;++k)q[k]=a[k]+t*ab[k];return vtkMath::Distance2BetweenPoints(p,q);};
@@ -673,5 +687,17 @@ int32_t vm_geometry_pick(vm_view* v,const double* point,int64_t* element,int32_t
         if(!edge_ids.empty()&&vtkMath::Distance2BetweenPoints(closest,dataset->GetPoint(edge_ids.back()))<vtkMath::Distance2BetweenPoints(closest,dataset->GetPoint(edge_ids.front())))std::reverse(edge_ids.begin(),edge_ids.end());
         for(auto id:edge_ids)v->selected[3].push_back(static_cast<int64_t>(global->GetTuple1(id)));
         return 0;} CATCH
+}
+int32_t vm_closest_cells(vm_view* v,const double* point,const int64_t* actors,int32_t count,double* distances,double* normals) {
+    TRY {VIEW;require(point&&finite3(point)&&count>=0&&(count==0||(actors&&distances&&normals)),"invalid closest cell query");
+        for(int i=0;i<count;++i){distances[i]=-1;std::fill_n(normals+3*i,3,0.0);
+            actor_state* a=nullptr;if(actors[i]==0)a=v;else {auto it=v->actors.find(actors[i]);if(it!=v->actors.end())a=it->second.get();}
+            if(!a||!a->selectable||a->selection_layer||a->surface->GetNumberOfCells()==0)continue;
+            a->surface_locator->BuildLocator();double hit[3],d;vtkIdType cell_id;int sub;
+            a->surface_locator->FindClosestPoint(point,hit,cell_id,sub,d);if(d<0||cell_id<0)continue;
+            distances[i]=std::sqrt(d);auto cell=a->surface->GetCell(cell_id);if(cell->GetNumberOfPoints()<3)continue;
+            double p[3],q[3],r[3],u[3],w[3];cell->GetPoints()->GetPoint(0,p);cell->GetPoints()->GetPoint(1,q);cell->GetPoints()->GetPoint(2,r);
+            vtkMath::Subtract(q,p,u);vtkMath::Subtract(r,p,w);vtkMath::Cross(u,w,normals+3*i);vtkMath::Normalize(normals+3*i);
+        }return 0;} CATCH
 }
 }

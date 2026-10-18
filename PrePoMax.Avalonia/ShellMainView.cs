@@ -13,6 +13,7 @@ internal sealed class ShellMainView(MainWindow window,VtkMaxView viewport) : Nul
     // The shell atomically adapts Controller.Model after parsing, then enables direct display callbacks.
     public bool Loading {get;set;}
     public new IViewport3D Viewport=>viewport;
+    public new bool RenderingOn {get=>viewport.RenderingOn;set=>UI(()=>viewport.RenderingOn=value);}
     private static void UI(Action action) {if(Dispatcher.UIThread.CheckAccess())action();else Dispatcher.UIThread.Post(action);}
     public override void WriteDataToOutput(string data)=>UI(()=>window.Log(data));
     public override void WriteErrorToOutput(string data)=>UI(()=>window.Log("ERROR: "+data));
@@ -42,6 +43,11 @@ internal sealed class ShellMainView(MainWindow window,VtkMaxView viewport) : Nul
     public override void SetQuerySelection(bool querySelection)=>UI(()=>viewport.QuerySelectionInProgress=querySelection);
     public override bool GetQuerySelection()=>viewport.QuerySelectionInProgress;
     public override double GetSelectionPrecision()=>InvokeIfRequired(viewport.GetSelectionPrecision);
+    public override void SetSelectionDistance(int pixels)=>UI(()=>viewport.SetSelectionDistance(pixels));
+    public override void GetClosestCellsOnParts(double[] point,string[] names,out double[] distances,out double[][] normals)
+    {
+        var result=InvokeIfRequired(()=>{viewport.GetClosestCellsOnActors(point,names,out var d,out var n);return(d,n);});distances=result.d;normals=result.n;
+    }
     public override void GetGeometryPickProperties(double[] point,out int elementId,out int[] edgeNodeIds,out int[] cellFaceNodeIds,string[] selectionPartNames=null!)
     {
         var result=InvokeIfRequired(()=>{

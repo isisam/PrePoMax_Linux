@@ -16,11 +16,13 @@ vm.vm_load_grid.argtypes = [ptr, i32, c.POINTER(i64), c.POINTER(c.c_double), i32
 vm.vm_frustum_select.argtypes = [ptr, c.POINTER(c.c_double)]
 vm.vm_selected_ids.argtypes = [ptr, i32, c.POINTER(c.POINTER(i64)), c.POINTER(i32)]
 vm.vm_actor_selectable.argtypes = [ptr, i64, i32]
+vm.vm_actor_selection_layer.argtypes = [ptr,i64,i32]
 vm.vm_selectable_filter.argtypes = [ptr, c.POINTER(i64), i32]
 vm.vm_area_pick.argtypes = [ptr, i32, i32, i32, i32, c.POINTER(c.c_double)]
 vm.vm_selection_distance.argtypes = [ptr, i32]
 vm.vm_selection_precision.argtypes = [ptr, c.POINTER(c.c_double)]
 vm.vm_geometry_pick.argtypes = [ptr, c.POINTER(c.c_double), c.POINTER(i64), i32]
+vm.vm_closest_cells.argtypes = [ptr,c.POINTER(c.c_double),c.POINTER(i64),i32,c.POINTER(c.c_double),c.POINTER(c.c_double)]
 vm.vm_actor_style.argtypes = [ptr,i64,i32,c.c_double,c.c_double,c.c_double,c.c_double,i32]
 assert vm.vm_create(1, -1, 100) is None
 assert b"size" in vm.vm_last_error()
@@ -76,6 +78,9 @@ for attempt in range(3):
         assert vm.vm_actor_selectable(view,0,0) == 0
         assert vm.vm_frustum_select(view, box(-1,2)) == 0 and selected(0) == []
         assert vm.vm_actor_selectable(view,0,1) == 0
+        assert vm.vm_actor_selection_layer(view,0,1) == 0
+        assert vm.vm_frustum_select(view,box(-1,2)) == 0 and selected(0)==[]
+        assert vm.vm_actor_selection_layer(view,0,0) == 0
         planes=(c.c_double*36)()
         assert vm.vm_area_pick(view,0,0,127,127,planes) == 0
         assert len(planes) == 36 and all(__import__('math').isfinite(p) for p in planes)
@@ -88,6 +93,12 @@ for attempt in range(3):
         assert vm.vm_geometry_pick(view,(c.c_double*3)(.2,.2,0),c.byref(element),1) == 0
         assert element.value == 9000000001 and sorted(selected(4)) == [10,20,30]
         assert len(selected(3)) == 2
+        assert vm.vm_geometry_pick(view,(c.c_double*3)(100,100,100),c.byref(element),0) == 0
+        assert element.value==-1 and selected(3)==[] and len(selected(4))==3
+        distances=(c.c_double*2)();normals=(c.c_double*6)()
+        assert vm.vm_actor_style(view,0,0,0,0,0,1,1) == 0
+        assert vm.vm_closest_cells(view,(c.c_double*3)(.2,.2,0),(i64*2)(0,-1),2,distances,normals) == 0
+        assert distances[0]==0 and distances[1]==-1 and abs(sum(x*x for x in normals[:3])-1)<1e-12
     finally:
         vm.vm_destroy(view)
 print("PASS direct C ABI 0.3: grid validation, whole/crossing/empty frustum, visibility/filter/selectability, area planes, precision, geometry face/edge, repeated dispose")

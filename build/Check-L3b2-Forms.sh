@@ -9,9 +9,12 @@ export DOTNET_PROCESSOR_COUNT=4 LP_NUM_THREADS=1 OMP_NUM_THREADS=1 OPENBLAS_NUM_
 mkdir -p "$out/src" "$logs"
 rsync -a --exclude=.git --exclude=obj --exclude=bin --exclude=x64 --exclude=.vs --exclude=packages "$repo/" "$out/src/"
 nice -n 19 dotnet publish "$out/src/PrePoMax.Avalonia" -c Release -p:CoreTargetFrameworks=net8.0 -m:1 -r linux-x64 --self-contained true -o "$out/app"
-# The native code is unchanged. Reuse the verified L3b native artifact, record its hash.
-bash "$repo/build/Install-Native-Artifact.sh" /root/ppm-l3b/native "$out/app"
-sha256sum /root/ppm-l3b/native/libvtkmax.so.0.2.0 "$out/app/libvtkmax.so.0.2.0" > "$logs/native-sha256.txt"
+# Selection continuation uses ABI 0.3. Do not silently load the historical 0.2
+# artifact with the newer managed wrapper. Build-L3b2-Select.sh prepares this.
+native=${PPM_FORMS_NATIVE:-"$out/native-select"}
+[[ -f "$native/libvtkmax.so.0.3.0" ]]
+bash "$repo/build/Install-Native-Artifact.sh" "$native" "$out/app"
+sha256sum "$native/libvtkmax.so.0.3.0" "$out/app/libvtkmax.so.0.3.0" > "$logs/native-sha256.txt"
 if [[ ${PPM_FORMS_SKIP_METADATA:-0} != 1 ]]; then
     nice -n 19 dotnet build "$out/src/tests/L3b2/FormContracts.csproj" -f net10.0 -c Release -p:CoreTargetFrameworks=net8.0 -m:1
     xvfb-run -a nice -n 19 dotnet "$out/src/tests/L3b2/bin/Release/net10.0/FormContracts.dll" "$out/app" "$logs/contracts-linux.json"
