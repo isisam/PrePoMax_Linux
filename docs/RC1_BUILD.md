@@ -68,6 +68,15 @@ PMX through PrePoMax.com and running the bundled solver. Keep solver logs,
 structured application reports, actual values and binary hashes outside
 the student package.
 
+RC1e adds `tests/RC1e/run.py --runtime <fresh-runtime> --output <evidence>
+--sources <sources.json>`. The JSON maps DCB, ENF and Layup to actual FRD files
+from the bundled examples. Run this on the final archive's fresh copy after
+the smoke solver runs. The helper uses a private, never-switched desktop and
+checks native contour images against empty-scene controls, legend extrema,
+enum identity, preserved non-default values and all 13 Settings page choices
+through en -> zh-TW -> en. Do not call the toolbar initializers to repair the
+test state after language changes.
+
 Remove task-generated history/settings/trace files, test executables,
 __pycache__ and pyc files before generating SHA256SUMS. Include VERSION,
 CHANGELOG, SOURCE, student documentation and licence notices. Generate the

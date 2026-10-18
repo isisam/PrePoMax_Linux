@@ -42,6 +42,15 @@ namespace PrePoMax
 {
     public partial class FrmMain : MainMouseWheelManagedForm, IMainView
     {
+        // Display text can change while the form is alive; it is never a selection key.
+        private sealed class ToolbarChoice<T>
+        {
+            public readonly T Value;
+            private readonly Func<T, string> _display;
+            public ToolbarChoice(T value, Func<T, string> display) { Value = value; _display = display; }
+            public override string ToString() { return _display(Value); }
+        }
+
         private class ViewportLegendValueEditData
         {
             public readonly double Minimum;
@@ -269,6 +278,7 @@ namespace PrePoMax
             UserControls.XYPlotSettingsExtensions.Initialize();
             // Initialize               
             InitializeComponent();
+            InitializeColorByComboBox();
             ToolStripMenuItem duplicateResultFieldOutputMenuItem = new ToolStripMenuItem();
             duplicateResultFieldOutputMenuItem.Name = "tsmiDuplicateResultFieldOutput";
             duplicateResultFieldOutputMenuItem.Text = "Duplicate";
@@ -478,7 +488,6 @@ namespace PrePoMax
                 tsResultDeformation.Location = new Point(0, tsFile.Height);
                 tsResults.Location = new Point(tsResultDeformation.Left + tsResultDeformation.Width, tsFile.Height);
                 tscbSymbols.SelectedIndexChanged += tscbSymbols_SelectedIndexChanged;
-                tscbColorBy.SelectedIndex = 0;
                 tscbColorBy.SelectedIndexChanged += tscbColorBy_SelectedIndexChanged;
                 // Vtk
                 _vtk.OnMouseLeftButtonUpSelection += _vtk_SelectPointOrArea;
@@ -724,6 +733,8 @@ namespace PrePoMax
                 // Deformation toolstrip
                 InitializeDeformationComboBoxes();
                 InitializeComplexComboBoxes();
+                PrePoMax.L10n.Translator.LanguageChanged += ToolbarLanguageChanged;
+                Disposed += (disposedSender, disposedArgs) => PrePoMax.L10n.Translator.LanguageChanged -= ToolbarLanguageChanged;
                 // Converters
                 tstbDeformationFactor.UnitConverter = new StringDoubleConverter();
                 tstbAngle.UnitConverter = new StringAngleDegConverter();
@@ -11139,7 +11150,7 @@ namespace PrePoMax
                 // The combo box already shows the selection
                 _suppressColorByChanged = true;
                 //
-                ToolStripMenuItem tsmi = GetColorByMenuItem(tscbColorBy.SelectedItem.ToString());
+                ToolStripMenuItem tsmi = (tscbColorBy.SelectedItem as ToolbarChoice<ToolStripMenuItem>)?.Value;
                 if (tsmi == null)
                 {
                     ClearAnnotationStatus();
@@ -11158,34 +11169,25 @@ namespace PrePoMax
                 _suppressColorByChanged = false;
             }
         }
-        private ToolStripMenuItem GetColorByMenuItem(string name)
+        private void InitializeColorByComboBox()
         {
-            if (name == tsmiAnnotateFaceOrientations.Text) return tsmiAnnotateFaceOrientations;
-            else if (name == tsmiAnnotateMeshTypes.Text) return tsmiAnnotateMeshTypes;
-            else if (name == tsmiAnnotateParts.Text) return tsmiAnnotateParts;
-            else if (name == tsmiAnnotateMaterials.Text) return tsmiAnnotateMaterials;
-            else if (name == tsmiAnnotateSections.Text) return tsmiAnnotateSections;
-            else if (name == tsmiAnnotateSectionThicknesses.Text) return tsmiAnnotateSectionThicknesses;
-            else return null;
+            tscbColorBy.Items.Clear();
+            foreach (ToolStripMenuItem menu in new[] { null, tsmiAnnotateFaceOrientations, tsmiAnnotateMeshTypes,
+                tsmiAnnotateParts, tsmiAnnotateMaterials, tsmiAnnotateSections, tsmiAnnotateSectionThicknesses })
+                tscbColorBy.Items.Add(new ToolbarChoice<ToolStripMenuItem>(menu,
+                    item => item == null ? PrePoMax.L10n.Translator.Translate(Globals.ColorByNone) : item.Text));
+            tscbColorBy.SelectedIndex = 0;
         }
         private void UpdateColorByComboBox()
         {
             if (_suppressColorByChanged) return;
             //
-            string name;
-            if (tsmiAnnotateFaceOrientations.Checked) name = tsmiAnnotateFaceOrientations.Text;
-            else if (tsmiAnnotateMeshTypes.Checked) name = tsmiAnnotateMeshTypes.Text;
-            else if (tsmiAnnotateParts.Checked) name = tsmiAnnotateParts.Text;
-            else if (tsmiAnnotateMaterials.Checked) name = tsmiAnnotateMaterials.Text;
-            else if (tsmiAnnotateSections.Checked) name = tsmiAnnotateSections.Text;
-            else if (tsmiAnnotateSectionThicknesses.Checked) name = tsmiAnnotateSectionThicknesses.Text;
-            else name = Globals.ColorByNone;
-            //
-            if (tscbColorBy.SelectedItem != null && tscbColorBy.SelectedItem.ToString() == name) return;
-            //
+            var selected = tscbColorBy.Items.Cast<ToolbarChoice<ToolStripMenuItem>>()
+                .FirstOrDefault(item => item.Value != null && item.Value.Checked) ??
+                (ToolbarChoice<ToolStripMenuItem>)tscbColorBy.Items[0];
             _suppressColorByChanged = true;
-            tscbColorBy.SelectedItem = name;
-            _suppressColorByChanged = false;
+            try { tscbColorBy.SelectedItem = selected; }
+            finally { _suppressColorByChanged = false; }
         }
         #endregion  ################################################################################################################
 
@@ -11495,13 +11497,9 @@ namespace PrePoMax
             tscbDeformationVariable.SelectedIndex = 0;  // Displacements
             //
             tscbDeformationType.Items.Clear();
-            Type type = typeof(DeformationScaleFactorTypeEnum);
-            string[] typeNames = Enum.GetNames(type);
-            for (int i = 0; i < typeNames.Length; i++)
-            {
-                typeNames[i] = ((DeformationScaleFactorTypeEnum)Enum.Parse(type, typeNames[i])).GetDisplayedName();
-            }
-            tscbDeformationType.Items.AddRange(typeNames);
+            foreach (DeformationScaleFactorTypeEnum value in Enum.GetValues(typeof(DeformationScaleFactorTypeEnum)))
+                tscbDeformationType.Items.Add(new ToolbarChoice<DeformationScaleFactorTypeEnum>(value,
+                    item => item.GetDisplayedName()));
             tscbDeformationType.SelectedIndex = 2;      // Automatic
 
             //if (controller.Results != null)
@@ -11528,16 +11526,7 @@ namespace PrePoMax
             //
             if (tscbDeformationType.SelectedItem == null) return DeformationScaleFactorTypeEnum.Automatic;
             //
-            string displayName = tscbDeformationType.SelectedItem.ToString();
-            DeformationScaleFactorTypeEnum[] scaleFactorTypes =
-                (DeformationScaleFactorTypeEnum[])Enum.GetValues(typeof(DeformationScaleFactorTypeEnum));
-            //
-            for (int i = 0; i < scaleFactorTypes.Length; i++)
-            {
-                if (displayName == scaleFactorTypes[i].GetDisplayedName()) return scaleFactorTypes[i];
-            }
-            //
-            throw new NotSupportedException();
+            return ((ToolbarChoice<DeformationScaleFactorTypeEnum>)tscbDeformationType.SelectedItem).Value;
         }
         public float GetDeformationFactor()
         {
@@ -11548,7 +11537,8 @@ namespace PrePoMax
         // The combo box change redraws through its SelectedIndexChanged event, the same as a click
         public void SetDeformationType(DeformationScaleFactorTypeEnum deformationType)
         {
-            InvokeIfRequired(() => tscbDeformationType.SelectedItem = deformationType.GetDisplayedName());
+            InvokeIfRequired(() => tscbDeformationType.SelectedItem = tscbDeformationType.Items
+                .Cast<ToolbarChoice<DeformationScaleFactorTypeEnum>>().First(item => item.Value == deformationType));
         }
         public void SetDeformationFactor(float deformationFactor)
         {
@@ -11574,13 +11564,8 @@ namespace PrePoMax
         {
             tscbComplex.Items.Clear();
             //
-            Type type = typeof(ComplexResultTypeEnum);
-            string[] typeNames = Enum.GetNames(type);
-            for (int i = 0; i < typeNames.Length; i++)
-            {
-                typeNames[i] = ((ComplexResultTypeEnum)Enum.Parse(type, typeNames[i])).GetDisplayedName();
-            }
-            tscbComplex.Items.AddRange(typeNames);
+            foreach (ComplexResultTypeEnum value in Enum.GetValues(typeof(ComplexResultTypeEnum)))
+                tscbComplex.Items.Add(new ToolbarChoice<ComplexResultTypeEnum>(value, item => item.GetDisplayedName()));
             tscbComplex.SelectedIndex = 0;  // Real
             //
             UpdateComplexControlStates();
@@ -11628,15 +11613,38 @@ namespace PrePoMax
             if (InvokeRequired)
                 return (ComplexResultTypeEnum)Invoke(new Func<ComplexResultTypeEnum>(GetComplexResultType));
             //
-            string displayName = tscbComplex.SelectedItem.ToString();
-            ComplexResultTypeEnum[] complexResultTypes = (ComplexResultTypeEnum[])Enum.GetValues(typeof(ComplexResultTypeEnum));
-            //
-            for (int i = 0; i < complexResultTypes.Length; i++)
+            return (tscbComplex.SelectedItem as ToolbarChoice<ComplexResultTypeEnum>)?.Value ?? ComplexResultTypeEnum.Real;
+        }
+        private void ToolbarLanguageChanged(object sender, EventArgs e)
+        {
+            if (IsDisposed) return;
+            // Complete before ApplySettings continues to redraw. Never reset the user's selection,
+            // field variable, scale or angle, or fire a redraw halfway through refreshing the list.
+            InvokeIfRequired(() =>
             {
-                if (displayName == complexResultTypes[i].GetDisplayedName()) return complexResultTypes[i];
+                PrePoMax.L10n.UiTranslator.Translate(this);
+                RefreshToolbarChoices(tscbDeformationType, tscbDeformationType_SelectedIndexChanged);
+                RefreshToolbarChoices(tscbComplex, tscbComplex_SelectedIndexChanged);
+                RefreshToolbarChoices(tscbColorBy, tscbColorBy_SelectedIndexChanged);
+            });
+        }
+        private static void RefreshToolbarChoices(ToolStripComboBox combo, EventHandler changed)
+        {
+            int selected = combo.SelectedIndex;
+            object[] items = combo.Items.Cast<object>().ToArray();
+            combo.SelectedIndexChanged -= changed;
+            combo.ComboBox.BeginUpdate();
+            try
+            {
+                combo.Items.Clear();
+                combo.Items.AddRange(items);
+                combo.SelectedIndex = selected;
             }
-            //
-            throw new NotSupportedException();
+            finally
+            {
+                combo.ComboBox.EndUpdate();
+                combo.SelectedIndexChanged += changed;
+            }
         }
         public double GetComplexAngleDeg()
         {
