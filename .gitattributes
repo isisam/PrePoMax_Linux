@@ -61,3 +61,6 @@
 #*.PDF   diff=astextplain
 #*.rtf   diff=astextplain
 #*.RTF   diff=astextplain
+
+# Keep the upstream generated NCalc formatting intact.
+ThirdParty/NCalc.RCM/** whitespace=-blank-at-eol,-blank-at-eof,-space-before-tab
