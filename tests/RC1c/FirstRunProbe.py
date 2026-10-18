@@ -20,7 +20,8 @@ assert os.path.normcase(str(pmx.work_directory)) == os.path.normcase(expected), 
 settings.CheckWorkingDirectory()
 settings.SetRegenerationWorkDirectory(cli_override)
 assert not settings.Solver.UsePmxFolderAsWorkDirectory  # upstream/RC1 preference retained
-assert settings.General.Language == 'en'
+from PrePoMax import GeneralSettings
+assert settings.General.Language == GeneralSettings().Language
 assert str(settings.Solver.CalculixDefaultSolverType) == 'Spooles'
 
 def roundtrip(value):

@@ -67,7 +67,7 @@ namespace PrePoMax
         // Properties                                                                                                               
         public string Language
         {
-            get { return _language ?? "en"; }
+            get { return _language ?? GetDefaultLanguage(); }
             set { _language = value == "zh-TW" ? "zh-TW" : "en"; }
         }
         public bool OpenLastFile { get { return _openLastFile; } set { _openLastFile = value; } }
@@ -113,9 +113,20 @@ namespace PrePoMax
         public void CheckValues()
         {
         }
+        private static string GetDefaultLanguage()
+        {
+            // UI language is independent of numeric culture. A persisted choice
+            // bypasses this fallback. Settings predating the field use it too.
+            string culture = System.Globalization.CultureInfo.CurrentUICulture.Name;
+            return culture.Equals("zh-TW", StringComparison.OrdinalIgnoreCase) ||
+                   culture.Equals("zh-HK", StringComparison.OrdinalIgnoreCase) ||
+                   culture.Equals("zh-Hant", StringComparison.OrdinalIgnoreCase) ||
+                   culture.StartsWith("zh-Hant-", StringComparison.OrdinalIgnoreCase)
+                   ? "zh-TW" : "en";
+        }
         public void Reset()
         {
-            _language = "en";
+            _language = GetDefaultLanguage();
             _openLastFile = false;
             _lastFileName = null;
             _saveResultsInPmx = true;

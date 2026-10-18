@@ -52,7 +52,8 @@ L10nChecks.CheckChoice(layup_view,'Symmetric','否')
 Translator.SetLanguage('en')
 assert (prop.DisplayName,prop.Category,prop.Description)==english
 general=GeneralSettings()
-assert general.Language=='en' # RC1 follows the English-only upstream default.
+ui_culture=CultureInfo.CurrentUICulture.Name.lower()
+assert general.Language==('zh-TW' if ui_culture in ['zh-tw','zh-hk','zh-hant'] or ui_culture.startswith('zh-hant-') else 'en')
 general.Language='zh-TW'
 language_view=ViewGeneralSettings(general)
 assert language_view.Language=='繁體中文'

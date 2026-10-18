@@ -117,8 +117,10 @@ namespace PrePoMax
             System.Threading.Thread.CurrentThread.CurrentCulture = ci;           // This thread
             System.Globalization.CultureInfo.DefaultThreadCurrentCulture = ci;   // All feature threads
             //
-            System.Threading.Thread.CurrentThread.CurrentUICulture = ci;
-            System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = ci;
+            // Preserve Windows UI culture for first-run language selection.
+            // Numeric formatting above remains invariant for solver/API data.
+            System.Globalization.CultureInfo.DefaultThreadCurrentUICulture =
+                System.Threading.Thread.CurrentThread.CurrentUICulture;
             // Set MessageBoxButtons to English defaults
             MessageBoxManager.OK = "OK";
             MessageBoxManager.Cancel = "Cancel";
