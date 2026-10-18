@@ -270,3 +270,6 @@ CLAUDE.md
 /_Codex/
 /Notes/
 /CaeMesh/Meshing/Gmsh/Sweep/Roadmap.md
+
+__pycache__/
+*.pyc

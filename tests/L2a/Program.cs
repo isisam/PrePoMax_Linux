@@ -9,7 +9,7 @@ static void Reject(Action action)
     try { action(); } catch (InvalidOperationException) { return; }
     throw new Exception("Expected native argument rejection");
 }
-Require(Marshal.SizeOf<PickResult>() == 56, "C ABI struct size");
+Require(Marshal.SizeOf<PickResult>() == 64, "C ABI struct size");
 // Copy isolation matters to import and later edits; mutate nested arrays
 // independently while preserving values and serialized model identities.
 var originalPart = new CaeMesh.MeshPart("copy", 1, [1], [1], [typeof(CaeMesh.LinearHexaElement)]);
@@ -51,17 +51,17 @@ using (var v = new Viewport(true, 1000, 700))
         v.Highlight(model.Plies[0].ElementIds); v.Render(); v.WritePng(Path.Combine(output, name + "-highlight.png"));
         if (path.Contains("dcb", StringComparison.OrdinalIgnoreCase))
         {
-            v.StandardView(3); v.Zoom(8); v.Display(true, false);
+            v.StandardView(1); v.Zoom(8); v.Display(true, false);
             v.WritePng(Path.Combine(output, name + "-ply-detail.png")); v.Display(true, true);
         }
-        v.Highlight([]); v.StandardView(3); v.Fit(); v.Render();
+        v.Highlight([]); v.StandardView(1); v.Fit(); v.Render();
         double maxZ = model.Model.Mesh.Nodes.Values.Max(n => n.Z);
         var e = model.Model.Mesh.Elements.Values.OrderBy(e => e.Id).First(e => e.NodeIds.Count(id => Math.Abs(model.Model.Mesh.Nodes[id].Z - maxZ) < 1e-8) >= 3);
         var nodes = e.NodeIds.Select(id => model.Model.Mesh.Nodes[id]).Where(n => Math.Abs(n.Z - maxZ) < 1e-8).ToArray();
         var world = new[] { nodes.Average(n => n.X), nodes.Average(n => n.Y), maxZ };
         var screen = v.Project(world[0], world[1], world[2]);
         var picked = v.Pick((int)Math.Round(screen[0]), (int)Math.Round(screen[1]));
-        Require(picked.Hit == 1 && picked.ElementId == e.Id && picked.FaceId >= 0, $"{name}: expected {e.Id}, got {picked.ElementId}");
+        Require(picked.Hit == 1 && picked.ElementId == e.Id && picked.FaceId == 5, $"{name}: expected {e.Id}/face5, got {picked.ElementId}/{picked.FaceId}");
         v.WritePng(Path.Combine(output, name + "-pick.png"));
         var missed = v.Pick(-1, -1); Require(missed.Hit == 0 && missed.ElementId == -1 && missed.NodeId == -1, "miss IDs");
         Reject(() => v.Highlight([long.MaxValue])); Reject(() => v.Scalars([1, 2])); Reject(() => v.Zoom(0));
@@ -84,11 +84,12 @@ using (var v = new Viewport(true, 1000, 700))
         long expected = 9_000_000_000L + type;
         long[] ids = Enumerable.Range(0, count).Select(i => 8_000_000_000L + i).ToArray();
         v.Load(ids, xyz.Take(count * 3).ToArray(), [expected], [type], [0, count], Enumerable.Range(0, count).Select(i => (long)i).ToArray());
-        v.StandardView(3); v.Render();
+        v.StandardView(1); v.Render();
         double x = type is 10 or 24 ? .15 : type is 13 or 26 or 5 or 22 ? .25 : .5;
         var p = v.Project(x, x, type is 9 or 23 or 5 or 22 ? 0 : 1);
         var hit = v.Pick((int)p[0], (int)p[1]);
-        Require(hit.Hit == 1 && hit.ElementId == expected && hit.FaceId >= 0, $"topology {type}");
+        int expectedFace = type is 10 or 24 or 13 or 26 ? 1 : type is 12 or 25 ? 5 : 0;
+        Require(hit.Hit == 1 && hit.ElementId == expected && hit.FaceId == expectedFace, $"topology {type} exact face");
         v.Scalars(Enumerable.Range(0, count).Select(i => (double)i).ToArray(), 0, count, "Node scalar", nodes: true);
         v.Highlight([ids[0]], nodes: true); v.WritePng(Path.Combine(output, $"topology-{type}.png")); v.Highlight([]);
         Reject(() => v.Load(ids, xyz.Take(count * 3).ToArray(), [expected], [99], [0, count], Enumerable.Range(0, count).Select(i => (long)i).ToArray()));
@@ -98,7 +99,7 @@ using (var v = new Viewport(true, 1000, 700))
     // Front-facing upper corner of a cube: closest node must preserve original ID.
     long[] cubeIds = Enumerable.Range(0, 8).Select(i => 101L + i * 7).ToArray();
     v.Load(cubeIds, hex.Take(24).ToArray(), [909], [12], [0,8], [0,1,2,3,4,5,6,7]);
-    v.StandardView(3); v.Render(); var corner = v.Project(0.001,0.001,1);
+    v.StandardView(1); v.Render(); var corner = v.Project(0.001,0.001,1);
     var nodePick = v.Pick((int)Math.Ceiling(corner[0]), (int)Math.Ceiling(corner[1]));
     Require(nodePick.NodeId == cubeIds[4] && nodePick.FaceId == 5, $"cube node/face pick: node={nodePick.NodeId}, face={nodePick.FaceId}");
     receipts.Add(new { check = "node_and_face", expectedNode = cubeIds[4], expectedFace = 5, nodePick });

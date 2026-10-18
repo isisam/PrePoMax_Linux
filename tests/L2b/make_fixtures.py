@@ -20,3 +20,11 @@ for name,coords,typ,order,point,face in [
     (out/(name+'.inp')).write_text(text)
     expected.append(dict(name=name,type=typ,order=[ids[i] for i in order],point=point,face=face))
 (out/'expected.json').write_text(json.dumps(expected,indent=2))
+text='*HEADING\n65 unstructured tetrahedra; colour groups must fall back to parts\n*NODE\n'
+cells=[]
+for i in range(65):
+    ids=[i*4+j+1 for j in range(4)]
+    for id,p in zip(ids,[(2*i,3*i,5*i),(2*i+1,3*i,5*i),(2*i,3*i+1,5*i),(2*i,3*i,5*i+1)]):text+=str(id)+','+','.join(map(str,p))+'\n'
+    cells.append(str(1000+i)+','+','.join(map(str,ids)))
+text+='*ELEMENT, TYPE=C3D4, ELSET=UNSTRUCTURED\n'+'\n'.join(cells)+'\n'
+(out/'unstructured_65.inp').write_text(text)

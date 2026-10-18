@@ -62,3 +62,4 @@
 #*.rtf   diff=astextplain
 #*.RTF   diff=astextplain
 build/*.sh text eol=lf
+Licenses/linux-cache/* -text

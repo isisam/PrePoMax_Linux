@@ -66,7 +66,7 @@ fails if a shipped DLL/SO has no original license text. Package notices include:
 | SkiaSharp / HarfBuzzSharp | NuGet LICENSE and third-party notices |
 | Tmds.DBus / MicroCom | Original project MIT license |
 | UnitsNet / NCalc / OptimizedPriorityQueue | Original project license |
-| QuantumConcepts | Original CodeLibrary license when shipped |
+| QuantumConcepts STLdotNET 1.3.1 | Original 2013 AGPL-3.0 license; local STL/ source accompanies binary |
 | ThreeMF | PrePoMax GPL plus original 3MF Consortium binding BSD notice |
 | .NET runtime | Exact runtime pack LICENSE and THIRD-PARTY-NOTICES |
 

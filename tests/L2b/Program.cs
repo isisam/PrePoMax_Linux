@@ -8,6 +8,9 @@ static void Require(bool ok,string message){if(!ok)throw new Exception(message);
 static void Reject(Action action){try{action();}catch(InvalidOperationException){return;}throw new Exception("Expected rejection");}
 var output=Path.GetFullPath(args[0]);Directory.CreateDirectory(output);var receipts=new List<object>();
 Require(Marshal.SizeOf<PickResult>()==64,"0.2 ABI layout");
+var bounded=ViewerModel.Open(Path.Combine(args[1],"unstructured_65.inp"));
+Require(bounded.Plies.Count<=ViewerModel.MaxColourGroups&&bounded.PlySource.StartsWith("Per-part"),"unstructured mesh must use bounded per-part palette");
+Console.WriteLine("PASS bounded no-layup per-part colour fallback");
 using(var view=new Viewport(backend:3))
 {
     using var fixture=JsonDocument.Parse(File.ReadAllText(Path.Combine(args[1],"expected.json")));
@@ -37,7 +40,9 @@ using(var view=new Viewport(backend:3))
     view.ActorStyle(7,false,.4,.5,.6);view.Render();var revealed=view.Pick((int)center[0],(int)center[1]);
     Require(revealed.ActorId==0&&revealed.ElementId==101&&revealed.FaceId==5,"hidden front actor reveals rear");
     view.ActorStyle(7,true,.2,.8,.5,.5,false);view.ActorScalars(7,Enumerable.Range(0,8).Select(x=>(double)x).ToArray(),0,7,"Actor node value");view.ContourBands(8);
-    view.Deformation(Enumerable.Repeat(.1,24).ToArray(),2,7);view.Deformation(null,0,7);view.ActorHighlight(7,[202]);view.WritePng(Path.Combine(output,"actors.png"));view.Highlight([]);
+    view.Deformation(Enumerable.Repeat(.1,24).ToArray(),2,7);view.Deformation(Enumerable.Repeat(.1,24).ToArray(),2,7);view.Render();
+    var moved=view.Project(.7,.7,3.2);Require(Math.Abs(view.Pick((int)moved[0],(int)moved[1]).Z-3.2)<1e-8,"deformation is absolute, not cumulative");
+    view.Deformation(null,0,7);view.ActorHighlight(7,[202]);view.WritePng(Path.Combine(output,"actors.png"));view.Highlight([]);
     view.Perspective(true);view.Render();center=view.Project(.5,.5,3);var perspective=view.Pick((int)center[0],(int)center[1]);
     Require(perspective.ActorId==7&&perspective.ElementId==202&&perspective.FaceId==5,"perspective occlusion pick");
     using(var second=new Viewport(backend:3))
@@ -47,9 +52,22 @@ using(var view=new Viewport(backend:3))
         Require(view.Pick((int)center[0],(int)center[1]).ElementId==202,"two-view state isolation");
     }
     view.AnimateStandardBegin(3);view.AnimateStandardStep(.5);view.AnimateStandardStep(1);view.Render();view.RemoveActor(7);Reject(()=>view.RemoveActor(7));
+    view.StandardView(1);view.AnimateStandardBegin(2);view.AnimateStandardStep(.5);var middle=view.Camera;
+    double distance=Math.Sqrt(middle.Position.Zip(middle.Focal,(a,b)=>(a-b)*(a-b)).Sum());Require(distance>1&&middle.Up.All(double.IsFinite),"180-degree camera animation must not collapse through focal point");
+    view.AnimateStandardStep(1);var end=view.Camera;Require(end.Position[2]<end.Focal[2]&&end.Up[1]>.99,"animation exact Windows back endpoint");
     receipts.Add(new{check="zoom_occlusion_perspective_two_views_callbacks_animation",before,after,occluded,revealed,perspective,callbacks});
     Console.WriteLine("PASS zoom, multi-actor styles, deformation, occlusion, perspective, two views, callbacks, animation");
     Console.WriteLine(view.GlInfo);
+    foreach(string path in args.Skip(2))
+    {
+        var model=ViewerModel.Open(path);model.Show(view);view.StandardView(1);view.Render();
+        double z=model.Model.Mesh.Nodes.Values.Max(n=>n.Z);
+        var element=model.Model.Mesh.Elements.Values.OrderBy(e=>e.Id).First(e=>e.NodeIds.Count(id=>Math.Abs(model.Model.Mesh.Nodes[id].Z-z)<1e-8)>=4);
+        var top=element.NodeIds.Select(id=>model.Model.Mesh.Nodes[id]).Where(n=>Math.Abs(n.Z-z)<1e-8).ToArray();
+        var point=view.Project(top.Average(n=>n.X),top.Average(n=>n.Y),z);var hit=view.Pick((int)Math.Round(point[0]),(int)Math.Round(point[1]));
+        Require(hit.Hit==1&&hit.ElementId==element.Id&&hit.FaceId==5,Path.GetFileName(path)+" exact face 5");
+        receipts.Add(new{model=Path.GetFileName(path),nodes=model.NodeIds.Length,elements=model.ElementIds.Length,hit});Console.WriteLine($"PASS {Path.GetFileName(path)} element={hit.ElementId} exact face=5");
+    }
 }
 foreach(int nz in new[]{10,50})
 {

@@ -4,6 +4,7 @@ using Avalonia.Input;
 using Avalonia.OpenGL;
 using Avalonia.OpenGL.Controls;
 using Avalonia.Threading;
+using Avalonia.Media;
 using System.Diagnostics;
 using Vtkmax.Interop;
 
@@ -19,12 +20,15 @@ public sealed class GenericVtkView : OpenGlControlBase, IViewportHost
     private int w, h;
     private long inputAt;
     public GenericVtkView() { Focusable = true; }
+    public override void Render(DrawingContext context)
+    { context.FillRectangle(Brushes.Transparent,new Rect(Bounds.Size));base.Render(context); }
     public void Execute(Action<Viewport> action) { actions.Enqueue(action); RequestNextFrameRendering(); }
     protected override void OnOpenGlInit(GlInterface gl)
     {
+        if(GlVersion.Type!=GlProfileType.OpenGL)throw new PlatformNotSupportedException("VTK requires desktop OpenGL; select the X11 embedding backend on this platform.");
         View = new Viewport(backend: 2);
         View.RenderRequested += RequestNextFrameRendering;
-        Console.WriteLine("EMBED generic current-context thread=" + Environment.CurrentManagedThreadId);
+        Console.WriteLine("EMBED generic current-context version="+GlVersion+" thread=" + Environment.CurrentManagedThreadId);
         Dispatcher.UIThread.Post(() => Ready?.Invoke());
     }
     protected override void OnOpenGlRender(GlInterface gl, int fb)

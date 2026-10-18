@@ -1,0 +1,30 @@
+{
+  "https://raw.githubusercontent.com/AvaloniaUI/Avalonia/11.3.22/licence.md": {
+    "file": "c8b7f7cfcf7c40a015271af12c149d018ef498c73586af8cfb5cf80904327cac",
+    "sha256": "213814d306090074d234d760239ff0f67eb9b8d20eefb4d5631bb39dbe0b769b"
+  },
+  "https://raw.githubusercontent.com/BlueRaja/High-Speed-Priority-Queue-for-C-Sharp/master/LICENSE.txt": {
+    "file": "3b6f510e633ca712837c596f33a08b3aba488298a0be89f35017133e0d0c324e",
+    "sha256": "ba23d37622b5049b8c15d4902a5dbe33482194b14a18612c9202584d93b55f1f"
+  },
+  "https://raw.githubusercontent.com/QuantumConcepts/STLdotNET/9c6d0e36e84901106634f2145306fadfe6be2457/LICENSE.txt": {
+    "file": "a4dfe53e9a75a678c122e451f2fbab7ab26067b8c374cd9126622541d9379500",
+    "sha256": "57c8ff33c9c0cfc3ef00e650a1cc910d7ee479a8bc509f6c9209a7c2a11399d6"
+  },
+  "https://raw.githubusercontent.com/angularsen/UnitsNet/UnitsNet/4.89.1/LICENSE": {
+    "file": "89bed767a2998251364c6c584777b295c9bde5575576d8a5932b54bbb7c76e1e",
+    "sha256": "79d7ab398a49521f89786850f50f4d4fed33c5bb70b97b109032883edb060fdf"
+  },
+  "https://raw.githubusercontent.com/kekekeks/MicroCom/4b8a38f773c109bad558ee3713d9f16d80776e42/LICENSE": {
+    "file": "fca95b74cbbc69c6be62e7002aaf5ba68bde9e7005846829917e7fa4c193a920",
+    "sha256": "6ee769c9ac4dac9abb16b98b1341e9528ff9f4ab685481410d3376d14148f3a9"
+  },
+  "https://raw.githubusercontent.com/ncalc/ncalc/master/LICENSE": {
+    "file": "b81b9a371f8b5b292ab07896e24cfb177eda6705314b7ea67706e2ec4749217d",
+    "sha256": "42ada0a669c9bdd4e6b3480ceb052a1476b1d24a6ed7ea6f0d0705ee1e3f6120"
+  },
+  "https://raw.githubusercontent.com/tmds/Tmds.DBus/rel/0.21.3/COPYING": {
+    "file": "b3a2c62a6526a19b90c11705ff780a3b17384a543dbd2be411e64875c28a584d",
+    "sha256": "aca3b49277abcc7886ccb2f115603a9f5b15fc3f96019a10c00f2974098b210c"
+  }
+}

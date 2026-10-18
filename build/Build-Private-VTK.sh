@@ -11,7 +11,7 @@ fi
 sha256sum "$archive"
 echo "36c98e0da96bb12a30fe53708097aa9492e7b66d5c3b366e1c8dc251e2856a02  $archive" | sha256sum -c -
 if [[ ! -d "$root/VTK-$version" ]]; then tar -xzf "$archive" -C "$root"; fi
-cmake -S "$root/VTK-$version" -B "$root/build" -G Ninja \
+nice -n 19 cmake -S "$root/VTK-$version" -B "$root/build" -G Ninja \
   -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$root/install" \
   -DBUILD_SHARED_LIBS=OFF -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
   -DCMAKE_CXX_VISIBILITY_PRESET=hidden -DCMAKE_C_VISIBILITY_PRESET=hidden \

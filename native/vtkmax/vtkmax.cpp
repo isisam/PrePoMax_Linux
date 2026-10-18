@@ -4,7 +4,9 @@
 #include "vtkmax.h"
 #include <vtkActor.h>
 #include <vtkCamera.h>
-#include <vtkCameraInterpolator.h>
+#include <vtkQuaternionInterpolator.h>
+#include <vtkMath.h>
+#include <vtkMatrix4x4.h>
 #include <vtkCell.h>
 #include <vtkCellData.h>
 #include <vtkCellPicker.h>
@@ -31,6 +33,7 @@
 #include <vtkGenericRenderWindowInteractor.h>
 #include <vtkOpenGLState.h>
 #include <vtk_glad.h>
+#include <vtkglad/include/glad/egl.h>
 #include <vtkEGLRenderWindow.h>
 #ifdef VTKMAX_HAS_X11
 #include <vtkXOpenGLRenderWindow.h>
@@ -71,7 +74,7 @@ struct vm_view : actor_state {
     vtkNew<vtkActor> highlight;
     vtkSmartPointer<vtkRenderWindowInteractor> interactor;
     std::unordered_map<int64_t,std::unique_ptr<actor_state>> actors;
-    vtkNew<vtkCameraInterpolator> animation;
+    vtkNew<vtkQuaternionInterpolator> animation;
     vtkNew<vtkCamera> animation_start;
     vtkNew<vtkCamera> animation_end;
     bool animating=false;
@@ -86,6 +89,11 @@ struct vm_view : actor_state {
 actor_state* find_actor(vm_view* v,int64_t id) {
     require(v,"null view");if(id==0)return v;
     auto it=v->actors.find(id);require(it!=v->actors.end(),"unknown actor ID");return it->second.get();
+}
+int publish_pick(vm_view* v,vm_pick_result* r) {
+    r->sequence=v->last.sequence+1;v->last=*r;
+    if(v->callback)v->callback(r,v->callback_user);
+    return r->hit;
 }
 class ClickStyle : public vtkInteractorStyleTrackballCamera {
 public:
@@ -125,7 +133,12 @@ vm_view* vm_create_backend(int32_t backend,int32_t w,int32_t h) {
             g->SetOwnContext(0);g->SetReadyForRendering(true);g->SetIsCurrent(true);
             g->SetSupportsOpenGL(1);g->SetIsDirect(1);g->SetFrameBlitModeToBlitToCurrent();
             v->window=g;
-        } else if(backend==3) v->window=vtkSmartPointer<vtkEGLRenderWindow>::New();
+        } else if(backend==3) {
+            // Explicit subclass creation bypasses vtkOpenGLRenderWindow::New's
+            // runtime backend probe, which normally loads core EGL entry points.
+            require(gladLoaderLoadEGL(EGL_NO_DISPLAY)!=0,"system EGL loader unavailable");
+            v->window=vtkSmartPointer<vtkEGLRenderWindow>::New();
+        }
         else {
 #ifdef VTKMAX_HAS_X11
             v->window=vtkSmartPointer<vtkXOpenGLRenderWindow>::New();
@@ -263,6 +276,7 @@ int32_t vm_actor_scalars(vm_view* v,int64_t actor_id,int32_t association,const d
         else {m->grid->GetCellData()->SetScalars(a);m->mapper->SetScalarModeToUseCellData();}
         if(lo==hi) hi=lo+1;
         v->lut->SetTableRange(lo,hi); m->mapper->SetLookupTable(v->lut);
+        m->mapper->InterpolateScalarsBeforeMappingOn();
         m->mapper->SetScalarRange(lo,hi); m->mapper->ScalarVisibilityOn();
         v->bar->SetTitle(title?title:""); v->bar->VisibilityOn(); return 0; } CATCH
 }
@@ -309,15 +323,26 @@ int32_t vm_animate_standard_begin(vm_view* v,int32_t view) {
         if(vm_standard_view(v,view)<0)return -1;
         v->animation_end->DeepCopy(v->renderer->GetActiveCamera());
         v->animation->Initialize();v->animation->SetInterpolationTypeToLinear();
-        v->animation->AddCamera(0,v->animation_start);v->animation->AddCamera(1,v->animation_end);
+        double a[3][3],b[3][3],qa[4],qb[4];
+        for(int i=0;i<3;++i)for(int j=0;j<3;++j){a[i][j]=v->animation_start->GetViewTransformMatrix()->GetElement(i,j);b[i][j]=v->animation_end->GetViewTransformMatrix()->GetElement(i,j);}
+        vtkMath::Matrix3x3ToQuaternion(a,qa);vtkMath::Matrix3x3ToQuaternion(b,qb);
+        double dot=0;for(int i=0;i<4;++i)dot+=qa[i]*qb[i];if(dot<0)for(double& x:qb)x=-x;
+        v->animation->AddQuaternion(0,qa);v->animation->AddQuaternion(1,qb);
         v->renderer->GetActiveCamera()->DeepCopy(v->animation_start);v->animating=true;return 0;} CATCH
 }
 int32_t vm_animate_standard_step(vm_view* v,double t) {
     TRY {VIEW;require(v->animating&&std::isfinite(t)&&t>=0&&t<=1,"invalid animation fraction/state");
-        // CameraInterpolator uses quaternion orientation interpolation; preserve both
-        // position and focal point while interpolating zoom, as in vtkControl.
+        // vtkControl.cs AnimateCamera: shortest-arc quaternion orientation, focal
+        // point/pan and zoom interpolation. A frame clock is supplied by the host.
         if(t==1){v->renderer->GetActiveCamera()->DeepCopy(v->animation_end);v->animating=false;}
-        else v->animation->InterpolateCamera(t,v->renderer->GetActiveCamera());
+        else {
+            double q[4],rotation[3][3],fp[3],pos[3],up[3];v->animation->InterpolateQuaternion(t,q);vtkMath::QuaternionToMatrix3x3(q,rotation);
+            double distance=(1-t)*v->animation_start->GetDistance()+t*v->animation_end->GetDistance();
+            for(int i=0;i<3;++i){fp[i]=(1-t)*v->animation_start->GetFocalPoint()[i]+t*v->animation_end->GetFocalPoint()[i];pos[i]=fp[i]+distance*rotation[2][i];up[i]=rotation[1][i];}
+            auto c=v->renderer->GetActiveCamera();c->SetFocalPoint(fp);c->SetPosition(pos);c->SetViewUp(up);
+            c->SetParallelScale((1-t)*v->animation_start->GetParallelScale()+t*v->animation_end->GetParallelScale());
+            c->SetViewAngle((1-t)*v->animation_start->GetViewAngle()+t*v->animation_end->GetViewAngle());
+        }
         v->renderer->ResetCameraClippingRange();return 0;} CATCH
 }
 int32_t vm_rotate(vm_view* v,double az,double el) {
@@ -354,11 +379,11 @@ int32_t vm_project(vm_view* v,const double* xyz,double* out) {
 int32_t vm_pick(vm_view* v,int32_t x,int32_t y,vm_pick_result* r) {
     TRY { VIEW;require(r,"null pick output");*r={-1,-1,-1,0,0,0,0,0,-1};
         require(v->rendered,"render before picking");auto size=v->window->GetSize();
-        if(x<0||y<0||x>=size[0]||y>=size[1]) return 0;
+        if(x<0||y<0||x>=size[0]||y>=size[1]) return publish_pick(v,r);
         vtkNew<vtkCellPicker> p;p->SetTolerance(0.0005);p->PickFromListOn();
         if(v->actor->GetVisibility()){p->AddPickList(v->actor);p->AddLocator(v->locator);}
         for(auto& pair:v->actors) if(pair.second->actor->GetVisibility()){p->AddPickList(pair.second->actor);p->AddLocator(pair.second->locator);}
-        if(!p->Pick(x,y,0,v->renderer)||p->GetCellId()<0) return 0;
+        if(!p->Pick(x,y,0,v->renderer)||p->GetCellId()<0) return publish_pick(v,r);
         actor_state* mesh=v;r->actor_id=0;
         for(auto& pair:v->actors)if(pair.second->actor==p->GetActor()){mesh=pair.second.get();r->actor_id=pair.first;break;}
         auto id=p->GetCellId();require(id<static_cast<vtkIdType>(mesh->elements.size()),"unexpected picker cell mapping");
@@ -381,7 +406,7 @@ int32_t vm_pick(vm_view* v,int32_t x,int32_t y,vm_pick_result* r) {
                 best=d;bestWorld=worlddist;r->node_id=mesh->nodes[ni];
             }
         }
-        r->sequence=v->last.sequence+1;v->last=*r;if(v->callback)v->callback(r,v->callback_user);return 1;
+        return publish_pick(v,r);
     } CATCH
 }
 int32_t vm_write_png(vm_view* v,const char* path) {

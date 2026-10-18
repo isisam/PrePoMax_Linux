@@ -16,8 +16,16 @@ target=deps['targets'][deps['runtimeTarget']['name']]
 nuget=Path.home()/'.nuget/packages'
 
 def download(url):
+    index_file=repo/'Licenses/linux-cache/index.json'
+    if index_file.exists():
+        index=json.loads(index_file.read_text())
+        if url in index:
+            entry=index[url];data=(index_file.parent/entry['file']).read_bytes()
+            if hashlib.sha256(data).hexdigest()!=entry['sha256']:raise RuntimeError('Vendored license hash mismatch: '+url)
+            return data.decode('utf-8-sig')
     cached=a.cache/hashlib.sha256(url.encode()).hexdigest()
     if not cached.exists():
+        print('License source:',url,flush=True)
         req=urllib.request.Request(url,headers={'User-Agent':'PrePoMax-license-packager'})
         with urllib.request.urlopen(req,timeout=45) as r: data=r.read()
         if b'<html' in data.lower() or len(data)<80: raise RuntimeError('Not a license text: '+url)
@@ -26,10 +34,10 @@ def download(url):
 
 # Legacy packages have dead license URLs. These are original project sources.
 fallback={
- 'ncalc':'https://raw.githubusercontent.com/sheetsync/NCalc/master/LICENSE',
+ 'ncalc':'https://raw.githubusercontent.com/ncalc/ncalc/master/LICENSE',
  'optimizedpriorityqueue':'https://raw.githubusercontent.com/BlueRaja/High-Speed-Priority-Queue-for-C-Sharp/master/LICENSE.txt',
  'unitsnet':'https://raw.githubusercontent.com/angularsen/UnitsNet/UnitsNet/4.89.1/LICENSE',
- 'microcom.runtime':'https://raw.githubusercontent.com/AvaloniaUI/MicroCom/0.11.0/LICENSE',
+ 'microcom.runtime':'https://raw.githubusercontent.com/kekekeks/MicroCom/4b8a38f773c109bad558ee3713d9f16d80776e42/LICENSE',
  'tmds.dbus.protocol':'https://raw.githubusercontent.com/tmds/Tmds.DBus/rel/0.21.3/COPYING',
 }
 owners={}; rows=[]; records=[]
@@ -68,15 +76,20 @@ runtime_text='\n\n'.join(p.read_text(encoding='utf-8-sig') for p in pkg.iterdir(
 assert runtime_text,'runtime license missing'
 runtime_files={p.name for p in (pkg/'runtimes/linux-x64/native').glob('*') if (app/p.name).is_file()}
 runtime_files|={p.name for p in (pkg/'runtimes/linux-x64/lib/net10.0').glob('*.dll') if (app/p.name).is_file()}
+runtime_files-=owners.keys() # package overrides (e.g. compatibility formatter) have their own version/license
 add('.NET-runtime',runtime,runtime_files,runtime_text,'https://github.com/dotnet/runtime/tree/v'+runtime)
 
 gpl=(repo/'LICENSE').read_text(encoding='utf-8-sig')
-project_files={p.name for p in app.glob('*.dll') if p.stem in {x.stem for x in repo.glob('*/*.csproj')} or p.stem in ('ThreeMF','prepomax-cli')}
+assemblies=set()
+for project in repo.glob('*/*.csproj'):
+    names=[e.text for e in ET.parse(project).getroot().iter() if e.tag.split('}')[-1]=='AssemblyName']
+    assemblies.add(names[0] if names else project.stem)
+project_files={p.name for p in app.glob('*.dll') if p.stem in assemblies}
 # QuantumConcepts is an upstream supplied reference, not part of .NET or GPL core.
 quantum={p.name for p in app.glob('QuantumConcepts*.dll')}
 if quantum:
-    text=download('https://raw.githubusercontent.com/QuantumConcepts/CodeLibrary/master/LICENSE')
-    add('QuantumConcepts','upstream-reference',quantum,text,'https://github.com/QuantumConcepts/CodeLibrary')
+    text=download('https://raw.githubusercontent.com/QuantumConcepts/STLdotNET/9c6d0e36e84901106634f2145306fadfe6be2457/LICENSE.txt')
+    add('QuantumConcepts-STLdotNET','1.3.1',quantum,text,'https://github.com/QuantumConcepts/STLdotNET; original 2013 AGPL-3.0 license; local STL/ sources included')
 project_files-=quantum
 add('PrePoMax-RCM','L2b',project_files,gpl,'Corresponding-source archive supplied alongside binaries')
 if (app/'ThreeMF.dll').exists():
@@ -99,5 +112,5 @@ if unknown: raise RuntimeError('Unlicensed shipped binaries: '+', '.join(unknown
 (dst/'README.md').write_text('# Shipped binary licenses\n\n| Component/version | Shipped files | License | Source |\n|---|---|---|---|\n'+'\n'.join(rows)+'\n')
 (app/'THIRD-PARTY-NOTICES.txt').write_text('\n\n'.join(r['component']+' '+r['version']+'\nSource: '+r['source']+'\nFiles: '+', '.join(r['files'])+'\n'+(dst/r['license']).read_text() for r in records))
 (app/'license-inventory.json').write_text(json.dumps(records,indent=2))
-(app/'CORRESPONDING-SOURCE.txt').write_text('GPL-3.0-or-later section 6: binaries are accompanied by the complete corresponding source archive prepomax-l2b-source.tar.gz, including build/installation scripts and the exact VTK source archive. This is the source distribution route under section 6(a), not an unbacked promise of a future download. Anyone receiving these binaries may obtain, copy and redistribute that archive from the same delivery directory without additional charge. Keep this archive with redistributed binary packages. No contact address or three-year written offer is asserted. See SOURCE_REVISION.txt for revision and dirty status.\n')
+(app/'CORRESPONDING-SOURCE.txt').write_text('GPL-3.0-or-later section 6: binaries are accompanied by prepomax-l2b-source.tar.gz containing PrePoMax, vtkmax, local third-party sources, build/installation scripts and the exact VTK source archive (section 6(a)). Upstream package sources are offered from the repository servers identified beside the binaries in SOURCE-ACCESS.md and SOURCE-REPOSITORIES.json (section 6(d)); the project archive does not contain all upstream dependency source trees. Anyone receiving these binaries may obtain, copy and redistribute that archive from the same delivery directory without additional charge. Keep this archive with redistributed binary packages. No contact address or three-year written offer is asserted. See SOURCE_REVISION.txt for revision and dirty status.\n')
 print('PASS license coverage:',len(owners),'binary names,',len(records),'components')

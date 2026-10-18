@@ -22,6 +22,9 @@ public sealed class ViewerModel
     public FeResults? Results { get; private set; }
     public double[]? Displacement { get; private set; }
     public Dictionary<string, double[]> Contours { get; } = [];
+    public int ResultsStep { get; private set; }
+    public int ResultsIncrement { get; private set; }
+    public double ResultsTime { get; private set; }
     public const int MaxColourGroups = 64;
     private static readonly SemaphoreSlim importGate = new(1, 1);
     public static async Task<ViewerModel> OpenAsync(string path, IProgress<string>? progress = null, CancellationToken cancellation = default)
@@ -42,6 +45,7 @@ public sealed class ViewerModel
             try
             {
                 var controller = new Controller(new ProgressView(progress));
+                controller.RegenerationWorkDirectory=Path.GetDirectoryName(Path.GetFullPath(path));
                 controller.Open(Path.GetFullPath(path));
                 if (error != null) throw new InvalidDataException("PMX read failed", error);
                 if (controller.Model?.Mesh == null) throw new InvalidDataException("PMX contains no mesh");
@@ -90,12 +94,13 @@ public sealed class ViewerModel
                 // nonconstant centroid coordinates. DCB stacking is Y, not Z.
                 // These are display groups only; no CompositeLayup data are invented.
                 double Coord(int id, int a) { var n = model.Mesh.Nodes[id]; return a == 0 ? n.X : a == 1 ? n.Y : n.Z; }
-                var axes = Enumerable.Range(0, 3).Select(a => new { Axis = a, Groups = elements.GroupBy(e => Math.Round(e.NodeIds.Average(id => Coord(id, a)), 8)).OrderBy(g => g.Key).ToArray() }).ToArray();
-                var chosen = axes.Where(a => a.Groups.Length > 1).OrderBy(a => a.Groups.Length).FirstOrDefault() ?? axes[2];
-                string axisName = new[] { "X", "Y", "Z" }[chosen.Axis];
-                if (chosen.Groups.Length <= MaxColourGroups)
+                var axes = Enumerable.Range(0, 3).Select(a => new { Axis = a, Count = elements.Select(e => Math.Round(e.NodeIds.Average(id => Coord(id, a)), 8)).Distinct().Take(MaxColourGroups + 1).Count() }).ToArray();
+                var chosen = axes.Where(a => a.Count > 1 && a.Count <= MaxColourGroups).OrderBy(a => a.Count).FirstOrDefault();
+                if (chosen != null)
                 {
-                    foreach (var group in chosen.Groups) Plies.Add(new($"{axisName} layer {group.Key:G6} (display)", group.Select(e => (long)e.Id).ToArray()));
+                    string axisName = new[] { "X", "Y", "Z" }[chosen.Axis];
+                    foreach (var group in elements.GroupBy(e => Math.Round(e.NodeIds.Average(id => Coord(id, chosen.Axis)), 8)).OrderBy(g => g.Key))
+                        Plies.Add(new($"{axisName} layer {group.Key:G6} (display)", group.Select(e => (long)e.Id).ToArray()));
                     PlySource = $"Geometric {axisName} layers (display only; INP has no layup metadata)";
                 }
             }
@@ -124,6 +129,7 @@ public sealed class ViewerModel
     {
         progress?.Report("Reading FRD " + Path.GetFileName(path));
         var r = FrdFileReader.Read(Path.GetFullPath(path)) ?? throw new InvalidDataException("FRD read failed");
+        r.ComputeVisibleFieldInvariants();
         if (r.Mesh.Nodes.Count != NodeIds.Length || r.Mesh.Elements.Count != ElementIds.Length) throw new InvalidDataException("FRD mesh size differs");
         double coordinateTolerance=Math.Max(1,Coordinates.Select(Math.Abs).Max())*1e-5; // ASCII FRD has six significant digits.
         foreach (var id in NodeIds)
@@ -135,18 +141,27 @@ public sealed class ViewerModel
         foreach (var id in ElementIds)
             if (!r.Mesh.Elements.TryGetValue((int)id,out var e) || !e.NodeIds.SequenceEqual(Model.Mesh.Elements[(int)id].NodeIds))
                 throw new InvalidDataException($"FRD connectivity differs at element {id}");
-        var increments=r.GetAllExistingIncrementIds(); int step=increments.Keys.Max(), inc=increments[step].Max();
+        // A failed solve may append a DISP-only diagnostic increment. Select the
+        // latest increment containing both S and U; never reuse a previous range.
+        var common=r.GetAllFieldData().Where(f=>f.Name==FOFieldNames.Stress)
+            .Where(f=>r.GetFieldData(FOFieldNames.Disp,FOComponentNames.U1,f.StepId,f.StepIncrementId,true).Valid)
+            .OrderBy(f=>f.StepId).ThenBy(f=>f.StepIncrementId).LastOrDefault()
+            ?? throw new InvalidDataException("FRD has no common S/U increment");
+        int step=common.StepId,inc=common.StepIncrementId;
         var ids=NodeIds.Select(i=>(int)i).ToArray();
         double[] Values(string field, string component)
         {
+            if(!r.GetAllFieldNames().Contains(field))throw new InvalidDataException($"FRD has no {field} field");
             var data=r.GetFieldData(field,component,step,inc) ?? throw new InvalidDataException($"FRD missing {field}/{component}");
-            return r.GetValues(data,ids).Select(x=>(double)x).ToArray();
+            var values=r.GetValues(data,ids) ?? throw new InvalidDataException($"FRD has no {field}/{component} values");
+            return values.Select(x=>(double)x).ToArray();
         }
         var u1=Values(FOFieldNames.Disp,FOComponentNames.U1); var u2=Values(FOFieldNames.Disp,FOComponentNames.U2); var u3=Values(FOFieldNames.Disp,FOComponentNames.U3);
         var displacement=new double[3*ids.Length];
         for(int i=0;i<ids.Length;i++){displacement[3*i]=u1[i];displacement[3*i+1]=u2[i];displacement[3*i+2]=u3[i];}
         var s=Values(FOFieldNames.Stress,FOComponentNames.Mises); var u=Values(FOFieldNames.Disp,FOComponentNames.All);
         Contours.Clear();Contours.Add("S (Mises)",s);Contours.Add("U (magnitude)",u);Displacement=displacement;Results=r;
+        ResultsStep=step;ResultsIncrement=inc;ResultsTime=common.Time;
         progress?.Report($"FRD ready: step {step}, increment {inc}");
     }
     public void ShowContour(Viewport view,string field,double deformationScale=0)

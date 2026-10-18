@@ -76,6 +76,8 @@ public sealed class Viewport : IDisposable
     public void Perspective(bool enabled) => Check(Native.vm_perspective(Handle, enabled ? 1 : 0));
     public void AnimateStandardBegin(int view) => Check(Native.vm_animate_standard_begin(Handle, view));
     public void AnimateStandardStep(double fraction) => Check(Native.vm_animate_standard_step(Handle, fraction));
+    public (double[] Position,double[] Focal,double[] Up) Camera
+    { get { double[] p=new double[3],f=new double[3],u=new double[3];Check(Native.vm_camera(Handle,p,f,u));return(p,f,u); } }
     public void Display(bool surface, bool edges) => Check(Native.vm_display(Handle, surface ? 1 : 0, edges ? 1 : 0));
     public void Scalars(double[]? values, double min = 0, double max = 1, string title = "Ply", bool nodes = false) =>
         Check(Native.vm_scalars(Handle, nodes ? 1 : 0, values, values?.Length ?? 0, min, max, title));
@@ -119,6 +121,7 @@ internal static class Native
     [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)] internal static extern int vm_perspective(IntPtr view, int enabled);
     [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)] internal static extern int vm_animate_standard_begin(IntPtr view, int standard);
     [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)] internal static extern int vm_animate_standard_step(IntPtr view, double fraction);
+    [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)] internal static extern int vm_camera(IntPtr view, [Out] double[] position, [Out] double[] focal, [Out] double[] up);
     // Every entry point is Cdecl; native strings use UTF-8, IDs are int64 on all platforms.
     [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)] internal static extern int vm_abi_version();
     [DllImport(Lib, CallingConvention = CallingConvention.Cdecl)] internal static extern IntPtr vm_last_error();
