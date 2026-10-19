@@ -4,6 +4,7 @@
     <Compile Include="SelectionWindows.cs"/>
     <Compile Include="SelectionRegions.cs"/>
     <Compile Include="HistoryWindows.cs"/>
+    <Compile Include="KeywordWindows.cs"/>
     <Reference Include="System.Windows.Forms"/><Reference Include="System.Drawing"/><Reference Include="System.Web.Extensions"/>
     <Reference Include="PrePoMax.Core"><HintPath>../../PrePoMax/bin/x64/Release/lib/PrePoMax.Core.dll</HintPath></Reference>
     <Reference Include="PrePoMax.ViewContracts"><HintPath>../../PrePoMax/bin/x64/Release/lib/PrePoMax.ViewContracts.dll</HintPath></Reference>

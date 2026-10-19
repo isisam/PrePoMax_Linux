@@ -23,6 +23,7 @@ static partial class SelectionWindows
         try
         {
             CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
+            if(args[0]=="--keywords")return Keywords(args[1],args[2]);
             if(args[0]=="--regions")return Regions(args[1],args[2]);
             var host=new SelectionHost();var c = new Controller(host); c.Open(args[0]);
             using (var form = new Form { ClientSize = new System.Drawing.Size(1000,700), ShowInTaskbar = false })

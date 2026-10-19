@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType><TargetFramework>net10.0</TargetFramework>
+    <Version>0.4.0</Version>
     <ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable><LangVersion>12</LangVersion>
     <AvaloniaUseCompiledBindingsByDefault>false</AvaloniaUseCompiledBindingsByDefault>
     <EnableUnsafeBinaryFormatterSerialization>true</EnableUnsafeBinaryFormatterSerialization>
@@ -9,6 +10,7 @@
     <Content Include="lang/zh-TW.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <PackageReference Include="Avalonia.Desktop" Version="11.3.22" />
     <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.22" />
+    <PackageReference Include="Avalonia.AvaloniaEdit" Version="11.3.0" />
     <PackageReference Include="System.Runtime.Serialization.Formatters" Version="9.0.0" />
     <ProjectReference Include="../PrePoMax.Viewer/PrePoMax.Viewer.csproj" />
     <ProjectReference Include="../PrePoMax.ViewModels/PrePoMax.ViewModels.csproj" />

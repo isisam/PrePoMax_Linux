@@ -23,10 +23,11 @@ public sealed partial class MainWindow
         {
             undoMenu.Click+=async (_,_)=>await ChangeHistory(false);
             redoMenu.Click+=async (_,_)=>await ChangeHistory(true);
+            keywordMenu.Click+=(_,_)=>OpenKeywordViewer();
             historyMenuBound=true;
         }
         SetHistoryActions(undoName,redoName);
-        return new MenuItem{Header="Edit",ItemsSource=new[]{undoMenu,redoMenu}};
+        return new MenuItem{Header="Edit",ItemsSource=new[]{undoMenu,redoMenu,keywordMenu}};
     }
     internal void SetHistoryActions(string? undo,string? redo)
     {
@@ -35,6 +36,7 @@ public sealed partial class MainWindow
         redoMenu.Header=redo==null?"Redo":"Redo - "+redo;
         undoMenu.IsEnabled=undo!=null&&!loading&&!historyBusy;
         redoMenu.IsEnabled=redo!=null&&!loading&&!historyBusy;
+        keywordMenu.IsEnabled=model!=null&&!loading&&!historyBusy;
     }
     private void HistoryKeyDown(object? sender,KeyEventArgs e)
     {
@@ -71,6 +73,7 @@ public sealed partial class MainWindow
             }
             loading=true;mainView.Loading=true;progressBar.IsVisible=true;
             if(editor!=null)editor.IsEnabled=false;
+            if(keywordViewer!=null)keywordViewer.IsEnabled=false;
             treeTabs.IsEnabled=false;viewport.IsEnabled=false;
             SetStatus(redo?"Redoing…":"Undoing…");
             // Controller regeneration replays commands and may read PMX/mesh files.
@@ -92,6 +95,7 @@ public sealed partial class MainWindow
                 {
                     model=new ViewerModel(mainView.Controller.Model);
                     ViewportModelBridge.Load(viewport,model);RefreshModelTrees();
+                    keywordViewer?.Reload(mainView.Controller);
                     if(editor!=null)
                     {
                         var entry=treeItems.Values.Select(i=>i.Tag).OfType<TreeEntry>().FirstOrDefault(e=>e.Kind==kind&&e.Entity?.Name==name&&e.Step==step);
@@ -104,6 +108,7 @@ public sealed partial class MainWindow
                 catch(Exception error){historyError=error.ToString();Log(historyError);SetStatus("History refresh failed: "+error.Message);}
             }
             if(editor!=null)editor.IsEnabled=true;
+            if(keywordViewer!=null)keywordViewer.IsEnabled=true;
             loading=false;mainView.Loading=false;historyBusy=false;progressBar.IsVisible=false;
             treeTabs.IsEnabled=true;viewport.IsEnabled=true;SetHistoryActions(undoName,redoName);
         }

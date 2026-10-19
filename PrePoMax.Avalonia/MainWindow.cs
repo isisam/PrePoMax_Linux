@@ -247,6 +247,7 @@ public sealed partial class MainWindow : Window, IMainView
                     fields=model.Contours.ToDictionary(p=>p.Key,p=>new{min=p.Value.Min(),max=p.Value.Max()}),
                     language=ShellLocale.Chinese?"zh-TW":"en", units=units.Text, tree=TreeEvidenceState(), form=FormsEvidenceState(),
                     history=new {busy=historyBusy,undo=undoName,redo=redoName,sequence=historySequence,error=historyError}
+                    ,keyword=KeywordEvidenceState()
                 }, new JsonSerializerOptions { IncludeFields = true }));
                 File.Move(Path.Combine(output,"state.tmp"),Path.Combine(output,"state.json"),true);
                 if (File.Exists(Path.Combine(output, "capture")))
@@ -258,6 +259,7 @@ public sealed partial class MainWindow : Window, IMainView
                 {
                     using var command=JsonDocument.Parse(File.ReadAllText(commandPath));File.Delete(commandPath);
                     var c=command.RootElement;string op=c.GetProperty("op").GetString()!;
+                    if(op.StartsWith("keyword-"))KeywordEvidenceCommand(op,c);
                     if(op=="history") { (c.GetProperty("redo").GetBoolean()?redoMenu:undoMenu).RaiseEvent(new global::Avalonia.Interactivity.RoutedEventArgs(MenuItem.ClickEvent)); }
                     if(op.StartsWith("tree-"))TreeEvidenceCommand(op,c);
                     if(op.StartsWith("form-"))

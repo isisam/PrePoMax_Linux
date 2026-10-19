@@ -61,7 +61,11 @@ for key,lib in deps['libraries'].items():
     meta={e.tag.split('}')[-1]:(e.text or '') for e in root.iter()}
     licenses=[f for f in pkg.iterdir() if f.is_file() and f.name.lower().startswith(('license','third-party','thirdparty','notice','copying'))]
     source='NuGet '+key+'; '+meta.get('projectUrl','')
-    if licenses: text='\n\n'.join(f.read_text(encoding='utf-8-sig') for f in licenses)
+    if name.lower()=='avalonia.avaloniaedit':
+        if ver!='11.3.0': raise RuntimeError('Review the original AvaloniaEdit license for '+ver)
+        text=(repo/'Licenses/AvaloniaEdit-11.3.0.txt').read_text(encoding='utf-8-sig')
+        source+='; https://github.com/AvaloniaUI/AvaloniaEdit/blob/583f2f8279cf50830eb7fd79c73dec554a232abf/LICENSE'
+    elif licenses: text='\n\n'.join(f.read_text(encoding='utf-8-sig') for f in licenses)
     else:
         if name.lower().startswith('avalonia'):
             url='https://raw.githubusercontent.com/AvaloniaUI/Avalonia/11.3.22/licence.md'
