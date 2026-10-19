@@ -1,13 +1,13 @@
-# PrePoMax-RCM
+# PrePoMax_Linux — unofficial PrePoMax fork
 
-繁體中文複材疊層與 FATCZM 材料工作流程，延伸自 Matej Borovinšek 的 PrePoMax。此分支：**RC1g5 candidate / 150% DPI manual check pending**。
+**Windows RC1g5 development feature lineage.** Main focus: Linux/Avalonia port, L3 checkpoint **0.4.0**, with shared finite-element core and composite layup / 3D fibre-display work. Windows feature lines remain available on windows-rc (RC1f) and develop (RC1g5). Linux 0.4.0 does not include every Windows RC1c–RC1f enhancement; follow the documented checkpoint boundaries.
 
-`main`：RC1f；`develop`：rcm/m2c（原始 a6a29eb2）RC1g5；`linux-preview`：rcm/l3b2。RC1g5 維持預發行，尚待原生 150% DPI 人工檢查。
+PrePoMax was created by **Matej Borovinšek** and upstream contributors at the University of Maribor. This is an **unofficial fork**, not an endorsed upstream release. Upstream: https://github.com/ISCPC/PrePoMax . GPL-3.0; original LICENSE, Licenses/ and source notices are preserved.
 
-- [下載與安裝](docs/下載與安裝.md) · [使用教學](docs/使用教學.md) · [FAQ](docs/FAQ.md)
-- [教學 PDF 與 TeX](docs/tutorial/README.md) · [Composite layups](docs/COMPOSITE_LAYUP.md) · [FATCZM material](docs/FATCZM_material.md)
-- [Windows 原始碼建置](docs/BUILD.md) · [上游建置資訊](docs/UPSTREAM_BUILD.md) · [Releases](RELEASES.md) · [回報問題](CONTRIBUTING.md)
+- [下載與安裝](docs/下載與安裝.md) · [使用教學](docs/使用教學.md) · [FAQ](docs/FAQ.md) · [回報問題](docs/回報問題.md)
+- [Install](docs/INSTALL.en.md) · [Tutorial](docs/TUTORIAL.en.md) · [FAQ](docs/FAQ.en.md) · [Issues](docs/ISSUES.en.md)
+- [Public Gmsh boundary](docs/PUBLIC_GMSH.md) · [Build](docs/BUILD_PUBLIC.md) · [Source lineage](SOURCE_HISTORY.md)
 
-English: RCM extends PrePoMax with composite layups, FATCZM user materials and optional Traditional Chinese UI. Stable student release is RC1f; RC1g5 is a candidate with **150% DPI manual check pending**. Linux code is a separate preview branch. Download ready-to-run ZIPs from Releases; automatic source archives require a development environment.
+The Linux checkpoint supports existing-mesh models, property forms, selection-created sets/surfaces, undo/redo and a read-only keyword viewer. Linux Gmsh operations use an explicit compile stub and throw NotSupportedException. Native Linux/VM/GPU release acceptance, full meshing parity and editable raw keywords remain open. Windows RCM layup editing and 3D fibre display share source in this fork; branch names describe feature lineage, not a new binary validation.
 
-Original PrePoMax by **Matej Borovinšek**, [upstream](https://gitlab.com/MatejB/PrePoMax). GPL-3.0; original LICENSE, per-file copyrights and third-party notices are retained. Upstream Git history remains unchanged. Our commits were privacy-cleaned while preserving dates and merge topology; see SOURCE_HISTORY.md. Binary release assets are listed separately.
+The private Gmsh fork/SDK is excluded from every published history object. Original Windows application ZIPs are not release assets here. See PUBLIC_GMSH.md before attempting a Windows full-solution build.
