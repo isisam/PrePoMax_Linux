@@ -20,6 +20,7 @@ namespace PrePoMax.Forms
         private readonly DataGridView _grid;
         private readonly TextBox _summary;
         private readonly StackPlot _plot;
+        private readonly Panel _content;
         private List<ExpandedCompositePly> _expanded;
         private bool _loading;
         private List<string> _errors = new List<string>();
@@ -31,17 +32,34 @@ namespace PrePoMax.Forms
         {
             _controller = controller;
             _highlightPly = highlightPly ?? (controller == null ? (Action<int[]>)null : controller.HighlightCompositePly);
+            SuspendLayout();
+            // The inherited designer opts out of scaling. This editor uses one DPI
+            // baseline for the entire tree, including its inherited dialog buttons.
+            AutoScaleDimensions = new SizeF(96, 96);
+            AutoScaleMode = AutoScaleMode.Dpi;
             Text = "Composite Layup";
             ClientSize = new Size(1180, 1000);
             MinimumSize = new Size(960, 760);
             MaximizeBox = true;
-            var body = new TableLayoutPanel { Location = new Point(12, 12), Size = new Size(1156, 938),
-                Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right,
+            var content = _content = new Panel { Name = "layupContent", Dock = DockStyle.Fill, AutoScroll = true };
+            var body = new TableLayoutPanel { Name = "layupBody", Location = Point.Empty,
+                Size = new Size(1156, 938), MinimumSize = new Size(880, 650),
                 ColumnCount = 1, RowCount = 3 };
             body.RowStyles.Add(new RowStyle(SizeType.Absolute, 220));
             body.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
             body.RowStyles.Add(new RowStyle(SizeType.Absolute, 112));
-            Controls.Add(body);
+            body.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            content.Controls.Add(body);
+            content.Layout += (s, e) => {
+                body.Size = new Size(Math.Max(body.MinimumSize.Width, content.ClientSize.Width),
+                                     Math.Max(body.MinimumSize.Height, content.ClientSize.Height));
+                // Scale(SizeF) visits descendants after resizing their parent.
+                // Reflow the table even when the final viewport size is unchanged;
+                // otherwise its scaled children can retain stale dock bounds.
+                ReflowContainers(body);
+            };
+            Controls.Add(content);
+            Padding = new Padding(12);
             gbProperties.Parent = body;
             gbProperties.Dock = DockStyle.Fill;
             gbProperties.Text = "Layup properties";
@@ -49,20 +67,25 @@ namespace PrePoMax.Forms
             propertyGrid.AccessibleName = "Composite layup properties";
             propertyGrid.AccessibleDescription = "Name, region, rectangular coordinate system, stacking axis, symmetry and boundary tolerance.";
             var middle = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1 };
+            middle.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
             middle.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 56));
             middle.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 44));
             body.Controls.Add(middle, 0, 1);
             var plyGroup = new GroupBox { Text = "Plies (bottom to top; Elements is an optional mesh-band count)", Dock = DockStyle.Fill };
             middle.Controls.Add(plyGroup, 0, 0);
             var plyBody = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2 };
+            plyBody.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             plyBody.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
-            plyBody.RowStyles.Add(new RowStyle(SizeType.Absolute, 62));
+            plyBody.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             plyGroup.Controls.Add(plyBody);
             _grid = new DataGridView { Dock = DockStyle.Fill, AllowUserToAddRows = false, AllowUserToDeleteRows = false,
                 Name = "plyGrid", AccessibleName = "Composite plies, bottom to top",
                 AccessibleDescription = "Edit ply name, material, thickness with length units, angle with angle units, and optional positive integer mesh-band count.",
                 AllowUserToOrderColumns = false, MultiSelect = false, SelectionMode = DataGridViewSelectionMode.FullRowSelect,
-                AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill, RowHeadersWidth = 32, BackgroundColor = SystemColors.Window };
+                AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
+                ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize,
+                AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.DisplayedCellsExceptHeaders,
+                RowHeadersWidth = 32, BackgroundColor = SystemColors.Window };
             _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "PlyName", HeaderText = "Name", FillWeight = 115 });
             _grid.Columns.Add(new DataGridViewComboBoxColumn { Name = "Material", HeaderText = "Material", FillWeight = 130,
                 FlatStyle = FlatStyle.Flat, DisplayStyle = DataGridViewComboBoxDisplayStyle.DropDownButton });
@@ -87,7 +110,11 @@ namespace PrePoMax.Forms
                 e.Control.AccessibleDescription = _grid.CurrentCell.OwningColumn.HeaderCell.AccessibilityObject.Description;
             };
             plyBody.Controls.Add(_grid, 0, 0);
-            var tools = new FlowLayoutPanel { Dock = DockStyle.Fill, WrapContents = true };
+            // Let FlowLayout measure every wrapped row, including translated text
+            // and scaled fonts; a fixed-height row clips Reverse at minimum size.
+            var tools = new FlowLayoutPanel { Name = "plyToolbar", Dock = DockStyle.Fill,
+                AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                Margin = Padding.Empty, WrapContents = true };
             plyBody.Controls.Add(tools, 0, 1);
             foreach (string action in new[] { "Add", "Insert", "Delete", "Move up", "Move down", "Duplicate", "Reverse" })
             {
@@ -108,9 +135,21 @@ namespace PrePoMax.Forms
             _summary = new TextBox { Name = "LayupValidation", Tag = "L10n", Multiline = true, ReadOnly = true, ScrollBars = ScrollBars.Vertical, Dock = DockStyle.Fill };
             validation.Controls.Add(_summary);
             body.Controls.Add(validation, 0, 2);
-            btnCancel.Location = new Point(1093, 964);
-            btnOK.Location = new Point(1012, 964);
-            btnOkAddNew.Location = new Point(931, 964);
+            // Keep the actions outside the scrolling content and reserve their
+            // preferred height on every layout pass, rather than anchoring offsets.
+            var actions = new FlowLayoutPanel { Name = "layupActions", Dock = DockStyle.Bottom,
+                FlowDirection = FlowDirection.RightToLeft, WrapContents = true,
+                AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                Padding = new Padding(0, 6, 0, 0) };
+            foreach (var button in new[] { btnCancel, btnOK, btnOkAddNew })
+            {
+                button.Anchor = AnchorStyles.None;
+                button.AutoSize = true;
+                button.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+                button.MinimumSize = new Size(75, 25);
+                actions.Controls.Add(button);
+            }
+            Controls.Add(actions);
             btnCancel.CausesValidation = false;
             _grid.CellValidating += ValidateCell;
             _grid.CellEndEdit += (s, e) => { if (!_loading) RefreshValidation(); };
@@ -132,6 +171,22 @@ namespace PrePoMax.Forms
                 _summary.Text = "The table contains an invalid value: " + e.Exception.Message;
                 btnOK.Enabled = btnOkAddNew.Enabled = false;
             };
+            ResumeLayout(true);
+        }
+
+        private static void ReflowContainers(Control parent)
+        {
+            parent.PerformLayout();
+            foreach (Control child in parent.Controls)
+                if (child is Panel || child is GroupBox) ReflowContainers(child);
+        }
+
+        protected override void OnLayout(LayoutEventArgs e)
+        {
+            base.OnLayout(e);
+            // A form-scale/font pass can finish without resizing the viewport.
+            // Always invalidate its nested docking calculations at that boundary.
+            _content?.PerformLayout();
         }
 
         public void LoadFromModel(FeModel model, CompositeLayup value, string oldName)

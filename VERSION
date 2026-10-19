@@ -1,4 +1,4 @@
-PrePoMax-RCM 0.1.0-rc1g2 candidate
+PrePoMax-RCM 0.1.0-rc1g4 candidate
 Based on upstream PrePoMax 3.0.0 RC2, commit 912fb3d08014f246d48bef14d62a2cba0fdf5bb0
 Windows x64; .NET Framework 4.8
 Integration source commit 2dc22344ae03b0be19811ca6036a372075f54c2f
@@ -8,3 +8,4 @@ RC1d language-default source commit f61cede4ad9410af4be1aaa998f4dff8c9d85805
 RC1e runtime-language result-toolbar source commit c47f8d4b977c4dddbdd331cb6caf5f09125de270
 RC1g candidate base: rcm/rc1 d3916d7eaeebad8079f1c8c12dd5b60f6ffc26f9; source branch rcm/m2c
 M2d clarity candidate base: rcm/m2c 44c417063ce304d97ceac9b36f4bf2c66182ab8c; source branch rcm/m2c
+M2e layout candidate base: rcm/m2c 76cf0105057287725c72586902f5947bd1d223a3; native 144-DPI acceptance OPEN
