@@ -273,3 +273,9 @@ CLAUDE.md
 
 __pycache__/
 *.pyc
+
+# Release-only dependency; restore locally after verifying its hash.
+ThirdParty/NCalc.RCM/Antlr3.Runtime.dll
+*.pmx
+*.pmh
+_attempt/
