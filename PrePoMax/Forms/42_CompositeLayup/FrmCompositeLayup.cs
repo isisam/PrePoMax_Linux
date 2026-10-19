@@ -21,8 +21,11 @@ namespace PrePoMax.Forms
         private readonly TextBox _summary;
         private readonly StackPlot _plot;
         private readonly Panel _content;
+        private readonly CheckBox _showFibres;
+        private readonly TrackBar _fibreSize;
         private List<ExpandedCompositePly> _expanded;
         private bool _loading;
+        private bool _invalidCell;
         private List<string> _errors = new List<string>();
 
         // Passing null permits constructing, filling and reading the form in a headless STA test.
@@ -116,6 +119,17 @@ namespace PrePoMax.Forms
                 AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
                 Margin = Padding.Empty, WrapContents = true };
             plyBody.Controls.Add(tools, 0, 1);
+            _showFibres = new CheckBox { Name = "showFibreDirections", Text = "Show fibre directions", AutoSize = true, Checked = true };
+            _fibreSize = new TrackBar { Name = "fibreGlyphSize", Minimum = 10, Maximum = 200, Value = 100,
+                TickFrequency = 50, Width = 110, Height = 30, AutoSize = false,
+                AccessibleName = "Fibre glyph size" };
+            var fibreTools = new FlowLayoutPanel { Dock = DockStyle.Bottom, AutoSize = true, WrapContents = true };
+            fibreTools.Controls.Add(_showFibres);
+            fibreTools.Controls.Add(new Label { Text = "Glyph size", AutoSize = true, Margin = new Padding(3, 7, 3, 0) });
+            fibreTools.Controls.Add(_fibreSize);
+            plyGroup.Controls.Add(fibreTools);
+            _showFibres.CheckedChanged += (s, e) => Highlight();
+            _fibreSize.ValueChanged += (s, e) => Highlight();
             foreach (string action in new[] { "Add", "Insert", "Delete", "Move up", "Move down", "Duplicate", "Reverse" })
             {
                 var button = new Button { Name = "btnPly" + action.Replace(" ", ""), Text = action,
@@ -167,6 +181,8 @@ namespace PrePoMax.Forms
             };
             _grid.CurrentCellChanged += (s, e) => Highlight();
             _grid.DataError += (s, e) => {
+                _invalidCell = true;
+                _controller?.ShowCompositeFibreDirections(null, null, -1, 1);
                 e.ThrowException = false;
                 _summary.Text = "The table contains an invalid value: " + e.Exception.Message;
                 btnOK.Enabled = btnOkAddNew.Enabled = false;
@@ -179,6 +195,12 @@ namespace PrePoMax.Forms
             parent.PerformLayout();
             foreach (Control child in parent.Controls)
                 if (child is Panel || child is GroupBox) ReflowContainers(child);
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing) _controller?.ShowCompositeFibreDirections(null, null, -1, 1);
+            base.Dispose(disposing);
         }
 
         protected override void OnLayout(LayoutEventArgs e)
@@ -222,6 +244,7 @@ namespace PrePoMax.Forms
         }
         private void FillRows(int selected)
         {
+            _invalidCell = false;
             _loading = true;
             try
             {
@@ -246,6 +269,7 @@ namespace PrePoMax.Forms
             try
             {
                 _data.SetCell(e.RowIndex, e.ColumnIndex, Convert.ToString(e.FormattedValue));
+                _invalidCell = false;
                 cell.ErrorText = "";
                 cell.Style.BackColor = SystemColors.Window;
                 _propertyItemChanged = true;
@@ -255,6 +279,8 @@ namespace PrePoMax.Forms
             }
             catch (Exception ex)
             {
+                _invalidCell = true;
+                _controller?.ShowCompositeFibreDirections(null, null, -1, 1);
                 e.Cancel = true;
                 cell.ErrorText = ex.Message;
                 cell.Style.BackColor = Color.MistyRose;
@@ -331,6 +357,7 @@ namespace PrePoMax.Forms
         }
         protected override void OnHideOrClose()
         {
+            _controller?.ShowCompositeFibreDirections(null, null, -1, 1);
             ItemSetDataEditor.SelectionForm?.Hide();
             _controller?.SetSelectByToOff();
             base.OnHideOrClose();
@@ -380,6 +407,7 @@ namespace PrePoMax.Forms
             // so the next add/subtract pick extends the region instead of starting from nothing.
             if (_data?.Layup.RegionType == RegionTypeEnum.Selection && _data.Layup.CreationData != null)
                 _controller.Selection = _data.Layup.CreationData.DeepCopy(true, false);
+            _controller.ShowCompositeFibreDirections(_showFibres.Checked && !_invalidCell ? _data?.Layup : null, _expanded, index, _fibreSize.Value / 100.0);
         }
         public bool IsSelectionGeometryBased() { return _data?.Layup.CreationData?.IsGeometryBased() ?? true; }
         public bool IsGeometrySelectionIdBased()

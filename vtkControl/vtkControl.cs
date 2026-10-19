@@ -1842,6 +1842,7 @@ namespace vtkControl
                 pickedActor = null;
             }
             //
+            ApplyCompositeFibreOpacity();
             return p;
         }
         private bool IsSectionViewActor(vtkActor actor)
@@ -9176,6 +9177,7 @@ namespace vtkControl
         #region Clear ##############################################################################################################
         public void Clear()
         {
+            SetCompositeFibreActors(null);
             if (_sectionViewData.Active) RemoveSectionView();
             _transforms.Clear();
             //
@@ -9225,6 +9227,7 @@ namespace vtkControl
         }
         public void ClearButKeepParts()
         {
+            SetCompositeFibreActors(null);
             vtkMaxActor actor;
             List<string> actorsToRemove = new List<string>();
             //
@@ -10230,6 +10233,10 @@ namespace vtkControl
         public void UpdateActorColor(vtkMaxActor actor, Color newColor)
         {
             actor.Color = newColor;
+            // A deliberate colour/transparency edit becomes the restored value.
+            foreach (var prop in new[] { actor.GeometryProperty, actor.ElementEdgesProperty, actor.ModelEdgesProperty })
+                if (prop != null && _fibreOpacity.ContainsKey(prop)) _fibreOpacity[prop] = prop.GetOpacity();
+            ApplyCompositeFibreOpacity();
             // Transformed copies
             foreach (var copy in actor.Copies) UpdateActorColor(copy, newColor);
             // Section view
@@ -10314,6 +10321,9 @@ namespace vtkControl
         // Render
         private void RenderScene()
         {
+            // Selection and native picking restore actor colours internally. Keep
+            // the display-only translucency active across those operations too.
+            ApplyCompositeFibreOpacity();
             if (_renderingOn)
             {
                 if (_coorSysWidget != null) _coorSysWidget.UpdateGeometry();

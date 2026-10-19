@@ -6,6 +6,48 @@ namespace vtkControl
 {
     public partial class vtkControl
     {
+        private readonly System.Collections.Generic.List<vtkMaxActor> _fibreActors = new System.Collections.Generic.List<vtkMaxActor>();
+        public bool HasCompositeFibreActors { get { return _fibreActors.Count > 0; } }
+        private readonly System.Collections.Generic.Dictionary<vtkProperty, double> _fibreOpacity = new System.Collections.Generic.Dictionary<vtkProperty, double>();
+
+        private void ApplyCompositeFibreOpacity()
+        {
+            foreach (var item in _fibreOpacity) item.Key.SetOpacity(Math.Min(item.Value, .16));
+        }
+
+        // Transient world-space actors, deliberately outside model/selection actors.
+        // Preserve the original opacity, including user-defined transparency.
+        public void SetCompositeFibreActors(vtkMaxActorData[] data)
+        {
+            foreach (var actor in _fibreActors)
+            {
+                _renderer.RemoveActor(actor.Geometry);
+                ReleaseActorGraphicsResources(actor);
+            }
+            _fibreActors.Clear();
+            foreach (var item in _fibreOpacity) item.Key.SetOpacity(item.Value);
+            _fibreOpacity.Clear();
+            if (data != null && data.Length > 0)
+            {
+                foreach (var actor in _actors.Values)
+                {
+                    foreach (var prop in new[] { actor.GeometryProperty, actor.ElementEdgesProperty, actor.ModelEdgesProperty })
+                    {
+                        if (prop == null || _fibreOpacity.ContainsKey(prop)) continue;
+                        _fibreOpacity.Add(prop, prop.GetOpacity());
+                        prop.SetOpacity(Math.Min(prop.GetOpacity(), .16));
+                    }
+                }
+                foreach (var item in data)
+                {
+                    var actor = new vtkMaxActor(item);
+                    actor.Geometry.PickableOff();
+                    _renderer.AddActor(actor.Geometry);
+                    _fibreActors.Add(actor);
+                }
+            }
+            RenderScene();
+        }
         public double[][][] GetStlTriangles(vtkMaxActorData data)
         {
             return data.GetStlTriangles();

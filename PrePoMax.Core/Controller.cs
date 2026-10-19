@@ -15903,6 +15903,34 @@ namespace PrePoMax
             CheckAndUpdateModelValidity(true);
         }
         public static Color CompositePlyHighlightColor { get { return Color.Red; } }
+        [NonSerialized] private string _fibreLayupName;
+        [NonSerialized] private double _fibreGlyphSize = 1;
+        public void ShowCompositeFibreDirections(CompositeLayup layup, IList<ExpandedCompositePly> expanded, int selected, double size)
+        {
+            _fibreLayupName = null;
+            if (layup == null || expanded == null || selected >= layup.Plies.Count)
+            { _form.Viewport.SetCompositeFibreActors(null); return; }
+            _fibreGlyphSize = size;
+            IEnumerable<int> indices = selected < 0 ? Enumerable.Range(0, expanded.Count) : new[] { selected };
+            if (selected >= 0 && layup.Symmetric) indices = indices.Concat(new[] { expanded.Count - 1 - selected });
+            // Opaque selection skins otherwise hide the centroid glyphs inside solids.
+            // Retained region-picking history is untouched.
+            _form.Viewport.ClearSelection();
+            _form.Viewport.SetCompositeFibreActors(CompositeFibrePreview.Build(_model, expanded, indices, size));
+        }
+        public void ToggleCompositeFibreDirections(string name)
+        {
+            if (_fibreLayupName == name && _form.Viewport.HasCompositeFibreActors) { ShowCompositeFibreDirections(null, null, -1, 1); return; }
+            ShowSavedCompositeFibreDirections(name, _fibreGlyphSize > 0 ? _fibreGlyphSize : 1);
+        }
+        public void ShowSavedCompositeFibreDirections(string name, double size)
+        {
+            var layup = _model.CompositeLayups[name];
+            var expanded = CompositeLayupExpansion.Preview(_model, layup, name);
+            ClearSelectionHistory();
+            ShowCompositeFibreDirections(layup, expanded, -1, size);
+            _fibreLayupName = name;
+        }
         public void HighlightCompositePly(int[] elementIds)
         {
             ClearSelectionHistory();

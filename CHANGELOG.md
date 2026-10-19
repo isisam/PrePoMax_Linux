@@ -1,3 +1,13 @@
+# RC1g5 candidate — M2f main-viewport fibre directions (2026-10-19)
+
+- Draw per-element fibre, transverse and normal glyphs in the main VTK viewport
+  while editing a ply; include symmetric partners and use the solver's CSYS basis.
+- Add a fibre toggle and size slider in the editor and saved-layup tree controls.
+  Restore original part/edge opacity on teardown and clear stale invalid previews.
+- Preserve M2e layout repairs and all solver/model input behavior. Native Windows
+  150% / 144-DPI acceptance remains OPEN. Optional exploded plies are not included.
+- Reproduction and evidence: tools/m2f/ and Documentation/M2f_VIEWPORT.md.
+
 # RC1g4 candidate — M2e layout repair (2026-10-19)
 
 - RT-G2-01: measure the wrapping ply toolbar's preferred height instead of reserving
