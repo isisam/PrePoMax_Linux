@@ -32,10 +32,10 @@ namespace PrePoMax.Forms
             _controller = controller;
             _highlightPly = highlightPly ?? (controller == null ? (Action<int[]>)null : controller.HighlightCompositePly);
             Text = "Composite Layup";
-            ClientSize = new Size(980, 780);
+            ClientSize = new Size(1180, 1000);
             MinimumSize = new Size(960, 760);
             MaximizeBox = true;
-            var body = new TableLayoutPanel { Location = new Point(12, 12), Size = new Size(956, 718),
+            var body = new TableLayoutPanel { Location = new Point(12, 12), Size = new Size(1156, 938),
                 Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right,
                 ColumnCount = 1, RowCount = 3 };
             body.RowStyles.Add(new RowStyle(SizeType.Absolute, 220));
@@ -49,8 +49,8 @@ namespace PrePoMax.Forms
             propertyGrid.AccessibleName = "Composite layup properties";
             propertyGrid.AccessibleDescription = "Name, region, rectangular coordinate system, stacking axis, symmetry and boundary tolerance.";
             var middle = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1 };
-            middle.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 68));
-            middle.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 32));
+            middle.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 56));
+            middle.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 44));
             body.Controls.Add(middle, 0, 1);
             var plyGroup = new GroupBox { Text = "Plies (bottom to top; Elements is an optional mesh-band count)", Dock = DockStyle.Fill };
             middle.Controls.Add(plyGroup, 0, 0);
@@ -99,7 +99,7 @@ namespace PrePoMax.Forms
             }
             var plotGroup = new GroupBox { Text = "3D ply orientation", Dock = DockStyle.Fill };
             var scroll = new Panel { Dock = DockStyle.Fill, AutoScroll = true };
-            _plot = new StackPlot { Dock = DockStyle.Top, Height = 200 };
+            _plot = new StackPlot { MinimumSize = new Size(440, 0), Size = new Size(440, 700) };
             scroll.Controls.Add(_plot);
             scroll.Resize += (s, e) => ResizePlot();
             plotGroup.Controls.Add(scroll);
@@ -108,9 +108,9 @@ namespace PrePoMax.Forms
             _summary = new TextBox { Name = "LayupValidation", Tag = "L10n", Multiline = true, ReadOnly = true, ScrollBars = ScrollBars.Vertical, Dock = DockStyle.Fill };
             validation.Controls.Add(_summary);
             body.Controls.Add(validation, 0, 2);
-            btnCancel.Location = new Point(893, 744);
-            btnOK.Location = new Point(812, 744);
-            btnOkAddNew.Location = new Point(731, 744);
+            btnCancel.Location = new Point(1093, 964);
+            btnOK.Location = new Point(1012, 964);
+            btnOkAddNew.Location = new Point(931, 964);
             btnCancel.CausesValidation = false;
             _grid.CellValidating += ValidateCell;
             _grid.CellEndEdit += (s, e) => { if (!_loading) RefreshValidation(); };
@@ -226,7 +226,8 @@ namespace PrePoMax.Forms
         private void ResizePlot()
         {
             if (_plot == null || _plot.Parent == null) return;
-            _plot.Height = Math.Max(_plot.Parent.ClientSize.Height - 2, (_data?.Layup.GetExpandedPlies().Count ?? 0) * 106 + 100);
+            int count = _data?.Layup.GetExpandedPlies().Count ?? 0;
+            _plot.Size = new Size(Math.Max(440, _plot.Parent.ClientSize.Width - 20), StackPlot.ContentHeight(count));
             _plot.Invalidate();
         }
         private void RefreshValidation()
@@ -351,83 +352,187 @@ namespace PrePoMax.Forms
         {
             public CompositeLayup Layup;
             public int SelectedPly = -1;
+            private const int Pitch = 180;
+            public static int ContentHeight(int count) { return StackStart(count) + count * Pitch + 58; }
+            private static int StackStart(int count) { return 412 + count * 24; }
             public StackPlot()
             {
                 DoubleBuffered = true; BackColor = SystemColors.Window;
                 AccessibleName = "3D ply orientation";
-                AccessibleDescription = "Exploded plates with fibre directions in the layup coordinate system; spacing is not to scale.";
+                AccessibleDescription = "Plan view overlays every ply; exploded plates show signed angles from the local zero axis. Red marks the selected ply and its symmetric partner. Spacing is not to scale.";
             }
-            // u and v are the cyclic local axes used by CompositeLayupExpansion.
-            // Drawing in that plane keeps the angle relative to the layup reference,
-            // including a rotated rectangular coordinate system and stacking axes 1/2.
+            // u/v are the cyclic local axes used by CompositeLayupExpansion.
             private static PointF Project(float x, float y, float scale, float cx, float cy)
             { return new PointF(cx + scale * (.80f * x + .48f * y), cy + scale * (-.18f * x + .30f * y)); }
+            // Viewed from +stack toward the origin: +u right, +v up; positive angles CCW.
+            private static PointF Plan(float x, float y, float scale, float cx, float cy)
+            { return new PointF(cx + scale * x, cy - scale * y); }
+            private bool Selected(int i, int count)
+            { return i == SelectedPly || (Layup.Symmetric && SelectedPly >= 0 && i == count - 1 - SelectedPly); }
+            private static string Angle(double angle)
+            { return angle.ToString("+0.####;-0.####;0", System.Globalization.CultureInfo.InvariantCulture) + "°"; }
+            private static Color PlyColor(int index)
+            {
+                // Golden-angle hues give every expanded ply (including mirrors) its own colour.
+                double h = (index * 137.508 + 210) % 360 / 60;
+                double x = 1 - Math.Abs(h % 2 - 1);
+                double r = 0, g = 0, b = 0;
+                if (h < 1) { r = 1; g = x; } else if (h < 2) { r = x; g = 1; }
+                else if (h < 3) { g = 1; b = x; } else if (h < 4) { g = x; b = 1; }
+                else if (h < 5) { r = x; b = 1; } else { r = 1; b = x; }
+                return Color.FromArgb((int)(25 + 155 * r), (int)(25 + 155 * g), (int)(25 + 155 * b));
+            }
             private static Color Shade(Color c) { return Color.FromArgb(c.R * 3 / 4, c.G * 3 / 4, c.B * 3 / 4); }
+            private void DrawText(Graphics g, string text, RectangleF box, Color color, bool bold = false, bool center = false, bool badge = false)
+            {
+                // Pixel fonts keep the same logical geometry at 96 and 192 DPI.
+                using (var font = new Font(Font.FontFamily, Font.SizeInPoints * 96 / 72, bold ? FontStyle.Bold : FontStyle.Regular, GraphicsUnit.Pixel))
+                using (var brush = new SolidBrush(color))
+                using (var format = new StringFormat { Alignment = center ? StringAlignment.Center : StringAlignment.Near,
+                    LineAlignment = StringAlignment.Center, Trimming = StringTrimming.EllipsisCharacter, FormatFlags = StringFormatFlags.NoWrap })
+                {
+                    if (badge) g.FillRectangle(Brushes.White, box);
+                    g.DrawString(text, font, brush, box, format);
+                }
+            }
+            private static double Sweep(double angle)
+            { double a = angle % 360; return a == 0 && angle != 0 ? Math.Sign(angle) * 360 : a; }
+            private void Arc(Graphics g, double angle, float radius, Func<float, float, PointF> project, Color color)
+            {
+                double sweep = Sweep(angle);
+                var points = new List<PointF>();
+                int steps = Math.Max(2, (int)Math.Ceiling(Math.Abs(sweep) / 3));
+                for (int n = 0; n <= steps; n++)
+                {
+                    double a = sweep * n / steps * Math.PI / 180;
+                    points.Add(project(radius * (float)Math.Cos(a), radius * (float)Math.Sin(a)));
+                }
+                if (sweep == 0)
+                { var p = points[0]; g.FillEllipse(Brushes.DarkSlateGray, p.X - 3, p.Y - 3, 6, 6); return; }
+                using (var halo = new Pen(Color.White, 6)) g.DrawLines(halo, points.ToArray());
+                using (var pen = new Pen(color, 2.8f) { EndCap = System.Drawing.Drawing2D.LineCap.ArrowAnchor })
+                    g.DrawLines(pen, points.ToArray());
+            }
+            // Render the geometry and text afresh at 2x; never enlarge a 1x screenshot.
+            public Bitmap RenderPreview(int scale)
+            {
+                if (scale < 1 || scale > 4) throw new ArgumentOutOfRangeException(nameof(scale));
+                var bitmap = new Bitmap(Width * scale, Height * scale);
+                bitmap.SetResolution(96 * scale, 96 * scale);
+                using (var g = Graphics.FromImage(bitmap))
+                { g.Clear(BackColor); g.ScaleTransform(scale, scale); DrawPreview(g); }
+                return bitmap;
+            }
             protected override void OnPaint(PaintEventArgs e)
             {
                 base.OnPaint(e);
+                using (var bitmap = RenderPreview(2))
+                    e.Graphics.DrawImage(bitmap, new Rectangle(0, 0, Width, Height), 0, 0, bitmap.Width, bitmap.Height, GraphicsUnit.Pixel);
+            }
+            private void DrawPreview(Graphics g)
+            {
                 if (Layup == null || Layup.Plies.Count == 0) return;
-                e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAliasGridFit;
                 var plies = Layup.GetExpandedPlies();
                 string[] axes = { "X", "Y", "Z" };
                 int stack = Math.Max(1, Math.Min(3, Layup.StackingAxis));
                 string cs = Layup.CoordinateSystemName ?? PrePoMax.L10n.Translator.Translate("Global");
-                string reference = string.Format(PrePoMax.L10n.Translator.Translate("Reference: {0}"), cs);
-                TextRenderer.DrawText(e.Graphics, reference, Font, new Rectangle(6, 3, Width - 12, 20), Color.DarkSlateGray,
-                    TextFormatFlags.EndEllipsis | TextFormatFlags.SingleLine);
-                TextRenderer.DrawText(e.Graphics, "0° = " + axes[stack % 3] + "    90° = " + axes[(stack + 1) % 3] + "    +" + axes[stack - 1] + " ↑", Font,
-                    new Rectangle(6, 23, Width - 12, 20), Color.DarkSlateGray, TextFormatFlags.SingleLine);
-                float pitch = Math.Max(106, (Height - 100f) / plies.Count);
-                float scale = Math.Min(Width * .60f, 150);
+                DrawText(g, string.Format(PrePoMax.L10n.Translator.Translate("Reference: {0}"), cs), new RectangleF(10, 3, Width - 20, 23), Color.DarkSlateGray, true);
+                DrawText(g, "0° = " + axes[stack % 3] + "    90° = " + axes[(stack + 1) % 3] + "    +" + axes[stack - 1], new RectangleF(10, 26, Width - 20, 22), Color.DarkSlateGray);
+                DrawText(g, string.Format(PrePoMax.L10n.Translator.Translate("Plan view — looking down +{0}"), axes[stack - 1]), new RectangleF(10, 53, Width - 20, 24), Color.Black, true);
+                float cx = Width / 2f, cy = 221, side = 224;
+                Func<float, float, PointF> plan = (x, y) => Plan(x, y, side, cx, cy);
+                var square = new RectangleF(cx - side / 2, cy - side / 2, side, side);
+                g.FillRectangle(Brushes.AliceBlue, square);
+                using (var edge = new Pen(Color.SlateGray, 1.3f)) g.DrawRectangle(edge, square.X, square.Y, square.Width, square.Height);
+                using (var zero = new Pen(Color.DarkSlateGray, 2) { EndCap = System.Drawing.Drawing2D.LineCap.ArrowAnchor })
+                { g.DrawLine(zero, cx - side / 2 - 16, cy, cx + side / 2 + 52, cy); g.DrawLine(zero, cx, cy + side / 2 + 12, cx, cy - side / 2 - 18); }
+                DrawText(g, "0° " + axes[stack % 3], new RectangleF(cx + side / 2 + 14, cy + 6, 75, 22), Color.DarkSlateGray, true);
+                DrawText(g, "90° " + axes[(stack + 1) % 3], new RectangleF(cx + 8, cy - side / 2 - 28, 90, 22), Color.DarkSlateGray);
                 for (int i = 0; i < plies.Count; i++)
                 {
-                    bool selected = i == SelectedPly || (Layup.Symmetric && i == plies.Count - 1 - SelectedPly && SelectedPly >= 0);
-                    Color color = selected ? Controller.CompositePlyHighlightColor : i % 2 == 0 ? Color.LightSteelBlue : Color.LightCyan;
-                    float cy = 84 + (plies.Count - 1 - i) * pitch, cx = Width / 2f;
-                    PointF[] top = { Project(-.5f, -.5f, scale, cx, cy), Project(.5f, -.5f, scale, cx, cy),
-                        Project(.5f, .5f, scale, cx, cy), Project(-.5f, .5f, scale, cx, cy) };
-                    PointF[] side = { top[1], top[2], top[3], new PointF(top[3].X, top[3].Y + 5),
-                        new PointF(top[2].X, top[2].Y + 5), new PointF(top[1].X, top[1].Y + 5) };
-                    using (var brush = new SolidBrush(Shade(color))) e.Graphics.FillPolygon(brush, side);
-                    using (var brush = new SolidBrush(color)) e.Graphics.FillPolygon(brush, top);
+                    double a = plies[i].AngleDeg * Math.PI / 180;
+                    float dx = (float)Math.Cos(a), dy = (float)Math.Sin(a);
+                    // Same-angle mirrors share a diameter using alternating coloured dashes.
+                    Func<int, bool> same = j => Math.Abs(Math.IEEERemainder(plies[j].AngleDeg - plies[i].AngleDeg, 180)) < 1e-7;
+                    int duplicates = Enumerable.Range(0, plies.Count).Count(same);
+                    int ordinal = Enumerable.Range(0, i).Count(same);
+                    float extent = .5f / Math.Max(Math.Abs(dx), Math.Abs(dy));
+                    using (var fibre = new Pen(PlyColor(i), 3.8f))
+                    {
+                        if (duplicates > 1) { fibre.DashPattern = new[] { 3f, 3f * (duplicates - 1) }; fibre.DashOffset = -3 * ordinal; }
+                        g.DrawLine(fibre, plan(-dx * extent, -dy * extent), plan(dx * extent, dy * extent));
+                    }
+                    // Separate radii keep positive, negative and repeated-angle arcs legible.
+                    float radius = .14f + .031f * (i % 8);
+                    Arc(g, plies[i].AngleDeg, radius, plan, PlyColor(i));
+                    double half = Sweep(plies[i].AngleDeg) / 2 * Math.PI / 180;
+                    PointF label = plan((radius + .24f) * (float)Math.Cos(half), (radius + .24f) * (float)Math.Sin(half));
+                    // Labels for coincident angles belong in the colour-keyed legend below.
+                    if (duplicates == 1)
+                        DrawText(g, Angle(plies[i].AngleDeg), new RectangleF(label.X - 27, label.Y - 10, 54, 20), PlyColor(i), true, true, true);
+                    float y = 351 + i * 24;
+                    if (Selected(i, plies.Count))
+                        using (var mark = new Pen(Controller.CompositePlyHighlightColor, 2)) g.DrawRectangle(mark, 10, y, Width - 20, 23);
+                    using (var swatch = new Pen(PlyColor(i), 4)) g.DrawLine(swatch, 22, y + 11, 56, y + 11);
+                    DrawText(g, (i + 1) + ". " + plies[i].Name + "   " + Angle(plies[i].AngleDeg), new RectangleF(67, y, Width - 85, 23), PlyColor(i), true);
+                }
+                DrawText(g, PrePoMax.L10n.Translator.Translate("Red outline = selected ply (and symmetric partner)"), new RectangleF(10, 354 + plies.Count * 24, Width - 20, 24), Color.DarkRed);
+                int start = StackStart(plies.Count);
+                DrawText(g, PrePoMax.L10n.Translator.Translate("3D ply orientation"), new RectangleF(10, start - 25, Width - 20, 24), Color.Black, true);
+                float scale = Math.Min(Width * .60f, 260);
+                for (int i = 0; i < plies.Count; i++)
+                {
+                    bool selected = Selected(i, plies.Count);
+                    Color color = selected ? Controller.CompositePlyHighlightColor : Color.FromArgb(230, 240, 248);
+                    float plateY = start + 52 + (plies.Count - 1 - i) * Pitch;
+                    Func<float, float, PointF> project = (x, y) => Project(x, y, scale, cx, plateY);
+                    PointF[] top = { project(-.5f, -.5f), project(.5f, -.5f), project(.5f, .5f), project(-.5f, .5f) };
+                    PointF[] face = { top[1], top[2], top[3], new PointF(top[3].X, top[3].Y + 6), new PointF(top[2].X, top[2].Y + 6), new PointF(top[1].X, top[1].Y + 6) };
+                    using (var brush = new SolidBrush(Shade(color))) g.FillPolygon(brush, face);
+                    using (var brush = new SolidBrush(color)) g.FillPolygon(brush, top);
                     using (var path = new System.Drawing.Drawing2D.GraphicsPath())
                     {
-                        path.AddPolygon(top);
-                        var state = e.Graphics.Save();
+                        path.AddPolygon(top); var state = g.Save();
                         try
                         {
-                            e.Graphics.SetClip(path);
-                            double radians = (plies[i].AngleDeg % 360) * Math.PI / 180;
-                            float dx = (float)Math.Cos(radians), dy = (float)Math.Sin(radians);
-                            using (var fibre = new Pen(selected ? Color.White : Color.SteelBlue, 1.6f))
-                                for (int line = -9; line <= 9; line++)
+                            g.SetClip(path);
+                            double a = (plies[i].AngleDeg % 360) * Math.PI / 180;
+                            float dx = (float)Math.Cos(a), dy = (float)Math.Sin(a);
+                            using (var fibre = new Pen(selected ? Color.White : PlyColor(i), 2.8f))
+                                for (int line = -7; line <= 7; line++)
                                 {
-                                    float offset = line * .09f;
-                                    e.Graphics.DrawLine(fibre, Project(-dx * 2 - dy * offset, -dy * 2 + dx * offset, scale, cx, cy),
-                                        Project(dx * 2 - dy * offset, dy * 2 + dx * offset, scale, cx, cy));
+                                    float offset = line * .12f;
+                                    g.DrawLine(fibre, project(-dx * 2 - dy * offset, -dy * 2 + dx * offset), project(dx * 2 - dy * offset, dy * 2 + dx * offset));
                                 }
-                            using (var zero = new Pen(selected ? Color.DarkRed : Color.DarkSlateGray, 1.5f) { DashStyle = System.Drawing.Drawing2D.DashStyle.Dash })
-                                e.Graphics.DrawLine(zero, Project(-.5f, 0, scale, cx, cy), Project(.5f, 0, scale, cx, cy));
                         }
-                        finally { e.Graphics.Restore(state); }
+                        finally { g.Restore(state); }
                     }
                     using (var edge = new Pen(selected ? Controller.CompositePlyHighlightColor : Color.SlateGray, selected ? 2 : 1))
-                    { e.Graphics.DrawPolygon(edge, top); e.Graphics.DrawPolygon(edge, side); }
-                    string angle = plies[i].AngleDeg.ToString("+0.####;-0.####;0", System.Globalization.CultureInfo.InvariantCulture) + "°";
-                    TextRenderer.DrawText(e.Graphics, plies[i].Name + "  " + angle, Font,
-                        new Rectangle(5, (int)(cy + scale * .24f + 7), Width - 10, 20), selected ? Color.Red : Color.Black,
-                        TextFormatFlags.HorizontalCenter | TextFormatFlags.EndEllipsis | TextFormatFlags.SingleLine);
+                    { g.DrawPolygon(edge, top); g.DrawPolygon(edge, face); }
+                    // The baseline, radius and sampled arc use the SAME projection as the fibres.
+                    using (var halo = new Pen(Color.White, 5)) g.DrawLine(halo, project(0, 0), project(.53f, 0));
+                    using (var zero = new Pen(Color.DarkSlateGray, 1.7f) { DashStyle = System.Drawing.Drawing2D.DashStyle.Dash, EndCap = System.Drawing.Drawing2D.LineCap.ArrowAnchor })
+                        g.DrawLine(zero, project(0, 0), project(.53f, 0));
+                    double rad = Sweep(plies[i].AngleDeg) * Math.PI / 180;
+                    using (var ray = new Pen(Color.DarkSlateGray, 1.5f))
+                        g.DrawLine(ray, project(0, 0), project(.36f * (float)Math.Cos(rad), .36f * (float)Math.Sin(rad)));
+                    Arc(g, plies[i].AngleDeg, .32f, project, Color.MidnightBlue);
+                    double mid = Sweep(plies[i].AngleDeg) / 2 * Math.PI / 180;
+                    PointF arcPoint = project(.32f * (float)Math.Cos(mid), .32f * (float)Math.Sin(mid));
+                    float labelX = cx + scale * .43f, labelY = plateY + 33;
+                    using (var leader = new Pen(Color.MidnightBlue, 1)) g.DrawLine(leader, arcPoint, new PointF(labelX, labelY + 10));
+                    DrawText(g, Angle(plies[i].AngleDeg), new RectangleF(labelX, labelY, 70, 22), Color.MidnightBlue, true, true, true);
+                    PointF origin = project(.54f, 0);
+                    DrawText(g, "0°", new RectangleF(origin.X, origin.Y - 22, 38, 20), Color.DarkSlateGray, false, true, true);
+                    DrawText(g, (i + 1) + ". " + plies[i].Name + "   " + Angle(plies[i].AngleDeg), new RectangleF(10, plateY + scale * .24f + 9, Width - 20, 23), selected ? Color.Red : PlyColor(i), true, true);
                     if (Layup.Symmetric && i == Layup.Plies.Count - 1)
-                    {
                         using (var pen = new Pen(Color.DarkRed, 2) { DashStyle = System.Drawing.Drawing2D.DashStyle.Dash })
-                            e.Graphics.DrawLine(pen, 5, cy - pitch + scale * .24f + 30, Width - 5, cy - pitch + scale * .24f + 30);
-                    }
+                            g.DrawLine(pen, 10, plateY - Pitch / 2 + 15, Width - 10, plateY - Pitch / 2 + 15);
                 }
-                TextRenderer.DrawText(e.Graphics, PrePoMax.L10n.Translator.Translate(
-                    Layup.Symmetric ? "Symmetric — dashed midplane" : "Bottom → top"), Font,
-                    new Rectangle(0, Height - 43, Width, 20), Color.DarkSlateGray, TextFormatFlags.HorizontalCenter | TextFormatFlags.SingleLine);
-                TextRenderer.DrawText(e.Graphics, PrePoMax.L10n.Translator.Translate("Spacing not to scale"), Font,
-                    new Rectangle(0, Height - 23, Width, 20), Color.DarkSlateGray, TextFormatFlags.HorizontalCenter | TextFormatFlags.SingleLine);
+                DrawText(g, PrePoMax.L10n.Translator.Translate(Layup.Symmetric ? "Symmetric — dashed midplane" : "Bottom → top"), new RectangleF(0, Height - 48, Width, 22), Color.DarkSlateGray, false, true);
+                DrawText(g, PrePoMax.L10n.Translator.Translate("Spacing not to scale"), new RectangleF(0, Height - 26, Width, 22), Color.DarkSlateGray, false, true);
             }
         }
     }

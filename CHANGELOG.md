@@ -1,3 +1,10 @@
+# PrePoMax-RCM 0.1.0-rc1g2 candidate (2026-10-19)
+
+- Overlay every expanded ply in a top-down square, with signed angle arcs, a zero-axis arrow and a colour key.
+- Add projected angle arcs to every isometric plate; thicken fibres; render natively at 2x DPI.
+- Enlarge the editor and preserve scrolling, red selection and symmetric highlight synchronization.
+- Solver, mesh, layup expansion and input writer behaviour remain unchanged.
+
 # PrePoMax-RCM 0.1.0-rc1g candidate (2026-10-19)
 
 - M2c: isometric exploded ply plates with local fibre directions, shared viewport red selection, mirrored symmetric plies and vertical scrolling.
