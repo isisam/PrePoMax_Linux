@@ -1,3 +1,10 @@
+# PrePoMax-RCM 0.1.0-rc1g candidate (2026-10-19)
+
+- M2c: isometric exploded ply plates with local fibre directions, shared viewport red selection, mirrored symmetric plies and vertical scrolling.
+- Apply owner-approved Traditional Chinese engineering terms; English labels, model data, keywords and solver inputs retain their existing meaning and bytes.
+- Retain RC1f solvers, examples, licences and corresponding solver source unchanged.
+- Quick-start PDFs and their historical screenshots are retained from RC1f; see Documentation/M2c_PREVIEW_zh-TW.md for the new preview.
+
 # PrePoMax-RCM 0.1.0-rc1f (2026-10-18)
 
 Research assistant: Lota.

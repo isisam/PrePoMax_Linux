@@ -15902,10 +15902,11 @@ namespace PrePoMax
             _form.UpdateTreeNode(ViewGeometryModelResults.Model, name, layup, null);
             CheckAndUpdateModelValidity(true);
         }
+        public static Color CompositePlyHighlightColor { get { return Color.Red; } }
         public void HighlightCompositePly(int[] elementIds)
         {
             ClearSelectionHistory();
-            HighlightElementSet("CompositePly", new FeElementSet("CompositePly", elementIds), Color.Red, vtkRendererLayer.Selection);
+            HighlightElementSet("CompositePly", new FeElementSet("CompositePly", elementIds), CompositePlyHighlightColor, vtkRendererLayer.Selection);
         }
         public void AddSectionCommand(Section section)
         {

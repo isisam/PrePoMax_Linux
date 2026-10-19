@@ -13,7 +13,7 @@
 | Section | 斷面 |
 | Step | 分析步 |
 | Boundary condition | 邊界條件 |
-| Load | 負載 |
+| Load | 載重 |
 | Contact | 接觸 |
 | Results | 結果 |
 | Composite Layup | 複材疊層 |
@@ -40,7 +40,7 @@
 | History output | 歷程輸出 |
 | Surface interaction | 表面交互作用 |
 | Contact pair | 接觸對 |
-| Amplitude | 振幅 |
+| Amplitude | 幅值曲線 |
 | Distribution | 分佈 |
 | Analysis | 分析 |
 | Solver | 求解器 |
@@ -75,13 +75,13 @@
 | Boundary tolerance | 邊界容差 |
 | State variable | 狀態變數 |
 | User material | 使用者材料 |
-| Fatigue CZM | 疲勞內聚區域模型 |
+| Fatigue CZM | 疲勞內聚力模型（FATCZM） |
 | Cohesive | 內聚 |
 | Damage | 損傷 |
 | Fracture toughness | 斷裂韌性 |
 | Energy release rate | 能量釋放率 |
-| Crack | 裂縫 |
-| Delamination | 脫層 |
+| Crack | 裂紋 |
+| Delamination | 分層 |
 | Normal direction | 法線方向 |
 | Right-hand rule | 右手定則 |
 | Global | 全域 |
@@ -98,7 +98,7 @@
 | Truss | 桁架 |
 | Spring | 彈簧 |
 | Rigid body | 剛體 |
-| Kinematic | 運動學 |
+| Kinematic | 運動耦合 |
 | Distributing | 分佈式 |
 | Master surface | 主表面 |
 | Slave surface | 從表面 |
@@ -108,7 +108,7 @@
 | Overclosure | 過閉合量 |
 | Gap clearance | 間隙 |
 | Stiffness | 勁度 |
-| Penalty | 罰則 |
+| Penalty | 罰函數 |
 | Thermal conductivity | 熱傳導係數 |
 | Thermal expansion | 熱膨脹 |
 | Specific heat | 比熱 |
@@ -146,16 +146,16 @@
 | Second order | 二階 |
 | Midside node | 邊中節點 |
 | Mesh grading | 網格尺寸漸變 |
-| Remeshing | 重新劃分網格 |
+| Remeshing | 重新產生網格 |
 | Mesh optimization | 網格最佳化 |
 | Element quality | 元素品質 |
 | Mesh size | 網格尺寸 |
-| Bounding box | 包圍盒 |
+| Bounding box | 邊界框 |
 | Tolerance | 容差 |
 | Relative error | 相對誤差 |
 | Deformation | 變形 |
 | Deformed | 變形後 |
 | Undeformed | 未變形 |
-| Contour | 等值線 |
+| Contour | 等值圖 |
 
 字庫為第一版翻譯初稿：術語與 FATCZM／複材疊層說明經人工指定，其他公開介面字串由翻譯服務產生並套用本表術語，仍需工程教學語境審閱。執行程式僅讀本機 JSON。

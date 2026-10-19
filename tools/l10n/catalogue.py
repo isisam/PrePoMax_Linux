@@ -7,6 +7,7 @@ The shipping application never uses this endpoint. Existing entries are reused.
 from pathlib import Path
 from collections import Counter
 import argparse, concurrent.futures, json, re, time, urllib.parse, urllib.request
+from terms_zh_tw import normalize, PREVIEW
 ROOT=Path(__file__).resolve().parents[2]
 TERMS='''Mesh|網格
 Part|零件
@@ -14,7 +15,7 @@ Material|材料
 Section|斷面
 Step|分析步
 Boundary condition|邊界條件
-Load|負載
+Load|載重
 Contact|接觸
 Results|結果
 Composite Layup|複材疊層
@@ -41,7 +42,7 @@ Field output|場輸出
 History output|歷程輸出
 Surface interaction|表面交互作用
 Contact pair|接觸對
-Amplitude|振幅
+Amplitude|幅值曲線
 Distribution|分佈
 Analysis|分析
 Solver|求解器
@@ -76,13 +77,13 @@ Symmetric|對稱
 Boundary tolerance|邊界容差
 State variable|狀態變數
 User material|使用者材料
-Fatigue CZM|疲勞內聚區域模型
+Fatigue CZM|疲勞內聚力模型（FATCZM）
 Cohesive|內聚
 Damage|損傷
 Fracture toughness|斷裂韌性
 Energy release rate|能量釋放率
-Crack|裂縫
-Delamination|脫層
+Crack|裂紋
+Delamination|分層
 Normal direction|法線方向
 Right-hand rule|右手定則
 Global|全域
@@ -99,7 +100,7 @@ Beam|梁
 Truss|桁架
 Spring|彈簧
 Rigid body|剛體
-Kinematic|運動學
+Kinematic|運動耦合
 Distributing|分佈式
 Master surface|主表面
 Slave surface|從表面
@@ -109,7 +110,7 @@ Small sliding|小滑移
 Overclosure|過閉合量
 Gap clearance|間隙
 Stiffness|勁度
-Penalty|罰則
+Penalty|罰函數
 Thermal conductivity|熱傳導係數
 Thermal expansion|熱膨脹
 Specific heat|比熱
@@ -147,17 +148,17 @@ First order|一階
 Second order|二階
 Midside node|邊中節點
 Mesh grading|網格尺寸漸變
-Remeshing|重新劃分網格
+Remeshing|重新產生網格
 Mesh optimization|網格最佳化
 Element quality|元素品質
 Mesh size|網格尺寸
-Bounding box|包圍盒
+Bounding box|邊界框
 Tolerance|容差
 Relative error|相對誤差
 Deformation|變形
 Deformed|變形後
 Undeformed|未變形
-Contour|等值線
+Contour|等值圖
 Color spectrum|色譜
 Legend|圖例
 Annotation|註記
@@ -197,7 +198,7 @@ View|檢視
 Tools|工具
 Help|說明
 Result|結果
-Load case|負載案例
+Load case|載重案例
 Strain energy|應變能
 Kinetic energy|動能
 Contact energy|接觸能
@@ -226,7 +227,7 @@ Hinge|鉸鏈
 Weld|焊接
 Joint|接頭
 Surface traction|表面牽引力
-Gravity load|重力負載
+Gravity load|重力載重
 Time|時間
 Name|名稱
 Description|說明
@@ -249,11 +250,11 @@ Materials|材料
 Parts|零件
 Sections|斷面
 Steps|分析步
-Loads|負載
+Loads|載重
 Contacts|接觸
 Plies|層
 Composite Layups|複材疊層'''
-GLOSSARY=dict(line.split('|',1) for line in TERMS.splitlines())
+GLOSSARY={en: normalize(zh) for en, zh in (line.split('|',1) for line in TERMS.splitlines())}
 MANUAL='''OK|確定
 OK - New|確定－新增
 Cancel|取消
@@ -330,7 +331,7 @@ State variables (DEPVAR)|狀態變數 (DEPVAR)
 Value / equation|數值／方程式
 Value/Equation|數值／方程式
 Unit / description|單位／說明
-Fatigue CZM (FATCZM)|疲勞內聚區域模型 (FATCZM)
+Fatigue CZM (FATCZM)|疲勞內聚力模型（FATCZM）
 Layup properties|疊層屬性
 Plies (bottom to top; Elements is an optional mesh-band count)|層（由下至上；元素數為選填的網格層數）
 Ply stack (+ axis upward)|疊層示意（正軸向上）
@@ -463,7 +464,7 @@ The name of the last file Saved/Opened.|上次儲存或開啟的檔名。
 Save the results in the PrePoMax .pmx file.|將結果儲存在 PrePoMax .pmx 檔案中。
 Select the .pmx file compression level.|選擇 .pmx 檔案的壓縮等級。
 Select the default unit system for new models.|選擇新模型的預設單位系統。
-Select yes to always show the amplitude, coordinate system and distribution selection properties.|選擇「是」以一律顯示振幅、座標系統及分佈選取屬性。
+Select yes to always show the amplitude, coordinate system and distribution selection properties.|選擇「是」以一律顯示幅值曲線、座標系統及分佈選取屬性。
 Select yes to run existing history postprocessing commands from the results with the same file name.|選擇「是」以執行同名結果檔既有的歷程後處理命令。'''
 OVERRIDES={**GLOSSARY,**dict(line.split('|',1) for line in MANUAL.splitlines())}
 OVERRIDES.update(dict(line.split('|',1) for line in '''Running|執行中
@@ -497,7 +498,7 @@ Save to file|儲存至檔案
 Box zoom|框選縮放
 No edges|不顯示邊線
 Follower view|跟隨視圖
-Color contours|色彩等值線圖
+Color contours|色彩等值圖
 Vector plot|向量圖
 Transformation|變換
 First increment|首個增量
@@ -561,7 +562,7 @@ Failed with results|失敗但有結果
 Set the number of slip wear smoothing steps using the node averaging method.|設定以節點平均法進行滑動磨耗平滑處理的步數。
 Sew faces|縫合面
 Shell edge|殼邊線
-Shift amplitude|平移振幅
+Shift amplitude|平移幅值曲線
 Shift time|平移時間
 Show Element Edges|顯示元素邊線
 Show GUI switch can only be set to Yes or No.|顯示介面選項只能設為 Yes 或 No。
@@ -598,7 +599,7 @@ FE Model|有限元素模型
 Edit Settings|編輯設定
 Edit Material|編輯材料
 Edit Boundary Condition|編輯邊界條件
-Edit Load|編輯負載
+Edit Load|編輯載重
 Edit Section|編輯斷面
 Edit Step|編輯分析步
 User Material|使用者材料
@@ -682,7 +683,8 @@ def main():
     inventory=json.loads((ROOT/'lang/strings.inventory.json').read_text(encoding='utf8'))
     out=ROOT/'lang/zh-TW.json'
     existing=json.loads(out.read_text(encoding='utf8')) if out.exists() else {}
-    catalogue={}; pending=[]; excluded={}
+    # Retain reviewed runtime/context entries that the literal scanner cannot infer.
+    catalogue=dict(existing); pending=[]; excluded={}
     normalized={k.lower():v for k,v in OVERRIDES.items()}
     for index,source in enumerate(inventory):
         clean=source.strip()
@@ -720,6 +722,8 @@ def main():
     for key in ['File','Edit','View','Tools','Help']:
         catalogue['FrmMain.tsmi'+key]=OVERRIDES[key]
     for english,chinese in [('Top view','俯視圖'),('Bottom view','仰視圖'),('Front view','前視圖'),('Back view','後視圖'),('Left view','左視圖'),('Right view','右視圖'),('Normal view','法線視圖'),('Vertical view','垂直視圖'),('Zoom to fit','縮放至適合大小')]:catalogue[english.title()]=chinese
+    catalogue.update(PREVIEW)
+    catalogue={key: normalize(value) for key, value in catalogue.items()}
     out.write_text(json.dumps(dict(sorted(catalogue.items())),ensure_ascii=False,indent=2)+'\n',encoding='utf8')
     missing=[source for source in inventory if source not in catalogue and source not in excluded]
     (ROOT/'lang/excluded.json').write_text(json.dumps(excluded,ensure_ascii=False,indent=2)+'\n',encoding='utf8')

@@ -38,7 +38,7 @@ namespace PrePoMax.Forms
             var body = new TableLayoutPanel { Location = new Point(12, 12), Size = new Size(956, 718),
                 Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right,
                 ColumnCount = 1, RowCount = 3 };
-            body.RowStyles.Add(new RowStyle(SizeType.Absolute, 255));
+            body.RowStyles.Add(new RowStyle(SizeType.Absolute, 220));
             body.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
             body.RowStyles.Add(new RowStyle(SizeType.Absolute, 112));
             Controls.Add(body);
@@ -49,8 +49,8 @@ namespace PrePoMax.Forms
             propertyGrid.AccessibleName = "Composite layup properties";
             propertyGrid.AccessibleDescription = "Name, region, rectangular coordinate system, stacking axis, symmetry and boundary tolerance.";
             var middle = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1 };
-            middle.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 73));
-            middle.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 27));
+            middle.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 68));
+            middle.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 32));
             body.Controls.Add(middle, 0, 1);
             var plyGroup = new GroupBox { Text = "Plies (bottom to top; Elements is an optional mesh-band count)", Dock = DockStyle.Fill };
             middle.Controls.Add(plyGroup, 0, 0);
@@ -97,11 +97,11 @@ namespace PrePoMax.Forms
                 button.Click += (s, e) => EditTable(action);
                 tools.Controls.Add(button);
             }
-            var plotGroup = new GroupBox { Text = "Ply stack (+ axis upward)", Dock = DockStyle.Fill };
+            var plotGroup = new GroupBox { Text = "3D ply orientation", Dock = DockStyle.Fill };
             var scroll = new Panel { Dock = DockStyle.Fill, AutoScroll = true };
-            _plot = new StackPlot { Width = 200, Height = 200 };
+            _plot = new StackPlot { Dock = DockStyle.Top, Height = 200 };
             scroll.Controls.Add(_plot);
-            scroll.Resize += (s, e) => { _plot.Width = Math.Max(100, scroll.ClientSize.Width - 20); ResizePlot(); };
+            scroll.Resize += (s, e) => ResizePlot();
             plotGroup.Controls.Add(scroll);
             middle.Controls.Add(plotGroup, 1, 0);
             var validation = new GroupBox { Text = "Validation (updated after every edit)", Dock = DockStyle.Fill };
@@ -226,7 +226,7 @@ namespace PrePoMax.Forms
         private void ResizePlot()
         {
             if (_plot == null || _plot.Parent == null) return;
-            _plot.Height = Math.Max(_plot.Parent.ClientSize.Height - 2, (_data?.Layup.GetExpandedPlies().Count ?? 0) * 24 + 50);
+            _plot.Height = Math.Max(_plot.Parent.ClientSize.Height - 2, (_data?.Layup.GetExpandedPlies().Count ?? 0) * 106 + 100);
             _plot.Invalidate();
         }
         private void RefreshValidation()
@@ -301,6 +301,9 @@ namespace PrePoMax.Forms
         }
         public void Highlight()
         {
+            // Keep the schematic selection live even in controller-free form previews.
+            _plot.SelectedPly = _grid.CurrentRow?.Index ?? -1;
+            _plot.Invalidate();
             if (_loading || !Visible || _closing || _controller == null) return;
             _controller.ClearSelectionHistory();
             // An invalid edited stack must also erase the previous valid ply highlight.
@@ -347,35 +350,84 @@ namespace PrePoMax.Forms
         private class StackPlot : Control
         {
             public CompositeLayup Layup;
-            public StackPlot() { DoubleBuffered = true; BackColor = SystemColors.Window; }
+            public int SelectedPly = -1;
+            public StackPlot()
+            {
+                DoubleBuffered = true; BackColor = SystemColors.Window;
+                AccessibleName = "3D ply orientation";
+                AccessibleDescription = "Exploded plates with fibre directions in the layup coordinate system; spacing is not to scale.";
+            }
+            // u and v are the cyclic local axes used by CompositeLayupExpansion.
+            // Drawing in that plane keeps the angle relative to the layup reference,
+            // including a rotated rectangular coordinate system and stacking axes 1/2.
+            private static PointF Project(float x, float y, float scale, float cx, float cy)
+            { return new PointF(cx + scale * (.80f * x + .48f * y), cy + scale * (-.18f * x + .30f * y)); }
+            private static Color Shade(Color c) { return Color.FromArgb(c.R * 3 / 4, c.G * 3 / 4, c.B * 3 / 4); }
             protected override void OnPaint(PaintEventArgs e)
             {
                 base.OnPaint(e);
                 if (Layup == null || Layup.Plies.Count == 0) return;
+                e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
                 var plies = Layup.GetExpandedPlies();
-                var weights = plies.Select(p => double.IsNaN(p.Thickness) || double.IsInfinity(p.Thickness) || p.Thickness <= 0 ? 0 : p.Thickness).ToArray();
-                double max = weights.Max();
-                double sum = max > 0 ? weights.Sum(w => w / max) : 0;
-                float available = Math.Max(0, Height - 45 - 24 * plies.Count);
-                float bottom = Height - 25;
+                string[] axes = { "X", "Y", "Z" };
+                int stack = Math.Max(1, Math.Min(3, Layup.StackingAxis));
+                string cs = Layup.CoordinateSystemName ?? PrePoMax.L10n.Translator.Translate("Global");
+                string reference = string.Format(PrePoMax.L10n.Translator.Translate("Reference: {0}"), cs);
+                TextRenderer.DrawText(e.Graphics, reference, Font, new Rectangle(6, 3, Width - 12, 20), Color.DarkSlateGray,
+                    TextFormatFlags.EndEllipsis | TextFormatFlags.SingleLine);
+                TextRenderer.DrawText(e.Graphics, "0° = " + axes[stack % 3] + "    90° = " + axes[(stack + 1) % 3] + "    +" + axes[stack - 1] + " ↑", Font,
+                    new Rectangle(6, 23, Width - 12, 20), Color.DarkSlateGray, TextFormatFlags.SingleLine);
+                float pitch = Math.Max(106, (Height - 100f) / plies.Count);
+                float scale = Math.Min(Width * .60f, 150);
                 for (int i = 0; i < plies.Count; i++)
                 {
-                    float h = 24 + (sum > 0 ? (float)(available * (weights[i] / max) / sum) : 0);
-                    var rect = new RectangleF(8, bottom - h, Width - 16, h);
-                    using (var brush = new SolidBrush(i % 2 == 0 ? Color.LightSteelBlue : Color.LightCyan)) e.Graphics.FillRectangle(brush, rect);
-                    e.Graphics.DrawRectangle(Pens.SlateGray, rect.X, rect.Y, rect.Width, rect.Height);
-                    TextRenderer.DrawText(e.Graphics, plies[i].Name + " " + plies[i].AngleDeg.ToString("G5") + "°", Font,
-                        Rectangle.Round(rect), Color.Black, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
-                    bottom -= h;
+                    bool selected = i == SelectedPly || (Layup.Symmetric && i == plies.Count - 1 - SelectedPly && SelectedPly >= 0);
+                    Color color = selected ? Controller.CompositePlyHighlightColor : i % 2 == 0 ? Color.LightSteelBlue : Color.LightCyan;
+                    float cy = 84 + (plies.Count - 1 - i) * pitch, cx = Width / 2f;
+                    PointF[] top = { Project(-.5f, -.5f, scale, cx, cy), Project(.5f, -.5f, scale, cx, cy),
+                        Project(.5f, .5f, scale, cx, cy), Project(-.5f, .5f, scale, cx, cy) };
+                    PointF[] side = { top[1], top[2], top[3], new PointF(top[3].X, top[3].Y + 5),
+                        new PointF(top[2].X, top[2].Y + 5), new PointF(top[1].X, top[1].Y + 5) };
+                    using (var brush = new SolidBrush(Shade(color))) e.Graphics.FillPolygon(brush, side);
+                    using (var brush = new SolidBrush(color)) e.Graphics.FillPolygon(brush, top);
+                    using (var path = new System.Drawing.Drawing2D.GraphicsPath())
+                    {
+                        path.AddPolygon(top);
+                        var state = e.Graphics.Save();
+                        try
+                        {
+                            e.Graphics.SetClip(path);
+                            double radians = (plies[i].AngleDeg % 360) * Math.PI / 180;
+                            float dx = (float)Math.Cos(radians), dy = (float)Math.Sin(radians);
+                            using (var fibre = new Pen(selected ? Color.White : Color.SteelBlue, 1.6f))
+                                for (int line = -9; line <= 9; line++)
+                                {
+                                    float offset = line * .09f;
+                                    e.Graphics.DrawLine(fibre, Project(-dx * 2 - dy * offset, -dy * 2 + dx * offset, scale, cx, cy),
+                                        Project(dx * 2 - dy * offset, dy * 2 + dx * offset, scale, cx, cy));
+                                }
+                            using (var zero = new Pen(selected ? Color.DarkRed : Color.DarkSlateGray, 1.5f) { DashStyle = System.Drawing.Drawing2D.DashStyle.Dash })
+                                e.Graphics.DrawLine(zero, Project(-.5f, 0, scale, cx, cy), Project(.5f, 0, scale, cx, cy));
+                        }
+                        finally { e.Graphics.Restore(state); }
+                    }
+                    using (var edge = new Pen(selected ? Controller.CompositePlyHighlightColor : Color.SlateGray, selected ? 2 : 1))
+                    { e.Graphics.DrawPolygon(edge, top); e.Graphics.DrawPolygon(edge, side); }
+                    string angle = plies[i].AngleDeg.ToString("+0.####;-0.####;0", System.Globalization.CultureInfo.InvariantCulture) + "°";
+                    TextRenderer.DrawText(e.Graphics, plies[i].Name + "  " + angle, Font,
+                        new Rectangle(5, (int)(cy + scale * .24f + 7), Width - 10, 20), selected ? Color.Red : Color.Black,
+                        TextFormatFlags.HorizontalCenter | TextFormatFlags.EndEllipsis | TextFormatFlags.SingleLine);
                     if (Layup.Symmetric && i == Layup.Plies.Count - 1)
                     {
                         using (var pen = new Pen(Color.DarkRed, 2) { DashStyle = System.Drawing.Drawing2D.DashStyle.Dash })
-                            e.Graphics.DrawLine(pen, 0, bottom, Width, bottom);
+                            e.Graphics.DrawLine(pen, 5, cy - pitch + scale * .24f + 30, Width - 5, cy - pitch + scale * .24f + 30);
                     }
                 }
                 TextRenderer.DrawText(e.Graphics, PrePoMax.L10n.Translator.Translate(
                     Layup.Symmetric ? "Symmetric — dashed midplane" : "Bottom → top"), Font,
-                    new Rectangle(0, Height - 23, Width, 22), Color.DarkSlateGray, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
+                    new Rectangle(0, Height - 43, Width, 20), Color.DarkSlateGray, TextFormatFlags.HorizontalCenter | TextFormatFlags.SingleLine);
+                TextRenderer.DrawText(e.Graphics, PrePoMax.L10n.Translator.Translate("Spacing not to scale"), Font,
+                    new Rectangle(0, Height - 23, Width, 20), Color.DarkSlateGray, TextFormatFlags.HorizontalCenter | TextFormatFlags.SingleLine);
             }
         }
     }

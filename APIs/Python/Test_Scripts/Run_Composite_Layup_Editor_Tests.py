@@ -48,7 +48,8 @@ def main():
         application("reload", "Composite_Layup_Editor_Reload.py", work / "M2b_layup.pmx")
     if args.regressions:
         command("M1", [sys.executable, "-B", str(scripts / "Run_Tests.py"), "--exe", str(exe), "--work", str(work / "M1"),
-            "--filter", "Test_Model_Materials_Sections.py", "Test_Model_User_Material.py", "Test_Solver_Ccx_Fat_Defaults.py", "Test_Solver_Ccx_Fat_Warning.py"])
+            "--filter", "Audit_API_Coverage.py", "Audit_API_Documentation.py", "test_runner_offline.py",
+            "Test_Model_Materials_Sections.py", "Test_Model_User_Material.py", "Test_Solver_Ccx_Fat_Defaults.py", "Test_Solver_Ccx_Fat_Warning.py"])
         command("M2a", [sys.executable, "-B", str(scripts / "Run_Composite_Layup_Tests.py"), "--exe", str(exe), "--work", str(work / "M2a")], timeout=1800)
     (work / "summary.json").write_text(json.dumps(results, indent=2), encoding="utf-8")
     passed = bool(results) and all(r["passed"] for r in results.values())

@@ -1785,6 +1785,13 @@
       "kind": "attribute"
     }
   ],
+  "3D ply orientation": [
+    {
+      "file": "PrePoMax/Forms/42_CompositeLayup/FrmCompositeLayup.cs",
+      "line": 100,
+      "kind": "runtime-ui"
+    }
+  ],
   ": it changes at a node of ": [
     {
       "file": "CaeMesh/Meshing/Gmsh/Sweep/SweepMeshData.cs",
@@ -9959,6 +9966,13 @@
       "file": "PrePoMax/Forms/FrmMain.Designer.cs",
       "line": 1935,
       "kind": "designer"
+    }
+  ],
+  "Exploded plates with fibre directions in the layup coordinate system; spacing is not to scale.": [
+    {
+      "file": "PrePoMax/Forms/42_CompositeLayup/FrmCompositeLayup.cs",
+      "kind": "custom-draw",
+      "line": 358
     }
   ],
   "Exploded view": [
@@ -20429,6 +20443,13 @@
       "kind": "attribute"
     }
   ],
+  "Reference: {0}": [
+    {
+      "file": "PrePoMax/Forms/42_CompositeLayup/FrmCompositeLayup.cs",
+      "kind": "custom-draw",
+      "line": 375
+    }
+  ],
   "Regenerate All": [
     {
       "file": "PrePoMax/Forms/FrmMain.cs",
@@ -23671,6 +23692,13 @@
       "file": "PrePoMax/Forms/82_ResultFieldOutput/ViewResultFieldOutput.cs",
       "line": 104,
       "kind": "attribute"
+    }
+  ],
+  "Spacing not to scale": [
+    {
+      "file": "PrePoMax/Forms/42_CompositeLayup/FrmCompositeLayup.cs",
+      "line": 429,
+      "kind": "custom-draw"
     }
   ],
   "Specific Heat": [

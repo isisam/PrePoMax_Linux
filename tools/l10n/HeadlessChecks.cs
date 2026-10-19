@@ -184,7 +184,7 @@ public static class L10nChecks
             string validation = "Elements crossing a ply boundary: 1 (IDs 7); outside the stack: 0 (IDs ); ambiguous/zero extent: 0 (IDs ).";
             Assert(Translator.Message(validation) == "跨越層邊界的元素：1（編號 7）；位於疊層外的元素：0（編號 ）；範圍不明確或為零的元素：0（編號 ）。",
                 "dynamic message retains populated and empty arguments");
-            Assert(label.Text == "網格" && item.Text == "負載" && item.ToolTipText == "材料", "caption/menu/tooltip");
+            Assert(label.Text == "網格" && item.Text == "載重" && item.ToolTipText == "材料", "caption/menu/tooltip");
             Assert(context.Items[0].Text == "接觸" && tabs.TabPages[0].Text == "結果" && grid.Columns[0].HeaderText == "材料", "context/tab/grid header");
             Assert(input.Text == "Mesh" && combo.Text == "Mesh" && (string)combo.Items[0] == "Material" && (string)grid.Rows[0].Cells[0].Value == "Mesh", "model/input values untouched");
             Assert(keywords.Text == "*MATERIAL, NAME=Mesh\n1.25, mm, MPa", "keyword/unit/number untouched");
