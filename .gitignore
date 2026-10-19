@@ -270,3 +270,9 @@ CLAUDE.md
 /_Codex/
 /Notes/
 /CaeMesh/Meshing/Gmsh/Sweep/Roadmap.md
+
+# Release-only dependency; restore locally after verifying its hash.
+ThirdParty/NCalc.RCM/Antlr3.Runtime.dll
+*.pmx
+*.pmh
+_attempt/
