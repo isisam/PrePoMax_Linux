@@ -10,6 +10,8 @@ namespace PrePoMax.Avalonia;
 public sealed partial class MainWindow
 {
     private EntityEditorWindow? activeEditor;
+    private string? activeEditorStep;
+    private Action? activeEditorNew;
     private static bool CanEdit(TreeEntry entry) => entry.View == ViewGeometryModelResults.Model && (entry.Entity switch
     {
         Material m => m.Properties.All(p => p is Density or Elastic or ElasticEngineeringConstants or ElasticLamina or ElasticWithDensity or Plastic or ThermalExpansion or ThermalConductivity or SpecificHeat or SlipWear or UserMaterial),
@@ -44,14 +46,16 @@ public sealed partial class MainWindow
                 "ElementSet" => new ElementSetFormSession(c), "Surface" => new SurfaceFormSession(c), "Step" => new StepFormSession(c),
                 "BoundaryCondition" => new BoundaryFormSession(c, category.Step!, displacement: type != "Fixed"),
                 "Load" => new LoadFormSession(c, category.Step!, type: type), _ => throw new NotSupportedException(type)
-            }, () => OpenNewEditor(category, type));
+            }, () => OpenNewEditor(category, type), category.Step);
         }
         catch (Exception error) { Log(error.ToString()); SetStatus(error.Message); }
     }
-    private void ShowEntityEditor(EntityFormSession session, Action? addNew = null)
+    private void ShowEntityEditor(EntityFormSession session, Action? addNew = null, string? step = null)
     {
         if (activeEditor != null) { activeEditor.Activate(); return; }
         var dialog = activeEditor = new EntityEditorWindow(session, mainView.Controller);
+        activeEditorStep=step;activeEditorNew=addNew;
+        dialog.AddHandler(global::Avalonia.Input.InputElement.KeyDownEvent,HistoryKeyDown,global::Avalonia.Interactivity.RoutingStrategies.Tunnel);
         dialog.Applied += () => { RefreshModelTrees(); Log("FORM " + session.Kind + " " + session.Draft.Name + " commands=" + mainView.Controller.GetActiveCommandCount()); };
         dialog.DraftChanged += () => HighlightDraft(session);
         dialog.AddNewRequested += () => global::Avalonia.Threading.Dispatcher.UIThread.Post(() => addNew?.Invoke());
@@ -61,6 +65,7 @@ public sealed partial class MainWindow
     }
     private void ViewportSelection(double[] point,double[] direction,double[][] planes,bool completelyInside,vtkSelectOperation operation,string[] names)
     {
+        if(loading)return;
         if(activeEditor?.SelectionPanel is {IsVisible:true} panel){panel.SelectPointOrArea(point,direction,planes,completelyInside,operation,names);return;}
         if(viewport.SelectBy==vtkSelectBy.Default && planes!=null && DisplayedMesh is {} mesh)
         {

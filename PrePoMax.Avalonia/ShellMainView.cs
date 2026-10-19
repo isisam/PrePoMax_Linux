@@ -18,6 +18,7 @@ internal sealed class ShellMainView(MainWindow window,VtkMaxView viewport) : Nul
     public override void WriteDataToOutput(string data)=>UI(()=>window.Log(data));
     public override void WriteErrorToOutput(string data)=>UI(()=>window.Log("ERROR: "+data));
     public override void ShowTimedError(string message,int milliseconds)=>WriteErrorToOutput(message);
+    public override void EnableDisableUndoRedo(string undo,string redo)=>UI(()=>window.SetHistoryActions(undo,redo));
     public override void SetTitle(string title)=>UI(()=>window.Title=title);
     // FrmStep adds the default analysis after its first AddStepCommand. The
     // NullMainView placeholder returns null; prepare the same typed job here.

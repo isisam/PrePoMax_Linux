@@ -78,7 +78,8 @@ static partial class SelectionWindows
                     camera=new {position=actualPosition,focal=actualFocal,up=actualUp,scale=actualScale,width=view.ClientSize.Width,height=view.ClientSize.Height},
                     geometry=new {point=target.Coor,element,edge,face}, private_desktop=true, semantics="real Windows vtkControl, volume provider, six planes fed unchanged to Linux" };
                 File.WriteAllText(args[1],Json.Serialize(result),new UTF8Encoding(false));
-                if(args.Length>2)Replay(c,view,args[2]);
+                if(args.Length>3&&args[2]=="--history")History(c,args[3]);
+                else if(args.Length>2)Replay(c,view,args[2]);
                 Console.WriteLine("PASS Windows frustum snapshot: "+args[0]);
             }
             return 0;

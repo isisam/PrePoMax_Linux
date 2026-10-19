@@ -71,7 +71,7 @@ public sealed partial class MainWindow
                 }
                 else if (entry.View == ViewGeometryModelResults.Model && NewFormTypes(entry.Kind).Length > 0)
                     item.ContextMenu = new ContextMenu { ItemsSource = NewFormTypes(entry.Kind).Select(type => Item("New " + type + "…", () => OpenNewEditor(entry, type))).ToArray() };
-                if (entry.Key == "Model/Steps" && entry.Children.Length == 0 && mainView.Controller.Model.CalculixUserKeywords.Count > 0)
+                if (entry.Key == "Model/Steps" && entry.Children.Length == 0 && mainView.Controller.Model.CalculixUserKeywords?.Count > 0)
                     item.ItemsSource = new[] { new TreeViewItem { Header = new TextBlock { Text = "No typed steps. This model contains CalculiX user keywords; steps may be stored there.", TextWrapping = TextWrapping.Wrap, MaxWidth = 220 } } };
                 ToolTip.SetTip(item,entry.Entity == null ? entry.Caption : entry.Entity.GetType().Name+" — "+entry.Caption);
                 return item;
@@ -186,7 +186,7 @@ public sealed partial class MainWindow
     private void OpenTreeEditor(TreeEntry entry)
     {
         if(entry.Entity==null)return;
-        if (CanEdit(entry)) { ShowEntityEditor(CreateSession(entry)); return; }
+        if (CanEdit(entry)) { ShowEntityEditor(CreateSession(entry),step:entry.Step); return; }
         var text=string.Join(Environment.NewLine,TypeDescriptor.GetProperties(entry.Entity).Cast<PropertyDescriptor>()
             .Where(p=>p.IsBrowsable).Select(p=>p.DisplayName+": "+p.GetValue(entry.Entity)));
         if(entry.Entity is CaeModel.CompositeLayup layup)

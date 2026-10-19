@@ -36,6 +36,7 @@ public sealed partial class MainWindow : Window, IMainView
         SettingsContainer.IsSaveDisabled=true;
         _=new Controller(this);mainView.Loading=false;
         KeyDown += (_, e) => { if (e.Key == Key.Q && e.KeyModifiers.HasFlag(KeyModifiers.Control)) { e.Handled = true; Close(); } };
+        AddHandler(InputElement.KeyDownEvent, HistoryKeyDown, global::Avalonia.Interactivity.RoutingStrategies.Tunnel);
         Closed += (_, _) => {closing=true;solverCancellation?.Cancel();};
         viewport.OperationFailed+=e=>Log("Viewport error: "+e.Message);
         var root = new DockPanel();
@@ -80,6 +81,7 @@ public sealed partial class MainWindow : Window, IMainView
         MenuItem L(string title,Action action)=>Item(ShellLocale.Text(title),action);
         menu.ItemsSource=new[]{
             new MenuItem{Header=ShellLocale.Text("File"),ItemsSource=new[]{L("Open",async()=>await ChooseFile()),L("Save",async()=>await SavePmx()),Item("Export INP",async()=>await ExportInp()),L("Export",async()=>await SavePng()),L("Exit",Close)}},
+            BuildEditMenu(),
             new MenuItem{Header=ShellLocale.Text("View"),ItemsSource=new[]{L("Front",()=>viewport.SetFrontBackView(false,true)),L("Back",()=>viewport.SetFrontBackView(false,false)),L("Top",()=>viewport.SetTopBottomView(false,true)),L("Bottom",()=>viewport.SetTopBottomView(false,false)),L("Left",()=>viewport.SetLeftRightView(false,true)),L("Right",()=>viewport.SetLeftRightView(false,false)),Item("Isometric",()=>viewport.SetIsometricView(false,true)),L("Zoom to fit",()=>viewport.SetZoomToFit(false)),Item("Show / hide edges",ToggleEdges)}},
             new MenuItem{Header=ShellLocale.Text("Language"),ItemsSource=new[]{Item("English",()=>{ShellLocale.Chinese=false;BuildMenu();}),Item("\u7e41\u9ad4\u4e2d\u6587",()=>{ShellLocale.Chinese=true;BuildMenu();})}}
         };
@@ -114,7 +116,13 @@ public sealed partial class MainWindow : Window, IMainView
             else
             {
                 var loaded=await Task.Run(()=>{
-                    var controller=new Controller(this);controller.RegenerationWorkDirectory=Path.GetDirectoryName(Path.GetFullPath(path));
+                    // An interactive open must remain outside batch regeneration.
+                    // RegenerationWorkDirectory also enables BatchRegenerationMode,
+                    // which rewrites saved history paths during an ordinary Undo.
+                    var controller=new Controller(this);
+                    var settings=controller.Settings;
+                    settings.Solver.WorkDirectoryForSettingsOnly=Path.GetDirectoryName(Path.GetFullPath(path))!;
+                    controller.Settings=settings;
                     Exception? error=null;var previous=CoreHost.FileReadError;CoreHost.FileReadError=e=>error=e;
                     try
                     {
@@ -147,7 +155,7 @@ public sealed partial class MainWindow : Window, IMainView
             if((Environment.GetEnvironmentVariable("PPM_L2C_EVIDENCE")=="1"||Environment.GetEnvironmentVariable("PPM_L2B_EVIDENCE")=="1")&&Program.Arguments.Contains("--evidence"))Evidence();
         }
         catch(Exception e){mainView.Controller=previousController;Log(e.ToString());status.Text="Open failed: "+e.Message;}
-        finally{loading=false;mainView.Loading=false;progressBar.IsVisible=false;}
+        finally{loading=false;mainView.Loading=false;progressBar.IsVisible=false;SetHistoryActions(undoName,redoName);}
     }
     private async Task ChooseFile()
     {
@@ -163,9 +171,9 @@ public sealed partial class MainWindow : Window, IMainView
     private async Task SavePmxTo(string path)
     {
         if(model==null||loading)return;loading=true;mainView.Loading=true;progressBar.IsVisible=true;
-        try{await Task.Run(()=>mainView.Controller.SaveToPmx(path));Log("SAVE PMX "+path);status.Text="Saved "+path;}
+        try{await Task.Run(()=>mainView.Controller.SaveToPmxCommand(path));Log("SAVE PMX "+path);status.Text="Saved "+path;}
         catch(Exception e){Log(e.ToString());status.Text="Save failed: "+e.Message;}
-        finally{loading=false;mainView.Loading=false;progressBar.IsVisible=false;}
+        finally{loading=false;mainView.Loading=false;progressBar.IsVisible=false;SetHistoryActions(undoName,redoName);}
     }
     private async Task ExportInp()
     {
@@ -211,6 +219,22 @@ public sealed partial class MainWindow : Window, IMainView
             monitor.Tick += async (_, _) =>
             {
                 if (viewport.View is not { } view) { monitor.Stop(); return; }
+                if(historyBusy)
+                {
+                    // Regeneration temporarily replaces Controller.Model. Publish
+                    // the last complete snapshot plus a live UI heartbeat, without
+                    // traversing objects being rebuilt by the worker.
+                    var statePath=Path.Combine(output,"state.json");
+                    if(File.Exists(statePath))
+                    {
+                        var frame=System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(statePath))!;
+                        frame["history"]=JsonSerializer.SerializeToNode(new{busy=historyBusy,undo=undoName,redo=redoName,sequence=historySequence,error=historyError});
+                        frame["pumpCount"]=viewport.PumpCount;frame["status"]=status.Text;
+                        File.WriteAllText(Path.Combine(output,"state.tmp"),frame.ToJsonString());
+                        File.Move(Path.Combine(output,"state.tmp"),statePath,true);
+                    }
+                    return;
+                }
                 var screen = view.Project(x, y, z);
                 File.WriteAllText(Path.Combine(output, "state.tmp"), JsonSerializer.Serialize(new
                 {
@@ -221,7 +245,8 @@ public sealed partial class MainWindow : Window, IMainView
                     focus=viewport.HasViewportFocus, status=status.Text, log=messages.Text, actors=viewport.GetVtkMaxActorData().Length,
                     nodes=model.NodeIds.Length,elements=model.ElementIds.Length,controllerNodes=mainView.Controller.Model.Mesh?.Nodes.Count??0,step=model.ResultsStep,increment=model.ResultsIncrement,time=model.ResultsTime,
                     fields=model.Contours.ToDictionary(p=>p.Key,p=>new{min=p.Value.Min(),max=p.Value.Max()}),
-                    language=ShellLocale.Chinese?"zh-TW":"en", units=units.Text, tree=TreeEvidenceState(), form=FormsEvidenceState()
+                    language=ShellLocale.Chinese?"zh-TW":"en", units=units.Text, tree=TreeEvidenceState(), form=FormsEvidenceState(),
+                    history=new {busy=historyBusy,undo=undoName,redo=redoName,sequence=historySequence,error=historyError}
                 }, new JsonSerializerOptions { IncludeFields = true }));
                 File.Move(Path.Combine(output,"state.tmp"),Path.Combine(output,"state.json"),true);
                 if (File.Exists(Path.Combine(output, "capture")))
@@ -233,6 +258,7 @@ public sealed partial class MainWindow : Window, IMainView
                 {
                     using var command=JsonDocument.Parse(File.ReadAllText(commandPath));File.Delete(commandPath);
                     var c=command.RootElement;string op=c.GetProperty("op").GetString()!;
+                    if(op=="history") { (c.GetProperty("redo").GetBoolean()?redoMenu:undoMenu).RaiseEvent(new global::Avalonia.Interactivity.RoutedEventArgs(MenuItem.ClickEvent)); }
                     if(op.StartsWith("tree-"))TreeEvidenceCommand(op,c);
                     if(op.StartsWith("form-"))
                     {
