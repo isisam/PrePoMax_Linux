@@ -158,6 +158,16 @@ namespace CaeGlobals
                 string startUpPath = PlatformServices.Paths.ApplicationDirectory;
                 return Path.Combine(startUpPath, path.Substring(1).TrimStart('\\', '/'));
             }
+            // A PMX command history can refer to an existing file on a Windows
+            // drive mounted by WSL. Resolve that spelling at execution time;
+            // retain the serialized path and leave missing files unchanged so
+            // normal regeneration diagnostics still identify the original input.
+            if (!PlatformInfo.IsWindows && path != null && path.Length > 2 &&
+                char.IsLetter(path[0]) && path[1] == ':' && (path[2] == '\\' || path[2] == '/'))
+            {
+                string mounted = "/mnt/" + char.ToLowerInvariant(path[0]) + "/" + path.Substring(3).Replace('\\', '/');
+                if (File.Exists(mounted)) return mounted;
+            }
             return path;
         }
         public static string GetNonExistentRandomFileName(string path, string extension = "")
