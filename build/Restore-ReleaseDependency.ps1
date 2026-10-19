@@ -18,4 +18,4 @@ try {
     [IO.File]::WriteAllBytes($target, $bytes)
     $memory.Dispose()
 } finally { $archive.Dispose() }
-Write-Output 'Antlr3.Runtime 3.1.2 restored locally; keep this dependency untracked.'
+Write-Output 'Antlr3.Runtime assembly version 3.1.3.22795 restored locally; keep this dependency untracked.'
