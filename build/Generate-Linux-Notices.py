@@ -4,7 +4,7 @@
 Preserve original package copyright/licenses, never invent license texts.
 """
 from pathlib import Path
-import argparse, hashlib, json, shutil, urllib.request, xml.etree.ElementTree as ET
+import argparse, hashlib, json, os, shutil, urllib.request, xml.etree.ElementTree as ET
 
 ap=argparse.ArgumentParser()
 ap.add_argument('app',type=Path); ap.add_argument('repo',type=Path)
@@ -102,7 +102,7 @@ for component, filename, license_file, version in (
         add(component, version, {filename}, (repo/'ThirdParty/NCalc.RCM'/license_file).read_text(encoding='utf-8-sig'),
             'RC1 ThirdParty/NCalc.RCM; NCalc source, ANTLR binary and original notices in corresponding-source archive')
         project_files.discard(filename)
-add('PrePoMax-RCM','L2b',project_files,gpl,'Corresponding-source archive supplied alongside binaries')
+add('PrePoMax-RCM',os.environ.get('PPM_PACKAGE_VERSION','L2b'),project_files,gpl,'Corresponding-source archive supplied alongside binaries')
 if (app/'ThreeMF.dll').exists():
     binding=(repo/'3MF/Lib3MF.cs').read_text(encoding='utf-8-sig').split('*/',1)[0]+'*/\n'
     add('ThreeMF-binding','2024',{'ThreeMF.dll'},binding,'3MF Consortium; generated Lib3MF.cs BSD-2-Clause notice')
@@ -112,8 +112,10 @@ vtkl=dst/'VTK-third-party'; vtkl.mkdir(exist_ok=True)
 for p in (a.vtk_source/'ThirdParty').rglob('*'):
     if p.is_file() and (p.name.lower().startswith(('license','copying','copyright','notice'))):
         target_path=vtkl/p.relative_to(a.vtk_source/'ThirdParty'); target_path.parent.mkdir(parents=True,exist_ok=True); shutil.copy2(p,target_path)
-add('VTK','9.4.2',{'libvtkmax.so.0.2.0'},vtktext+'\n\nInternal notices: VTK-third-party/\n','https://vtk.org/files/release/9.4/VTK-9.4.2.tar.gz')
-add('vtkmax','0.2.0',{'libvtkmax.so.0.2.0'},(repo/'native/vtkmax/NOTICE.md').read_text()+gpl,'Corresponding-source archive supplied alongside binaries')
+native=(app/'libvtkmax.so').resolve(strict=True)
+native_version=native.name.split('.so.',1)[1]
+add('VTK','9.4.2',{native.name},vtktext+'\n\nInternal notices: VTK-third-party/\n','https://vtk.org/files/release/9.4/VTK-9.4.2.tar.gz')
+add('vtkmax',native_version,{native.name},(repo/'native/vtkmax/NOTICE.md').read_text()+gpl,'Corresponding-source archive supplied alongside binaries')
 
 unknown=[]
 for p in app.rglob('*'):

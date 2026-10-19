@@ -8,6 +8,12 @@ gateway=resolver.ModelGateway
 controller=gateway.GetType().GetField('_controller',BindingFlags.Instance|BindingFlags.NonPublic).GetValue(gateway)
 model=controller.Model
 kind=os.path.basename(os.path.dirname(pmx.work_directory))
+if kind=='ui-old-DCB' and os.environ.get('PPM_FINAL_P3_OLD')=='1':
+    step=controller.GetStep('Step-1')
+    assert step.InitialTimeIncrement==0.1 and step.IncrementationType.ToString()=='Automatic'
+    assert step.BoundaryConditions.ContainsKey('StrictFixed') and step.Loads['StrictForce'].F2.Value==0.001
+    assert list(model.Mesh.NodeSets['StrictNodes'].Labels)==[1,2,3,4]
+    assert not controller.GetCommandCollectionErrors()
 if kind!='ui-old-DCB':
     assert len(model.Mesh.NodeSets['StrictNodes'].Labels)==4
     assert len(model.Mesh.ElementSets['StrictElements'].Labels)==1
