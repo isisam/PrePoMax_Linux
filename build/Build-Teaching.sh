@@ -12,7 +12,7 @@ export DOTNET_PROCESSOR_COUNT=4 DOTNET_CLI_TELEMETRY_OPTOUT=1
 export LP_NUM_THREADS=1 OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1
 export PPM_PACKAGE_VERSION=0.4.0 LC_ALL=C TZ=UTC
 mkdir -p "$root"
-maps="-ffile-prefix-map=$root=/_/build -ffile-prefix-map=$repo=/_/src -fdebug-prefix-map=$root=/_/build -fmacro-prefix-map=$root=/_/build"
+maps="-ffile-prefix-map=$root=/_/build -fdebug-prefix-map=$root=/_/build -fmacro-prefix-map=$root=/_/build -ffile-prefix-map=$repo=/_/src -fdebug-prefix-map=$repo=/_/src -fmacro-prefix-map=$repo=/_/src"
 export CFLAGS="$maps" CXXFLAGS="$maps"
 if [[ "$phase" = managed || "$phase" = all ]]; then
   test ! -e "$root/app"
