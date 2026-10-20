@@ -23,8 +23,8 @@ At last change the active solution platform using the main menu: **Build** -> **
 Start the compilation and execution of the project by pressing the Start button...
 
 Compiling PrePoMax produces a working meshing setup on its own. The Netgen, Mmg and Gmsh binaries
-are vendored in [ThirdParty/](ThirdParty/) and the build copies them into `Meshers\Netgen`,
-`Meshers\Mmg` and `lib`, together with the license texts from [Licenses/](Licenses/). Nothing has to
+are vendored in [ThirdParty/](../ThirdParty/) and the build copies them into `Meshers\Netgen`,
+`Meshers\Mmg` and `lib`, together with the license texts from [Licenses/](../Licenses/). Nothing has to
 be copied by hand for meshing to work.
 
 The rest of the base folder (Models, Solver, Python, Tools, Help) still has to be taken from the
@@ -33,15 +33,15 @@ latest released version of PrePoMax's base folder. Then set the working folder a
 
 # License
 
-PrePoMax is licensed under the GNU General Public License v3 - see [LICENSE](LICENSE).
+PrePoMax is licensed under the GNU General Public License v3 - see [LICENSE](../LICENSE).
 
 It also ships third-party mesher binaries that are not built from this repository: Gmsh
 (GPL-2.0-or-later, with an exception), Mmg (LGPL-3.0-or-later), and NetGenMesher (GPL-3.0), which in
 turn links Netgen, OpenCASCADE and pthreads-win32 (all LGPL-2.1). Their license texts live in
-[Licenses/](Licenses/) and the build copies them into the output folder next to the binaries they
+[Licenses/](../Licenses/) and the build copies them into the output folder next to the binaries they
 cover, so a build from this repository carries them automatically.
 
-See [Licenses/README.md](Licenses/README.md) for the full inventory, the corresponding-source
+See [Licenses/README.md](../Licenses/README.md) for the full inventory, the corresponding-source
 obligation, and the handful of libraries bundled with the OpenCASCADE distribution whose terms are
 still to be established.
 
@@ -102,7 +102,7 @@ project's own instructions, so that it asks rather than working around it.
 The application serves the agent its own guide: **`get_guide`** is how the work is ordered, what a
 number without a unit means, how to find the face that was meant, and what to do when a call is
 refused. It travels with the version, so there is nothing to keep in step on the client side.
-`Help\Python\SKILL.md`, in the installation folder (and in [AgentSkill/prepomax/](AgentSkill/prepomax/)
+`Help\Python\SKILL.md`, in the installation folder (and in [AgentSkill/prepomax/](../AgentSkill/prepomax/)
 in this repository), is a Claude Code skill that points an agent at it. Copy it to
 `<project>/.claude/skills/prepomax/SKILL.md` to have it in one project, or to
 `~/.claude/skills/prepomax/SKILL.md` to have it in all of them.
@@ -131,7 +131,7 @@ The PrePoMax is a solution which consists of 14 projects:
 
 PrePoMax is compiled in an exe file all the other projects are compiled in dll files.
 
-Alongside the projects, [ThirdParty/](ThirdParty/) holds the binaries that are not built here and
+Alongside the projects, [ThirdParty/](../ThirdParty/) holds the binaries that are not built here and
 are deployed by the build: `netgen/` (NetGenMesher and its OpenCASCADE runtime), `mmg/` (the Mmg
 executables) and `gmsh-4.13.0-Windows64-sdk/` (the Gmsh sdk that GmshCommon links against and whose
 dll is shipped).
