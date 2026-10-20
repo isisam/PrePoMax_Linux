@@ -728,7 +728,7 @@ def main():
     missing=[source for source in inventory if source not in catalogue and source not in excluded]
     (ROOT/'lang/excluded.json').write_text(json.dumps(excluded,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
     (ROOT/'lang/missing.json').write_text(json.dumps(missing,ensure_ascii=False,indent=2)+'\n',encoding='utf8')
-    glossary='# PrePoMax 繁體中文工程術語表\n\n供 Lota 與project contributor審閱。適用臺灣工程教學；僅第一層選單以括號保留英文。\n\n'
+    glossary='# PrePoMax 繁體中文工程術語表\n\n供 Isisam 與project contributor審閱。適用臺灣工程教學；僅第一層選單以括號保留英文。\n\n'
     glossary+='「斷面」指材料／元素的 Section 指派；「剖面視圖」指 Section View。Ply 為單一層，Composite Layup 為完整複材疊層。\n'
     glossary+='主／從表面沿用既有 master/slave 定義；內部識別名稱、檔案格式、單位、數字、CalculiX 關鍵字及關鍵字編輯區均維持原樣。\n\n'
     glossary+='| English | 繁體中文 |\n| --- | --- |\n'+''.join('| '+a+' | '+b+' |\n' for a,b in list(GLOSSARY.items())[:150])

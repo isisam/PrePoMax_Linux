@@ -1,5 +1,7 @@
 # PrePoMax_Linux — unofficial PrePoMax fork
 
+Public author and maintainer of this fork's additions: **Isisam**. Original upstream authors and notices are retained.
+
 **Windows RC1g5 development feature lineage.** Main focus: Linux/Avalonia port, L3 checkpoint **0.4.0**, with shared finite-element core and composite layup / 3D fibre-display work. Windows feature lines remain available on windows-rc (RC1f) and develop (RC1g5). Linux 0.4.0 does not include every Windows RC1c–RC1f enhancement; follow the documented checkpoint boundaries.
 
 PrePoMax was created by **Matej Borovinšek** and upstream contributors at the University of Maribor. This is an **unofficial fork**, not an endorsed upstream release. Upstream: https://github.com/ISCPC/PrePoMax . GPL-3.0; original LICENSE, Licenses/ and source notices are preserved.

@@ -1,6 +1,6 @@
 # Windows RC1 build and redistribution recipe
 
-Research assistant: Lota. Release: PrePoMax-RCM 0.1.0-rc1.
+Author: Isisam. Release: PrePoMax-RCM 0.1.0-rc1.
 
 RC1d selects Traditional Chinese on first launch and Reset when Windows UI
 culture is zh-TW, zh-HK or zh-Hant (including zh-Hant subtags), and English

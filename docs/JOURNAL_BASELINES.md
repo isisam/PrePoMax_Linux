@@ -1,6 +1,6 @@
 # Session journal baselines
 
-Lota: a PMX snapshot is not necessarily reconstructible from its command history.
+Isisam: a PMX snapshot is not necessarily reconstructible from its command history.
 The GUI2 fixture has 16 elements, but its recorded import describes an earlier
 one-element cube. Replaying that import on top of the snapshot produced 17.
 
