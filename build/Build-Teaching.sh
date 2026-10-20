@@ -74,7 +74,7 @@ EOF
 Package: prepomax-rcm
 Version: 0.4.0+teaching.5
 Architecture: amd64
-Maintainer: Isisam <isisam@users.noreply.github.com>
+Maintainer: S.Y. Su <isisam@users.noreply.github.com>
 Section: science
 Priority: optional
 Depends: libc6 (>= 2.35), libstdc++6, libgcc-s1, libx11-6, libxext6, libxrender1, libxi6, libice6, libsm6, libxcb1, libfontconfig1, libgl1, libegl1, libglx0, libxrandr2, libxcursor1, libxfixes3, libicu70 | libicu72 | libicu74, libssl3 | libssl3t64, zlib1g

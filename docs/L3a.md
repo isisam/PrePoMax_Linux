@@ -1,6 +1,6 @@
 # L3a shared ViewModels checkpoint
 
-Author: Isisam. Base `rcm/l2c` / `d95d9b7a`; branch `rcm/l3a`.
+Author: S.Y. Su; Base `rcm/l2c` / `d95d9b7a`; branch `rcm/l3a`.
 
 The 178 `View*.cs` files and 18 supporting files formerly compiled into PrePoMax
 now compile once in `PrePoMax.ViewModels` (`net48;net8.0`). The exact source paths

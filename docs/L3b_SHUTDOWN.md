@@ -1,6 +1,6 @@
 # L3b shutdown investigation
 
-Author: Isisam. This is a graphics teardown diagnosis and a WSL mitigation, not native GPU acceptance.
+Author: S.Y. Su; This is a graphics teardown diagnosis and a WSL mitigation, not native GPU acceptance.
 
 ## Reproduction and evidence
 

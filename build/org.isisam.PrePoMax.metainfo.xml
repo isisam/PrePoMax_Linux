@@ -5,8 +5,8 @@
   <project_license>GPL-3.0-or-later</project_license>
   <name>PrePoMax Linux Teaching</name>
   <summary>Unofficial finite element model and result viewer</summary>
-  <developer_name>Isisam</developer_name>
-  <description><p>Linux teaching additions maintained by Isisam. Original PrePoMax was created by Matej Borovinšek and upstream contributors. This unofficial build includes no solver and does not support Gmsh meshing. Native Linux, VM and GPU acceptance remains pending.</p></description>
+  <developer_name>S.Y. Su</developer_name>
+  <description><p>Linux teaching additions maintained by S.Y. Su; Original PrePoMax was created by Matej Borovinšek and upstream contributors. This unofficial build includes no solver and does not support Gmsh meshing. Native Linux, VM and GPU acceptance remains pending.</p></description>
   <url type="homepage">https://github.com/isisam/PrePoMax_Linux</url>
   <launchable type="desktop-id">prepomax-rcm.desktop</launchable>
   <releases><release version="0.4.0+teaching.5" date="2026-10-20"/></releases>

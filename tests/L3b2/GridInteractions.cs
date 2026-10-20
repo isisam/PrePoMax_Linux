@@ -156,7 +156,7 @@ public sealed class GridTestApp : Application
                 Check(controller.GetStep("ControlsStep").StepControls.Parameters.OfType<TimeIncrementationStepControlParameter>().Single().I0 == 8, "edited step-control value persisted");
                 stepEditor.PageSelector.SelectedIndex = 4; stepEditor.Buttons["Remove step control"].RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                 Check(stepSession.Pages.Count == 4, "remove step control through real control"); stepEditor.Close();
-                // Regression gates requested by Isisam: no-op commands, step apply rules and model properties.
+                // Regression gates requested by S.Y. Su: no-op commands, step apply rules and model properties.
                 var unchanged = new EntityEditorWindow(new StepFormSession(controller, controller.GetStep("ControlsStep"))); unchanged.Show();
                 commands = controller.GetActiveCommandCount(); unchanged.Buttons["OK"].RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                 await Task.Delay(30); Check(controller.GetActiveCommandCount() == commands, "unchanged step OK adds no command");
