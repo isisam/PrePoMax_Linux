@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "dependencies": {
+    "net8.0": {
+      "Antlr": {
+        "type": "Direct",
+        "requested": "[3.1.3.42154, 3.1.3.42154]",
+        "resolved": "3.1.3.42154",
+        "contentHash": "7LMudXJuw2TnIw/Gog2ERv5oZvku2yUnSaUpbA1Znqv2RGR5Z739vK4o8yIM7ofjU2y91GS2hZO1L+il9+cmdQ=="
+      }
+    },
+    "net8.0/linux-x64": {}
+  }
+}

@@ -19,7 +19,8 @@ if [[ "$phase" = managed || "$phase" = all ]]; then
   dotnet publish "$repo/PrePoMax.Avalonia" -c Release -p:CoreTargetFrameworks=net8.0 -m:1 \
     -r linux-x64 --self-contained true -o "$root/app" \
     -p:DebugType=None -p:DebugSymbols=false -p:Deterministic=true \
-    -p:ContinuousIntegrationBuild=true "-p:PathMap=$repo=/_/src" -p:RestorePackagesWithLockFile=true
+    -p:ContinuousIntegrationBuild=true "-p:PathMap=$repo=/_/src" \
+    -p:RestorePackagesWithLockFile=true -p:RestoreLockedMode=true
   printf '%s\n' "$SOURCE_REVISION" > "$root/app/SOURCE_REVISION.txt"
   cp "$repo/build/viewer-run.sh" "$root/app/run.sh"
   chmod 755 "$root/app/run.sh"
@@ -62,6 +63,11 @@ EOF
   mkdir -p "$source_stage/prepomax" "$deb/opt/prepomax-rcm" "$deb/DEBIAN" "$deb/usr/bin" "$deb/usr/share/applications"
   rsync -a --exclude=.git --exclude=obj --exclude=bin --exclude=x64 --exclude=packages "$repo/" "$source_stage/prepomax/"
   cp "$root/vtk/VTK-9.4.2.tar.gz" "$source_stage/"
+  if [[ ! -s "$root/antlr-3.1.3.tar.gz" ]]; then
+    curl -fL --retry 2 https://www.antlr3.org/download/antlr-3.1.3.tar.gz -o "$root/antlr-3.1.3.tar.gz"
+  fi
+  echo "1fca0fc7304140807e64ec263a58d93ef1b380cfb6407084e6909f8220bc1039  $root/antlr-3.1.3.tar.gz" | sha256sum -c -
+  cp "$root/antlr-3.1.3.tar.gz" "$source_stage/"
   cp "$root/app/SOURCE_REVISION.txt" "$root/app/SOURCE-ACCESS.md" "$root/app/SOURCE-REPOSITORIES.json" "$source_stage/"
   rsync -a "$root/app/" "$deb/opt/prepomax-rcm/"
   cat > "$deb/DEBIAN/control" <<'EOF'

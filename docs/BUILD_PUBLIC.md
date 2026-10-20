@@ -17,3 +17,11 @@ bash build/Build-Teaching.sh /opt/ppm-teaching all /new/release-directory
 Use a fresh build root and delivery directory. The script never deletes previous output. The managed/native/package phases may also be invoked separately. Native and VTK builds use -ffile-prefix-map, -fdebug-prefix-map and -fmacro-prefix-map; managed builds use PathMap, Deterministic, ContinuousIntegrationBuild and DebugType=None. Source and binary archives normalize owner, ordering, timestamps and gzip headers. These controls address build paths; they do not claim bit-for-bit reproducibility across different compiler versions.
 
 The application omits the research solver. Select an independently installed stock CalculiX (Ubuntu calculix-ccx, or the companion CalculiX_Win release on Windows). Retained third-party diagnostic/PDB paths must be documented against byte-identical public package inputs. Rebuilding and WSL checks do not establish native Linux/VM/GPU acceptance.
+
+Check the restored expression runtime and the public meshing refusal against the published app:
+
+```bash
+dotnet run --project tests/Teaching/ExpressionCheck.csproj -c Release -p:TeachingApp=/opt/ppm-teaching/app
+```
+
+Antlr remains a historical .NET Framework package; NU1701 is expected. The release records runtime expression checks instead of hiding this compatibility warning.
