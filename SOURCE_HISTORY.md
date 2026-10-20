@@ -7,3 +7,5 @@ The earlier private preparation preserved upstream hashes. For this public repos
 The L3b2 branch inherits the earlier net8 Gmsh refusal stub, not the later L1g native interop work. Public PrePoMax integration source is retained; no unpublished Gmsh implementation is included. Private paths and our contributor metadata were already generalized during the preceding source preparation. License/copyright attribution is retained.
 
 Final supplement: older GmshCommon/GmshLib SDK aliases are also excluded at every historical occurrence. Third-party PE binaries with absolute CodeView developer paths are omitted from the public source history; original bytes remain private in the owner staging. Reacquire/build public dependencies separately; no signatures were modified.
+
+Final supplement: older GmshCommon/GmshLib SDK aliases are also excluded at every historical occurrence. Third-party PE binaries with absolute CodeView developer paths are omitted from the public source history; original bytes remain private in the owner staging. Reacquire/build public dependencies separately; no signatures were modified.
