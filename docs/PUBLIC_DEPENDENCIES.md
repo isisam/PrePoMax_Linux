@@ -1,0 +1,5 @@
+# Public dependency restoration boundary
+
+The historical GmshCommon/GmshLib SDK copies and the ThirdParty SDK/QuadMesher are absent from all reachable trees. Linux uses the documented Gmsh refusal stub; do not restore modified libraries from old packages.
+
+Seventeen historical PE payloads with absolute developer PDB paths (including native dependency/runtime builds) are also omitted from public source history. Their exact identities and exclusions are retained in the owner's audit. Obtain Microsoft VC runtimes only from Microsoft and build Netgen/MMG from public source with prefix maps; the custom Windows mesher protocol requires independent validation. Other third-party managed/native packages must be restored from their public source/package records, preserving their licences. Do not copy a forbidden SDK or an old path-bearing binary back to satisfy a missing project reference. The shared Linux source uses its existing runtime/package declarations and remains the primary teaching checkpoint. Windows full binary builds are withheld until public dependency/backend restoration is validated.
