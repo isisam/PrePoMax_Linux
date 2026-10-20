@@ -60,7 +60,7 @@ EOF
   source_stage="$root/corresponding-source"
   deb="$root/deb-stage"
   test ! -e "$source_stage" && test ! -e "$deb"
-  mkdir -p "$source_stage/prepomax" "$deb/opt/prepomax-rcm" "$deb/DEBIAN" "$deb/usr/bin" "$deb/usr/share/applications"
+  mkdir -p "$source_stage/prepomax" "$deb/opt/prepomax-rcm" "$deb/DEBIAN" "$deb/usr/bin" "$deb/usr/share/applications" "$deb/usr/share/metainfo"
   rsync -a --exclude=.git --exclude=obj --exclude=bin --exclude=x64 --exclude=packages "$repo/" "$source_stage/prepomax/"
   cp "$root/vtk/VTK-9.4.2.tar.gz" "$source_stage/"
   if [[ ! -s "$root/antlr-3.1.3.tar.gz" ]]; then
@@ -72,9 +72,9 @@ EOF
   rsync -a "$root/app/" "$deb/opt/prepomax-rcm/"
   cat > "$deb/DEBIAN/control" <<'EOF'
 Package: prepomax-rcm
-Version: 0.4.0+teaching.4
+Version: 0.4.0+teaching.5
 Architecture: amd64
-Maintainer: PrePoMax contributors
+Maintainer: Isisam <isisam@users.noreply.github.com>
 Section: science
 Priority: optional
 Depends: libc6 (>= 2.35), libstdc++6, libgcc-s1, libx11-6, libxext6, libxrender1, libxi6, libice6, libsm6, libxcb1, libfontconfig1, libgl1, libegl1, libglx0, libxrandr2, libxcursor1, libxfixes3, libicu70 | libicu72 | libicu74, libssl3 | libssl3t64, zlib1g
@@ -86,9 +86,12 @@ EOF
   printf '#!/bin/sh\nexec /opt/prepomax-rcm/run.sh "$@"\n' > "$deb/usr/bin/prepomax-rcm"
   chmod 755 "$deb/usr/bin/prepomax-rcm"
   cp "$root/app/prepomax-rcm.desktop" "$deb/usr/share/applications/"
+  cp "$repo/build/org.isisam.PrePoMax.metainfo.xml" "$deb/usr/share/metainfo/"
+  cp "$repo/build/org.isisam.PrePoMax.metainfo.xml" "$root/app/"
+  cp "$repo/build/org.isisam.PrePoMax.metainfo.xml" "$deb/opt/prepomax-rcm/"
   find "$deb" -exec touch -h -d "@$SOURCE_DATE_EPOCH" {} +
   tar --sort=name --mtime="@$SOURCE_DATE_EPOCH" --owner=0 --group=0 --numeric-owner -cf - -C "$root" app | gzip -n -9 > "$delivery/PrePoMax-Linux-0.4.0-teaching.tar.gz"
   tar --sort=name --mtime="@$SOURCE_DATE_EPOCH" --owner=0 --group=0 --numeric-owner -cf - -C "$source_stage" . | gzip -n -9 > "$delivery/PrePoMax-Linux-0.4.0-public-source.tar.gz"
-  dpkg-deb -Zgzip -z9 --root-owner-group --build "$deb" "$delivery/prepomax-rcm_0.4.0+teaching.4_amd64.deb"
+  dpkg-deb -Zgzip -z9 --root-owner-group --build "$deb" "$delivery/prepomax-rcm_0.4.0+teaching.5_amd64.deb"
   (cd "$delivery" && sha256sum *.tar.gz *.deb > SHA256SUMS)
 fi

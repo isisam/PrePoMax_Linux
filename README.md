@@ -1,5 +1,7 @@
 # PrePoMax_Linux — unofficial PrePoMax fork
 
+Public author and maintainer of this fork's additions: **Isisam**. Original upstream authors and notices are retained.
+
 **Linux L3 checkpoint 0.4.0.** Main focus: Linux/Avalonia port, L3 checkpoint **0.4.0**, with shared finite-element core and composite layup / 3D fibre-display work. Windows feature lines remain available on windows-rc (RC1f) and develop (RC1g5). Linux 0.4.0 does not include every Windows RC1c–RC1f enhancement; follow the documented checkpoint boundaries.
 
 PrePoMax was created by **Matej Borovinšek** and upstream contributors at the University of Maribor. This is an **unofficial fork**, not an endorsed upstream release. Upstream: https://github.com/ISCPC/PrePoMax . GPL-3.0; original LICENSE, Licenses/ and source notices are preserved.
@@ -11,3 +13,5 @@ PrePoMax was created by **Matej Borovinšek** and upstream contributors at the U
 The Linux checkpoint supports existing-mesh models, property forms, selection-created sets/surfaces, undo/redo and a read-only keyword viewer. Linux Gmsh operations use an explicit compile stub and throw NotSupportedException. Native Linux/VM/GPU release acceptance, full meshing parity and editable raw keywords remain open. Windows RCM layup editing and 3D fibre display share source in this fork; branch names describe feature lineage, not a new binary validation.
 
 The private Gmsh fork/SDK is excluded from every published history object. Original Windows application ZIPs are not release assets here. See PUBLIC_GMSH.md before attempting a Windows full-solution build.
+
+Latest attribution package: **v0.4.0-teaching.5**; see [release notes](RELEASE_NOTES.md).

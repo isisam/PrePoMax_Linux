@@ -1,6 +1,6 @@
 # PrePoMax 繁體中文工程術語表
 
-供 Lota 與project contributor審閱。適用臺灣工程教學；僅第一層選單以括號保留英文。
+供 Isisam 與project contributor審閱。適用臺灣工程教學；僅第一層選單以括號保留英文。
 
 「斷面」指材料／元素的 Section 指派；「剖面視圖」指 Section View。Ply 為單一層，Composite Layup 為完整複材疊層。
 主／從表面沿用既有 master/slave 定義；內部識別名稱、檔案格式、單位、數字、CalculiX 關鍵字及關鍵字編輯區均維持原樣。

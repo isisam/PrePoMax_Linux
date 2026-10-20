@@ -1,4 +1,4 @@
-"""Lota L2a carry-overs: production evidence isolation, inherited launcher budget, idle evidence."""
+"""Isisam L2a carry-overs: production evidence isolation, inherited launcher budget, idle evidence."""
 from pathlib import Path
 import json,os,signal,subprocess as sp,sys,tempfile,time
 app=Path(sys.argv[1]);model=Path(sys.argv[2]);output=Path(sys.argv[3]);output.mkdir(parents=True,exist_ok=True)

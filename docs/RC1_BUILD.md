@@ -1,6 +1,6 @@
 # Windows RC1 build and redistribution recipe
 
-Research assistant: Lota. Release: PrePoMax-RCM 0.1.0-rc1.
+Author: Isisam. Release: PrePoMax-RCM 0.1.0-rc1.
 
 The upstream base has English UI only and no language field. RC1 therefore
 uses English on first launch, reset, and when old settings lack the optional
