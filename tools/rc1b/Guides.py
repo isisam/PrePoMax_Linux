@@ -86,7 +86,7 @@ EN=[
 ('Limits, support and source',[
 'RC1 supports flat laminates and solid elements. It does not generate a layup mesh, insert interface layers automatically, support curved layups, or rotate FATCZM normals through *ORIENTATION. The ply plot and current highlighting are not a proof of local fibre-direction rendering. Shared-node stress contours may average values across layers.',
 'The demonstrations verify software behavior and numerical reproducibility. Their alpha = 1 cycle scales are not calibrated life predictions. Confirm model assumptions and material calibration before using results in a thesis. A human review of view rotation, plot readability and engineering Chinese terminology remains useful.',
-'To report a problem to your course instructor or maintainer Isisam, provide VERSION, Windows version, UI language, exact steps, a minimal .pmx, exported .inp, solver .log/.sta/.cvg and relevant .dat or fatczm_jumps.log lines. Include expected versus observed behavior. Remove private geometry, personal paths, credentials and unrelated files.',
+'To report a problem to your course instructor or maintainer S.Y. Su, provide VERSION, Windows version, UI language, exact steps, a minimal .pmx, exported .inp, solver .log/.sta/.cvg and relevant .dat or fatczm_jumps.log lines. Include expected versus observed behavior. Remove private geometry, personal paths, credentials and unrelated files.',
 'The executables are unsigned; antivirus or SmartScreen may flag an unfamiliar build. Verify SHA256SUMS and ask the course distributor if a file is quarantined. Do not disable protection globally. PrePoMax-RCM is GPL-3.0; the corresponding-source git bundle is beside the zip. CalculiX/FATCZM GPL-2 source is in Source/ccx_fat. Preserve Licenses and the source information when sharing.'
 ],None)]
 ZH=[
@@ -144,13 +144,13 @@ ZH=[
 ('限制、問題回報與原始碼',[
 'RC1 僅支援平板疊層及實體元素，不會自動產生疊層網格或插入界面，也不支援曲面疊層；FATCZM 不藉 *ORIENTATION 旋轉法向。層圖與元素高亮不代表局部纖維方向箭頭已完成。共用節點的應力圖可能跨層平均。',
 '示範驗證的是軟體行為與數值重現性，alpha = 1 的循環尺度不是已校準的壽命預測。論文使用前須確認模型假設與材料校準。旋轉外觀、圖表可讀性與工程中文用語，仍適合再做人工觀感確認。',
-'請向課程教師或研究助理 Isisam 回報：VERSION、Windows 版本、介面語言、重現步驟、最小 .pmx、匯出的 .inp、求解 .log／.sta／.cvg，以及相關 .dat 或 fatczm_jumps.log 列。說明預期與實際行為，移除私人幾何、個人路徑、憑證與無關檔案。',
+'請向課程教師或研究助理 S.Y. Su 回報：VERSION、Windows 版本、介面語言、重現步驟、最小 .pmx、匯出的 .inp、求解 .log／.sta／.cvg，以及相關 .dat 或 fatczm_jumps.log 列。說明預期與實際行為，移除私人幾何、個人路徑、憑證與無關檔案。',
 '執行檔未簽章，防毒或 SmartScreen 可能將陌生版本列為可疑。先核對 SHA256SUMS；若檔案遭隔離，請洽課程發行者，不要全面關閉防護。PrePoMax-RCM 採 GPL-3.0，對應原始碼 git bundle 放在 zip 旁；CalculiX／FATCZM 的 GPL-2 原始碼位於 Source/ccx_fat。轉交時請保留 Licenses 與原始碼資訊。'
 ],None)]
 def make(lang,pages,filename):
     target=OUT/filename;c=canvas.Canvas(str(target),pagesize=(W,H),pageCompression=1)
     c.setTitle('PrePoMax-RCM | '+('快速入門' if lang=='zh-TW' else 'Quick Start'))
-    c.setAuthor('Isisam');c.setSubject('Student quick start, Windows RC1')
+    c.setAuthor('S.Y. Su');c.setSubject('Student quick start, Windows RC1')
     for i,(title,texts,img) in enumerate(pages,1):
         c.setFillColor(navy);c.rect(0,H-116,W,116,fill=1,stroke=0)
         c.setFillColor(HexColor('#80d5d3'));c.setFont(FONT,10);c.drawString(44,H-35,'PREPOMAX-RCM  /  STUDENT GUIDE  /  0.1.0-RC1b')
@@ -166,7 +166,7 @@ def make(lang,pages,filename):
             rows=([['範例','模型','主要檢查'],['DCB','DCB.pmx','60 jumps; N = 18860.013543'],['ENF','ENF.pmx','300 jumps; onset N = 624.92741'],['Layup','Layup.pmx','[45/90/-45/0]s; Ex = 60500.75 MPa']] if lang=='zh-TW' else [['Example','Model','Key check'],['DCB','DCB.pmx','60 jumps; N = 18860.013543'],['ENF','ENF.pmx','300 jumps; onset N = 624.92741'],['Layup','Layup.pmx','[45/90/-45/0]s; Ex = 60500.75 MPa']])
             y=table(c,rows,y,[72,90,W-250])
         c.setStrokeColor(HexColor('#d2dde3'));c.line(44,43,W-44,43)
-        c.setFont(FONT,8);c.setFillColor(navy);c.drawString(44,28,'PrePoMax-RCM  |  Windows x64  |  Author: Isisam');c.drawRightString(W-44,28,f'{i} / 10')
+        c.setFont(FONT,8);c.setFillColor(navy);c.drawString(44,28,'PrePoMax-RCM  |  Windows x64  |  Author: S.Y. Su');c.drawRightString(W-44,28,f'{i} / 10')
         records.append(dict(language=lang,page=i,bottom_content=round(y,1)))
         c.showPage()
     c.save();print(target)

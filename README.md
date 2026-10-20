@@ -1,6 +1,6 @@
 # PrePoMax_Linux — unofficial PrePoMax fork
 
-Public author and maintainer of this fork's additions: **Isisam**. Original upstream authors and notices are retained.
+Public author and maintainer of this fork's additions: **S.Y. Su**. Original upstream authors and notices are retained.
 
 **Windows RC1f stable feature lineage.** Main focus: Linux/Avalonia port, L3 checkpoint **0.4.0**, with shared finite-element core and composite layup / 3D fibre-display work. Windows feature lines remain available on windows-rc (RC1f) and develop (RC1g5). Linux 0.4.0 does not include every Windows RC1c–RC1f enhancement; follow the documented checkpoint boundaries.
 

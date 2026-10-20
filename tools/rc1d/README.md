@@ -2,7 +2,7 @@
 
 Set RC1D_PACKAGE to the package root, then run `python -B Guides.py`.
 Requires the existing reportlab and Microsoft JhengHei font. Both ten-page
-guides retain Isisam authorship. The language/default-work-directory instructions
+guides retain S.Y. Su authorship. The language/default-work-directory instructions
 are on page 2. See tests/RC1d and docs/RC1d_CHANGELOG.md.
 
 Language acceptance against a fresh extracted copy (no settings.bin):
