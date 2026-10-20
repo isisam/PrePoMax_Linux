@@ -1,6 +1,6 @@
 # L2c：Avalonia shell 與 L1b view contracts
 
-工作分支 `rcm/l2c`，由 `rcm/l2b` 的 `2fadaed8` 建立。六個任務項目各一個 commit；交付 patch 在 `../../patches/l2c/`。完整驗收、數據與未實作成員清單見 [L2c_REPORT.md](../../L2c_REPORT.md)。研究助理為 Lota。
+工作分支 `rcm/l2c`，由 `rcm/l2b` 的 `2fadaed8` 建立。六個任務項目各一個 commit；交付 patch 在 `../../patches/l2c/`。完整驗收、數據與未實作成員清單見 [L2c public viewport contract](L2c-viewport-unsupported.txt)。研究助理為 Lota。
 
 ## 使用
 
