@@ -1,6 +1,6 @@
 # M2b GUI acceptance checklist
 
-Owner: Isisam. Run these steps only during an explicitly authorized GUI session.
+Owner: S.Y. Su; Run these steps only during an explicitly authorized GUI session.
 This checklist was written after headless checks; visual appearance, interactive
 picking, VTK highlighting and mouse/keyboard workflows still require acceptance.
 
