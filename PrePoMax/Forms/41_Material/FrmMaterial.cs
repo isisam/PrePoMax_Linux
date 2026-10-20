@@ -79,7 +79,6 @@ namespace PrePoMax.Forms
             }
             //
             tvProperties.Nodes.Add(new TreeNode("User Material") { Name = "User Material" });
-            tvProperties.Nodes.Add(new TreeNode("Fatigue CZM (FATCZM)") { Name = "Fatigue CZM (FATCZM)" });
             _controller = controller;
             _material = null;
             //
@@ -439,7 +438,6 @@ namespace PrePoMax.Forms
                 new double[ElasticLamina.NumberOfValues]
             });
             tvProperties.Nodes.Find("User Material", true)[0].Tag = new UserMaterial(new double[] { 0 });
-            tvProperties.Nodes.Find("Fatigue CZM (FATCZM)", true)[0].Tag = UserMaterial.CreateFatczm();
             node = tvProperties.Nodes.Find("Plastic", true)[0];
             node.Tag = new Plastic(new double[][] { new double[] { 0, 0, 0 } });
             node = tvProperties.Nodes.Find("Thermal Expansion", true)[0];
@@ -592,17 +590,6 @@ namespace PrePoMax.Forms
         }
         public void Add()
         {
-            // Check if the name exists
-            foreach (ListViewItem item in lvAddedProperties.Items)
-            {
-                if (item.Tag is ViewUserMaterial um && um.Fatczm && !tbName.Text.StartsWith("USERFATCZM", StringComparison.Ordinal))
-                {
-                    if (MessageBoxes.ShowWarningQuestionOKCancel("FATCZM requires a USERFATCZM material name. " +
-                        "Prefix this name with USERFATCZM?") == DialogResult.Cancel)
-                        throw new CaeException("FATCZM requires a material name starting with USERFATCZM.");
-                    tbName.Text = "USERFATCZM" + tbName.Text;
-                }
-            }
             UserControls.FrmProperties.CheckName(_materialToEditName, tbName.Text, _materialNames, "material");
             //
             _material = new Material(tbName.Text);

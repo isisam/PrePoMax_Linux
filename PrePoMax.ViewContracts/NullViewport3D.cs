@@ -7,6 +7,8 @@ namespace vtkControl
 {
     public class NullViewport3D : IViewport3D
     {
+        public void SetCompositeFibreActors(vtkMaxActorData[] data, CompositePlyLegendEntry[] legend = null) { }
+        public bool HasCompositeFibreActors { get { return false; } }
         public event Action<double[], double[], double[][], bool, vtkSelectOperation, string[]> OnMouseLeftButtonUpSelection { add { } remove { } }
         public event Action<double[]> RotationPointChanged { add { } remove { } }
 

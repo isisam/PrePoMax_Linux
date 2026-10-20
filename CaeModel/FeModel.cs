@@ -363,7 +363,6 @@ namespace CaeModel
                         try
                         {
                             um.CheckMaterialName(material.Name);
-                            UserMaterial.CheckSharedFatczmConstants(_materials.Values);
                         }
                         catch { valid = false; }
                     }

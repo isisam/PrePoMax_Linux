@@ -1,0 +1,27 @@
+{
+  "exe_sha256": "5870c815b3aad52936a1e8f277b80466026f34a63254be7e1829ec797808f813",
+  "cases": [
+    {
+      "case": "beamp",
+      "status": "PASS",
+      "numbers": 42,
+      "maximum_absolute_difference": 0.0,
+      "dat_sha256": "c7b8c615586581b81e14f4b372f88e8b4a8dcc8d69fa0b944284250e4203a0e5"
+    },
+    {
+      "case": "beamf",
+      "status": "PASS",
+      "numbers": 40,
+      "maximum_absolute_difference": 0.0,
+      "dat_sha256": "b563213f2d09ad32cf4d43c83456a4de3bd3b8db6ec0edc5c90ebe5aa3c3a940"
+    },
+    {
+      "case": "spring1",
+      "status": "PASS",
+      "numbers": 7,
+      "maximum_absolute_difference": 0.0,
+      "dat_sha256": "6b4ba1804c76a199bed6bf4990a78cbf7898a881e8655401d64004ef5644d176"
+    }
+  ],
+  "status": "PASS"
+}

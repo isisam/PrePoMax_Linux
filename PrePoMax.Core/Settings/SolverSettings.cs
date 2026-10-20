@@ -131,28 +131,19 @@ namespace PrePoMax
         }
         private static string CreateDefaultWorkDirectory()
         {
-            string directory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-                                            "Documents", "PrePoMax-RCM", "Work");
+            string directory = Path.Combine(CaeGlobals.PlatformServices.Paths.ApplicationDirectory, "Work");
             Directory.CreateDirectory(directory);
             return directory;
         }
         private void SetBundledCalculixDefault(bool resetMatrixSolver)
         {
             if (!string.IsNullOrWhiteSpace(_calculixExe)) return;
-            string executable = Tools.GetGlobalPath("#\\Solver\\ccx_fat.exe");
+            string executable = Tools.GetGlobalPath("#\\Solver\\ccx.exe");
             if (File.Exists(executable))
             {
                 _calculixExe = Tools.GetLocalPath(executable);
                 if (resetMatrixSolver) _calculixDefaultSolverType = SolverTypeEnum.Spooles;
             }
-        }
-        public static bool IsCcxFat(string executable)
-        {
-            return string.Equals(Path.GetFileName(executable), "ccx_fat.exe", StringComparison.OrdinalIgnoreCase);
-        }
-        public static bool IsUnsupportedCcxFatSolver(SolverTypeEnum solver)
-        {
-            return solver == SolverTypeEnum.Pardiso || solver == SolverTypeEnum.PaStiX;
         }
         private static string SetExecutable(string value, string solverName)
         {

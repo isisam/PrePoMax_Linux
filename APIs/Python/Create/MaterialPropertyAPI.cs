@@ -135,7 +135,6 @@ namespace APIs.Python
             {
                 values["constants"] = PythonListConverter.ToPythonList(um.Constants.Select(c => ToValue(c.Value)).ToArray());
                 values["state_variables"] = um.NumberOfStateVariables;
-                values["fatczm"] = um.Fatczm;
                 values["names"] = PythonListConverter.ToPythonList(um.Constants.Select(c => (object)c.Name).ToArray());
                 values["descriptions"] = PythonListConverter.ToPythonList(um.Constants.Select(c => (object)c.Description).ToArray());
             }

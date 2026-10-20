@@ -1945,7 +1945,6 @@ namespace FileInOut.Output
                 }
             }
             //
-            UserMaterial.CheckSharedFatczmConstants(materials);
             foreach (var material in materials)
             {
                 if ((materialNames != null && materialNames.Contains(material.Name)) || material.Active)

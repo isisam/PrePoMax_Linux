@@ -99,7 +99,7 @@ namespace PrePoMax.Python.Journal
                     descriptions.Add(PythonValueFormatter.Text(constant.Description));
                 }
                 return PythonJournalWriter.Join("pmx.create.user_material", "[" + string.Join(", ", values) + "]",
-                    "state_variables=" + um.NumberOfStateVariables, "fatczm=" + (um.Fatczm ? "True" : "False"),
+                    "state_variables=" + um.NumberOfStateVariables,
                     "names=[" + string.Join(", ", names) + "]", "descriptions=[" + string.Join(", ", descriptions) + "]");
             }
             if (property is Plastic plastic)

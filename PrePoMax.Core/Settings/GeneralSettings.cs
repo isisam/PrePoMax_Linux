@@ -1,4 +1,4 @@
-﻿// PrePoMax - Copyright (C) 2016-2026 Matej Borovinšek
+// PrePoMax - Copyright (C) 2016-2026 Matej Borovinšek
 //
 // Licensed under the terms defined in the LICENSE file located in the root directory of this source code.
 //
@@ -113,17 +113,7 @@ namespace PrePoMax
         public void CheckValues()
         {
         }
-        private static string GetDefaultLanguage()
-        {
-            // UI language is independent of numeric culture. A persisted choice
-            // bypasses this fallback. Settings predating the field use it too.
-            string culture = System.Globalization.CultureInfo.CurrentUICulture.Name;
-            return culture.Equals("zh-TW", StringComparison.OrdinalIgnoreCase) ||
-                   culture.Equals("zh-HK", StringComparison.OrdinalIgnoreCase) ||
-                   culture.Equals("zh-Hant", StringComparison.OrdinalIgnoreCase) ||
-                   culture.StartsWith("zh-Hant-", StringComparison.OrdinalIgnoreCase)
-                   ? "zh-TW" : "en";
-        }
+        private static string GetDefaultLanguage() { return "zh-TW"; }
         public void Reset()
         {
             _language = GetDefaultLanguage();

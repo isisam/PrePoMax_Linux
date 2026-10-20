@@ -1,4 +1,4 @@
-﻿using PrePoMax.Forms;
+using PrePoMax.Forms;
 using MessageBoxes = CaeGlobals.PortableMessageBoxes;
 using DialogResult = CaeGlobals.DialogAnswer;
 // PrePoMax - Copyright (C) 2016-2026 Matej Borovinšek
@@ -15902,10 +15902,41 @@ namespace PrePoMax
             _form.UpdateTreeNode(ViewGeometryModelResults.Model, name, layup, null);
             CheckAndUpdateModelValidity(true);
         }
+        public static Color CompositePlyHighlightColor { get { return Color.Red; } }
+        [NonSerialized] private string _fibreLayupName;
+        [NonSerialized] private double _fibreGlyphSize = 1;
+        public void ShowCompositeFibreDirections(CompositeLayup layup, IList<ExpandedCompositePly> expanded, int selected, double size, double gap = 1)
+        {
+            _fibreLayupName = null;
+            if (layup == null || expanded == null || selected >= expanded.Count)
+            { _form.Viewport.SetCompositeFibreActors(null); return; }
+            _fibreGlyphSize = size;
+            // Opaque selection skins otherwise hide the centroid glyphs inside solids.
+            // Retained region-picking history is untouched.
+            _form.Viewport.ClearSelection();
+            var legend = expanded.Select((p, i) => new CompositePlyLegendEntry {
+                Label = CompositePlyPalette.Label(i, p.AngleDeg), Color = CompositePlyPalette.Get(CompositePlyPalette.Source(i, layup.Plies.Count, layup.Symmetric)),
+                Selected = i == selected, Symmetric = layup.Symmetric }).ToArray();
+            _form.Viewport.SetCompositeFibreActors(CompositeFibrePreview.Build(_model, expanded,
+                layup.Plies.Count, layup.Symmetric, selected, size, gap), legend);
+        }
+        public void ToggleCompositeFibreDirections(string name)
+        {
+            if (_fibreLayupName == name && _form.Viewport.HasCompositeFibreActors) { ShowCompositeFibreDirections(null, null, -1, 1); return; }
+            ShowSavedCompositeFibreDirections(name, _fibreGlyphSize > 0 ? _fibreGlyphSize : 1);
+        }
+        public void ShowSavedCompositeFibreDirections(string name, double size)
+        {
+            var layup = _model.CompositeLayups[name];
+            var expanded = CompositeLayupExpansion.Preview(_model, layup, name);
+            ClearSelectionHistory();
+            ShowCompositeFibreDirections(layup, expanded, 0, size);
+            _fibreLayupName = name;
+        }
         public void HighlightCompositePly(int[] elementIds)
         {
             ClearSelectionHistory();
-            HighlightElementSet("CompositePly", new FeElementSet("CompositePly", elementIds), Color.Red, vtkRendererLayer.Selection);
+            HighlightElementSet("CompositePly", new FeElementSet("CompositePly", elementIds), CompositePlyHighlightColor, vtkRendererLayer.Selection);
         }
         public void AddSectionCommand(Section section)
         {
@@ -19743,21 +19774,7 @@ namespace PrePoMax
             //
             if (File.Exists(job.Executable))
             {
-                if (job.FEMSolver == FEMSolverEnum.Calculix && SolverSettings.IsCcxFat(job.Executable))
-                {
-                    List<string> unsupported = new List<string>();
-                    if (SolverSettings.IsUnsupportedCcxFatSolver(_settings.Solver.CalculixDefaultSolverType))
-                        unsupported.Add("Settings: " + _settings.Solver.CalculixDefaultSolverType);
-                    foreach (Step step in _model.StepCollection.StepsList)
-                    {
-                        if (step.Active && SolverSettings.IsUnsupportedCcxFatSolver(step.SolverType))
-                            unsupported.Add("Step '" + step.Name + "': " + step.SolverType);
-                    }
-                    if (unsupported.Count > 0 && MessageBoxes.ShowWarningQuestionOKCancel(
-                        "ccx_fat.exe does not include Pardiso or PaStiX. Select Spooles in Settings and in the " +
-                        "affected steps before running.\n" + string.Join("\n", unsupported) + "\nContinue anyway?") ==
-                        DialogResult.Cancel) return false;
-                }
+
                 if (CheckModelBeforeJobRun(job.FEMSolver) && DeleteFilesBeforeJobRun(inputFileName, job)) // must be separate due to exception
                 {
                     if (onlyCheckModel) _model.StepCollection.SetCheckModel();

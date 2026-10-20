@@ -79,7 +79,7 @@ namespace APIs.Python
             //
             return Checked(property, "constants");
         }
-        public static UserMaterial CreateUserMaterial(object constants, int stateVariables, bool fatczm,
+        public static UserMaterial CreateUserMaterial(object constants, int stateVariables,
                                                       object names, object descriptions)
         {
             List<object> items = ToItems(constants, "user_material", 1);
@@ -87,7 +87,7 @@ namespace APIs.Python
             {
                 if (stateVariables < 0) throw new PythonAPIException("state_variables must not be negative.");
                 EquationString[] equations = PythonValueConverter.ToEquationArray(constants, "constants", items.Count);
-                UserMaterial property = new UserMaterial(new double[items.Count], stateVariables, fatczm);
+                UserMaterial property = new UserMaterial(new double[items.Count], stateVariables);
                 for (int i = 0; i < items.Count; i++)
                     PythonModelArgumentCheck.SetEquation(property.Constants[i].Value, equations[i], "constants");
                 if (names != null)

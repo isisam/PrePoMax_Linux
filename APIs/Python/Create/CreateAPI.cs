@@ -198,22 +198,14 @@ namespace APIs.Python
         }
 
         [PythonAPI("Creates a generic mechanical user material. Constants are ordered numbers or equations in model " +
-                   "units. Names and descriptions are optional parallel lists. fatczm=True enforces the 26-constant preset.",
-                   Arguments = "constants: list, state_variables: int = 0, fatczm: bool = False, names: list = None, descriptions: list = None",
+                   "units. Names and descriptions are optional parallel lists.",
+                   Arguments = "constants: list, state_variables: int = 0, names: list = None, descriptions: list = None",
                    Returns = "MaterialProperty")]
-        public MaterialPropertyAPI user_material(object constants, int state_variables = 0, bool fatczm = false,
+        public MaterialPropertyAPI user_material(object constants, int state_variables = 0,
                                                  object names = null, object descriptions = null)
         {
             return new MaterialPropertyAPI(MaterialPropertyFactory.CreateUserMaterial(constants, state_variables,
-                                                                                      fatczm, names, descriptions));
-        }
-
-        [PythonAPI("Creates the Fatigue CZM (FATCZM) IM7 ENF preset, 26 constants, DEPVAR 6, N/mm/MPa. " +
-                   "Use a USERFATCZM name; pre_crack=True sets Dint=0.999999 and needs a USERFATCZMPC name.",
-                   Arguments = "pre_crack: bool = False", Returns = "MaterialProperty")]
-        public MaterialPropertyAPI fatczm(bool pre_crack = false)
-        {
-            return new MaterialPropertyAPI(UserMaterial.CreateFatczm(pre_crack));
+                                                                                      names, descriptions));
         }
 
         [PythonAPI("Creates a plastic material property. Every row is [stress, strain, temperature]. " +

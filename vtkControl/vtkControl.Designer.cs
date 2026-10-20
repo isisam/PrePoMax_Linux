@@ -26,6 +26,7 @@ namespace vtkControl
             {
                 if (disposing)
                 {
+                    ClearCompositeFibreLegend();
                     if (components != null)
                     {
                         components.Dispose();

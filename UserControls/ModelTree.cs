@@ -314,6 +314,11 @@ namespace UserControls
         public event Action<NamedClass[], bool> SelectEvent;
         public event Action ClearSelectionEvent;
         public event Action ContextMenuForPartsClosedEvent;
+        public event Action<string> ShowCompositeFibreDirectionsEvent;
+        public event Action<string, double> CompositeFibreSizeEvent;
+        private ToolStripMenuItem _showCompositeFibres;
+        private ToolStripMenuItem _compositeFibreSizeMenu;
+        private System.Windows.Forms.TrackBar _compositeFibreSize;
         //
         public event Action<string, string> CreateEvent;
         public event Action<NamedClass, string> EditEvent;
@@ -556,6 +561,23 @@ namespace UserControls
         private void AssembleTreeContextMenu()
         {
             if (LicenseManager.UsageMode == LicenseUsageMode.Designtime) return;
+            _showCompositeFibres = new ToolStripMenuItem("Show fibre directions") { Name = "showCompositeFibres", Visible = false };
+            _showCompositeFibres.Click += (s, e) => {
+                var nodes = GetSelectedNodesIncludingGroupItems(cltvModel);
+                if (nodes.Length == 1 && nodes[0].Tag is CompositeLayup layup)
+                    ShowCompositeFibreDirectionsEvent?.Invoke(layup.Name);
+            };
+            cmsTree.Items.Add(_showCompositeFibres);
+            _compositeFibreSizeMenu = new ToolStripMenuItem("Glyph size") { Name = "compositeFibreSizeMenu", Visible = false };
+            _compositeFibreSize = new System.Windows.Forms.TrackBar { Name = "savedFibreGlyphSize", Minimum = 10, Maximum = 200,
+                Value = 100, TickFrequency = 50, Width = 150, AccessibleName = "Fibre glyph size" };
+            _compositeFibreSize.ValueChanged += (s, e) => {
+                var nodes = GetSelectedNodesIncludingGroupItems(cltvModel);
+                if (nodes.Length == 1 && nodes[0].Tag is CompositeLayup layup)
+                    CompositeFibreSizeEvent?.Invoke(layup.Name, _compositeFibreSize.Value / 100.0);
+            };
+            _compositeFibreSizeMenu.DropDownItems.Add(new ToolStripControlHost(_compositeFibreSize));
+            cmsTree.Items.Add(_compositeFibreSizeMenu);
             //
             while (cmsTreeSecondary.Items.Count > 0)
             {
@@ -1675,6 +1697,8 @@ namespace UserControls
         private void PrepareToolStripItem(CodersLabTreeView tree)
         {
             TreeNode[] actionNodes = GetSelectedNodesIncludingGroupItems(tree);
+            _showCompositeFibres.Visible = tree == cltvModel && actionNodes.Length == 1 && actionNodes[0].Tag is CompositeLayup;
+            _compositeFibreSizeMenu.Visible = _showCompositeFibres.Available;
             int n = actionNodes.Length;
             bool hasActionNodes = n > 0;
             //

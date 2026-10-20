@@ -1346,7 +1346,7 @@ namespace FileInOut.Input
                         }
                     }
                     // The CLI can preserve old/unknown UMAT formats as raw text for file conversion.
-                    // This does not make them a validated FATCZM material. The Windows default remains strict.
+                    // This does not make them a validated user material. The Windows default remains strict.
                     if (preserveUnsupportedUserMaterials && material.GetProperty<UserMaterial>() is UserMaterial candidate)
                     {
                         try { candidate.CheckMaterialName(name); }
@@ -1386,7 +1386,7 @@ namespace FileInOut.Input
                 StringSplitOptions.RemoveEmptyEntries)).Select(value => double.Parse(value.Trim().Replace('D', 'E')
                 .Replace('d', 'e'), System.Globalization.CultureInfo.InvariantCulture)).ToArray();
             if (count != constants.Length) throw new CaeException("USER MATERIAL CONSTANTS count does not match the data.");
-            return new UserMaterial(constants, 0, name.StartsWith("USERFATCZM", StringComparison.Ordinal) && count == 26);
+            return new UserMaterial(constants, 0);
         }
         private static Density GetMaterialDensity(string[] lines, out bool temperatureDependent)
         {

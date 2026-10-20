@@ -436,6 +436,14 @@ namespace PrePoMax
                 _modelTree.GeometryMeshResultsEvent += ModelTree_ViewEvent;
                 _modelTree.SelectEvent += ModelTree_SelectEvent;
                 _modelTree.ClearSelectionEvent += Clear3DSelection;
+                _modelTree.ShowCompositeFibreDirectionsEvent += name => {
+                    try { _controller.ToggleCompositeFibreDirections(name); }
+                    catch (Exception ex) { ExceptionTools.Show(this, ex); }
+                };
+                _modelTree.CompositeFibreSizeEvent += (name, size) => {
+                    try { _controller.ShowSavedCompositeFibreDirections(name, size); }
+                    catch (Exception ex) { ExceptionTools.Show(this, ex); }
+                };
                 _modelTree.ContextMenuForPartsClosedEvent += UpdateHighlight;
                 _modelTree.CreateEvent += ModelTree_CreateEvent;
                 _modelTree.EditEvent += ModelTree_EditEvent;
@@ -734,6 +742,8 @@ namespace PrePoMax
                 InitializeDeformationComboBoxes();
                 InitializeComplexComboBoxes();
                 PrePoMax.L10n.Translator.LanguageChanged += ToolbarLanguageChanged;
+                _vtk.SetCompositeFibreLegendText(PrePoMax.L10n.Translator.Translate("Ply fibre directions"),
+                    PrePoMax.L10n.Translator.Translate("Mirrors share colours"));
                 Disposed += (disposedSender, disposedArgs) => PrePoMax.L10n.Translator.LanguageChanged -= ToolbarLanguageChanged;
                 // Converters
                 tstbDeformationFactor.UnitConverter = new StringDoubleConverter();
@@ -11623,6 +11633,8 @@ namespace PrePoMax
             InvokeIfRequired(() =>
             {
                 PrePoMax.L10n.UiTranslator.Translate(this);
+                _vtk.SetCompositeFibreLegendText(PrePoMax.L10n.Translator.Translate("Ply fibre directions"),
+                    PrePoMax.L10n.Translator.Translate("Mirrors share colours"));
                 RefreshToolbarChoices(tscbDeformationType, tscbDeformationType_SelectedIndexChanged);
                 RefreshToolbarChoices(tscbComplex, tscbComplex_SelectedIndexChanged);
                 RefreshToolbarChoices(tscbColorBy, tscbColorBy_SelectedIndexChanged);

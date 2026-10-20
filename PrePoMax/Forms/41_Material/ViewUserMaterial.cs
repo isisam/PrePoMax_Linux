@@ -20,21 +20,17 @@ namespace PrePoMax
     {
         private List<UserMaterialDataPoint> _points;
         private UserMaterial _material;
-        public override string Name { get { return _material.Fatczm ? "Fatigue CZM (FATCZM)" : "User Material"; } }
+        public override string Name { get { return "User Material"; } }
         [Browsable(false)]
         public List<UserMaterialDataPoint> DataPoints { get { return _points; } }
         [Category("User material")]
         [DisplayName("State variables (DEPVAR)")]
-        [Description("Number of state variables. FATCZM needs at least 6; initiation needs at least 8.")]
+        [Description("Number of state variables for the user material.")]
         public int NumberOfStateVariables
         {
             get { return _material.NumberOfStateVariables; }
             set { _material.NumberOfStateVariables = value; }
         }
-        [Category("User material")]
-        [DisplayName("FATCZM preset")]
-        [Description("Edit the ordered constants on the Data points tab. Preset defaults use N, mm, MPa; convert manually for other units.")]
-        public bool Fatczm { get { return _material.Fatczm; } }
         public ViewUserMaterial(UserMaterial material)
         {
             _material = material;

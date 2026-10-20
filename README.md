@@ -1,15 +1,21 @@
-# PrePoMax_Linux — unofficial PrePoMax fork
+# PrePoMax-RCM — Windows 學生一鍵安裝包
 
-Public author and maintainer of this fork's additions: **S.Y. Su**. Original upstream authors and notices are retained.
+作者 / Author: **S.Y. Su**. 原始上游作者及授權聲明保留。
 
-**Windows RC1f stable feature lineage.** Main focus: Linux/Avalonia port, L3 checkpoint **0.4.0**, with shared finite-element core and composite layup / 3D fibre-display work. Windows feature lines remain available on windows-rc (RC1f) and develop (RC1g5). Linux 0.4.0 does not include every Windows RC1c–RC1f enhancement; follow the documented checkpoint boundaries.
+## 下載與安裝 / Download and install
 
-PrePoMax was created by **Matej Borovinšek** and upstream contributors at the University of Maribor. This is an **unofficial fork**, not an endorsed upstream release. Upstream: https://github.com/ISCPC/PrePoMax . GPL-3.0; original LICENSE, Licenses/ and source notices are preserved.
+**[下載 PrePoMax-RCM_Setup_0.1.0-rc1g8-win.1.exe](https://github.com/isisam/PrePoMax_Linux/releases/download/v0.1.0-rc1g8-win.1/PrePoMax-RCM_Setup_0.1.0-rc1g8-win.1.exe) → 雙擊 → 完成**
 
-- [下載與安裝](docs/下載與安裝.md) · [使用教學](docs/使用教學.md) · [FAQ](docs/FAQ.md) · [回報問題](docs/回報問題.md)
-- [Install](docs/INSTALL.en.md) · [Tutorial](docs/TUTORIAL.en.md) · [FAQ](docs/FAQ.en.md) · [Issues](docs/ISSUES.en.md)
-- [Public Gmsh boundary](docs/PUBLIC_GMSH.md) · [Build](docs/BUILD_PUBLIC.md) · [Source lineage](SOURCE_HISTORY.md)
+Download Setup.exe → double-click → Finish. Per-user installation; no administrator rights required.
 
-The Linux checkpoint supports existing-mesh models, property forms, selection-created sets/surfaces, undo/redo and a read-only keyword viewer. Linux Gmsh operations use an explicit compile stub and throw NotSupportedException. Native Linux/VM/GPU release acceptance, full meshing parity and editable raw keywords remain open. Windows RCM layup editing and 3D fibre display share source in this fork; branch names describe feature lineage, not a new binary validation.
+內附繁中 GUI、stock CalculiX 2.21 與疊層範例。提供 3D 纖維方向、各層顏色、單層與爆炸圖。這是 **RC 候選版**，主人的 **150% DPI 人工檢查尚未完成**。
 
-The private Gmsh fork/SDK is excluded from every published history object. Original Windows application ZIPs are not release assets here. See PUBLIC_GMSH.md before attempting a Windows full-solution build.
+- [繁中功能說明](docs/student/FEATURES_zh-TW.md)
+- [English features](docs/student/FEATURES_en.md)
+- [一頁安裝說明與截圖](docs/student/INSTALL_一鍵安裝.md)
+
+安裝程式未簽章。先核對 release 的 SHA256SUMS；若 SmartScreen 顯示「未知發行者」，按「其他資訊 → 仍要執行」。學校政策若禁止執行，請聯絡 IT。
+
+解除安裝可用 Windows 設定的應用程式清單，或安裝資料夾的 Uninstall.exe。支援 /S 靜默安裝及解除安裝。請把修改過的範例另存到工作資料夾。
+
+本 repo 同時保留 Linux 分支；本 tag 為 Windows 學生 RC。對應原始碼與授權見 [SOURCE_STUDENT.md](SOURCE_STUDENT.md)。

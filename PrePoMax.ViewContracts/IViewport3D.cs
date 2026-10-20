@@ -24,6 +24,8 @@ namespace vtkControl
     /// <summary>Portable viewport operations; native actor handles belong to the implementing viewport.</summary>
     public interface IViewport3D
     {
+        void SetCompositeFibreActors(vtkMaxActorData[] data, CompositePlyLegendEntry[] legend = null);
+        bool HasCompositeFibreActors { get; }
         event Action<double[], double[], double[][], bool, vtkSelectOperation, string[]> OnMouseLeftButtonUpSelection;
         event Action<double[]> RotationPointChanged;
 
