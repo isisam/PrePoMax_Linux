@@ -1,7 +1,9 @@
 # Releases
 
-Use https://github.com/isisam/PrePoMax_Linux/releases . The selected Linux teaching checkpoint is 0.4.0, tagged v0.4.0-teaching.1. Original RC1f/RC1g5 Windows binary ZIPs are not publishable: they contain the excluded modified Gmsh SDK and legacy model history paths. Do not upload them or the old full source archive. The Windows source feature lines remain windows-rc/develop.
+Use https://github.com/isisam/PrePoMax_Linux/releases . The selected teaching checkpoint is Linux 0.4.0, tag v0.4.0-teaching.4.
 
-Linux binary asset: PrePoMax-Linux-0.4.0-teaching.tar.gz. This newly created repack omits the research solver and debug symbol files. Its application/native code comes from the original L3 checkpoint and was not rebuilt. The asset remains HOLD while embedded CodeView developer paths are unresolved. Source publication and binary release privacy are assessed separately in the owner's external audit.
+The tar.gz and amd64 deb are rebuilt from the cleaned public source with deterministic managed compilation, native file-prefix maps, normalized archive timestamps and a pinned .NET SDK. No research solver is included; configure a separately installed stock CalculiX. Gmsh operations intentionally throw NotSupportedException. Native Linux/VM/GPU acceptance remains pending; WSL checks do not replace it.
 
-The corresponding public source archive contains the content-filtered history's selected source tree and all retained notices. Public Gmsh meshing is a documented refusal stub. No private Gmsh source is required for the Linux checkpoint. See docs/PUBLIC_GMSH.md and docs/BUILD_PUBLIC.md.
+PrePoMax-Linux-0.4.0-public-source.tar.gz includes the tagged project source, exact VTK 9.4.2 source archive, licenses and upstream source-access instructions. Preserve it beside redistributed binaries. The release's verification.json and UPSTREAM_PATHS.json record validation and byte-identical upstream binary provenance. Documented upstream compiler paths may remain in unmodified third-party packages; our own build paths must be absent.
+
+Windows RC1f-equivalent binaries are omitted. The original ZIPs contain the excluded modified Gmsh SDK, research solver/source and legacy model history paths. The cleaned Windows branches do not yet have an integrated and validated public backend/stub. They remain source feature lines, not release binaries. Do not upload original RC1f/RC1g5 ZIPs or the old full Linux source archive. Superseded teaching assets remain private audit evidence.

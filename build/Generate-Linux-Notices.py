@@ -65,6 +65,9 @@ for key,lib in deps['libraries'].items():
         if ver!='11.3.0': raise RuntimeError('Review the original AvaloniaEdit license for '+ver)
         text=(repo/'Licenses/AvaloniaEdit-11.3.0.txt').read_text(encoding='utf-8-sig')
         source+='; https://github.com/AvaloniaUI/AvaloniaEdit/blob/583f2f8279cf50830eb7fd79c73dec554a232abf/LICENSE'
+    elif name.lower()=='antlr':
+        text=(repo/'ThirdParty/NCalc.RCM/ANTLR-LICENSE.txt').read_text(encoding='utf-8-sig')
+        source+='; https://www.antlr3.org/; original BSD runtime notice retained'
     elif licenses: text='\n\n'.join(f.read_text(encoding='utf-8-sig') for f in licenses)
     else:
         if name.lower().startswith('avalonia'):
@@ -98,7 +101,7 @@ project_files-=quantum
 for component, filename, license_file, version in (
     ('NCalc-RCM', 'NCalc.dll', 'LICENSE', '1.3.8'),
     ('ANTLR-runtime', 'Antlr3.Runtime.dll', 'ANTLR-LICENSE.txt', '3.1.2')):
-    if (app/filename).is_file():
+    if (app/filename).is_file() and filename not in owners:
         add(component, version, {filename}, (repo/'ThirdParty/NCalc.RCM'/license_file).read_text(encoding='utf-8-sig'),
             'RC1 ThirdParty/NCalc.RCM; NCalc source, ANTLR binary and original notices in corresponding-source archive')
         project_files.discard(filename)

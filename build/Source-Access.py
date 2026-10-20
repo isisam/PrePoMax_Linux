@@ -11,6 +11,7 @@ for key,lib in deps['libraries'].items():
     root=ET.parse(next(pkg.glob('*.nuspec'))).getroot()
     repos=[dict(e.attrib) for e in root.iter() if e.tag.split('}')[-1]=='repository']
     fallback={
+      'Antlr':dict(url='https://github.com/antlr/antlr3',ref='3.1.3; see https://www.antlr3.org/download/'),
       'MicroCom.Runtime':dict(url='https://github.com/kekekeks/MicroCom',commit='7e773759cfc1012a5d080d4129c4718a662884b0'),
       'CommandLineParser':dict(url='https://github.com/commandlineparser/commandline'),
       'ncalc':dict(url='https://github.com/ncalc/ncalc',commit='34eeabf0b529110874fa1fcc33741a627d08e71a'),
