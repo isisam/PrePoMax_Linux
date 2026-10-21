@@ -2,7 +2,7 @@ Unicode true
 !include "MUI2.nsh"
 !include "LogicLib.nsh"
 !include "WinMessages.nsh"
-Name "CalculiX_Win 2.21-win64.2"
+Name "CalculiX_Win 2.21-win64.3"
 !ifndef OUTDIR
 !define OUTDIR "../dist"
 !endif
@@ -12,11 +12,11 @@ RequestExecutionLevel user
 SetCompressor /SOLID lzma
 SetCompressorDictSize 32
 ManifestDPIAware true
-VIProductVersion "2.21.0.2"
+VIProductVersion "2.21.0.3"
 VIAddVersionKey /LANG=1028 "ProductName" "CalculiX_Win"
 VIAddVersionKey /LANG=1028 "CompanyName" "S.Y. Su"
 VIAddVersionKey /LANG=1028 "FileDescription" "Student per-user installer"
-VIAddVersionKey /LANG=1028 "FileVersion" "2.21-win64.2"
+VIAddVersionKey /LANG=1028 "FileVersion" "2.21-win64.3"
 VIAddVersionKey /LANG=1028 "LegalCopyright" "S.Y. Su; upstream notices retained"
 !define MUI_ABORTWARNING
 !insertmacro MUI_PAGE_WELCOME
@@ -53,8 +53,8 @@ Section "Install"
   CreateDirectory "$SMPROGRAMS\CalculiX_Win"
   CreateShortcut "$SMPROGRAMS\CalculiX_Win\功能與安裝說明.lnk" "$INSTDIR\INSTALL_一鍵安裝.md"
   CreateShortcut "$SMPROGRAMS\CalculiX_Win\解除安裝.lnk" "$INSTDIR\Uninstall.exe"
-  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\CalculiX_Win-Student" "DisplayName" "CalculiX_Win 2.21-win64.2"
-  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\CalculiX_Win-Student" "DisplayVersion" "2.21-win64.2"
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\CalculiX_Win-Student" "DisplayName" "CalculiX_Win 2.21-win64.3"
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\CalculiX_Win-Student" "DisplayVersion" "2.21-win64.3"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\CalculiX_Win-Student" "Publisher" "S.Y. Su"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\CalculiX_Win-Student" "InstallLocation" "$INSTDIR"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\CalculiX_Win-Student" "UninstallString" '$\"$INSTDIR\Uninstall.exe$\"'

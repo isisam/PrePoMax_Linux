@@ -1,10 +1,10 @@
 # PrePoMax-RCM 一鍵安裝
 
-作者：S.Y. Su　版本：0.1.0-rc1g8-win.1 (RC)
+作者：S.Y. Su　版本：0.1.0-rc1g8-win.2 (RC)
 
 **下載 Setup.exe → 雙擊 → 完成**
 
-1. 到 [GitHub Releases](https://github.com/isisam/PrePoMax_Linux/releases) 下載 `PrePoMax-RCM_Setup_0.1.0-rc1g8-win.1.exe`。
+1. 到 [GitHub Releases](https://github.com/isisam/PrePoMax_Linux/releases) 下載 `PrePoMax-RCM_Setup_0.1.0-rc1g8-win.2.exe`。
 2. 雙擊，按「下一步」→「安裝」→「完成」。不需管理員密碼。
 3. 預設裝到 `%LOCALAPPDATA%\Programs\PrePoMax-RCM`。
 4. 用桌面或開始選單的 PrePoMax-RCM 捷徑開啟；求解器路徑已設定好。
@@ -20,3 +20,7 @@
 解除安裝：在 Windows「設定 → 應用程式 → 已安裝的應用程式」選擇本程式並解除安裝，或執行安裝資料夾的 `Uninstall.exe`。會移除本包檔案、捷徑與登錄項目。請將自己修改的範例另存到工作資料夾；解除安裝會移除本包附的範例，另存的模型與計算結果會保留。
 
 詳細功能與需求見 [繁中功能說明](FEATURES_zh-TW.md)／[English features](FEATURES_en.md)。
+
+更新建議：修正大網格時求解器可能中途停止的問題，建議所有人更新。請先關閉程式與求解器，舊版不用先解除安裝，直接選擇原安裝資料夾覆蓋安裝即可。已實測由上一版學生安裝包直接更新。
+
+RC1g8 介面與功能維持上一版。ccx_dynamic 2.22 尚未重建，完整 RC1g8 中的該求解器維持原狀；學生 Setup 沿用上一版，只附 stock 2.21 的 Solver/ccx.exe。本次修正不適用於 ccx_dynamic。

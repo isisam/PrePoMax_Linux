@@ -1,6 +1,6 @@
 # PrePoMax-RCM 功能說明
 
-版本：0.1.0-rc1g8-win.1 (RC)　作者：S.Y. Su（保留原始上游作者及授權聲明）
+版本：0.1.0-rc1g8-win.2 (RC)　作者：S.Y. Su（保留原始上游作者及授權聲明）
 
 ## 能做什麼
 
@@ -24,12 +24,12 @@ Windows 10/11 64 位元、.NET Framework 4.8、支援 OpenGL 的顯示卡與正�
 
 ## 怎麼安裝
 
-1. 到 [GitHub Releases](https://github.com/isisam/PrePoMax_Linux/releases) 下載 `PrePoMax-RCM_Setup_0.1.0-rc1g8-win.1.exe`。
+1. 到 [GitHub Releases](https://github.com/isisam/PrePoMax_Linux/releases) 下載 `PrePoMax-RCM_Setup_0.1.0-rc1g8-win.2.exe`。
 2. 雙擊，按「下一步」→「安裝」→「完成」。不需管理員密碼。
 3. 預設裝到 `%LOCALAPPDATA%\Programs\PrePoMax-RCM`。
 4. 用桌面或開始選單的 PrePoMax-RCM 捷徑開啟；求解器路徑已設定好。
 
-教室批次安裝可用 `PrePoMax-RCM_Setup_0.1.0-rc1g8-win.1.exe /S`。自訂資料夾時，`/D=完整路徑` 必須放最後；不用加引號，例如 `/S /D=C:\Student Apps\PrePoMax-RCM`。
+教室批次安裝可用 `PrePoMax-RCM_Setup_0.1.0-rc1g8-win.2.exe /S`。自訂資料夾時，`/D=完整路徑` 必須放最後；不用加引號，例如 `/S /D=C:\Student Apps\PrePoMax-RCM`。
 
 ## 怎麼解除安裝
 
@@ -38,3 +38,7 @@ Windows 10/11 64 位元、.NET Framework 4.8、支援 OpenGL 的顯示卡與正�
 ## SmartScreen 顯示未知發行者
 
 本包未以商業憑證簽章，因此可能顯示「未知發行者」。確認檔案來自上述 GitHub release，並比對 SHA256SUMS 後，在 SmartScreen 按「其他資訊」→「仍要執行」。若學校政策不允許，請聯絡學校 IT；不必關閉防毒或安全設定。
+
+更新建議：修正大網格時求解器可能中途停止的問題，建議所有人更新。請先關閉程式與求解器，舊版不用先解除安裝，直接選擇原安裝資料夾覆蓋安裝即可。已實測由上一版學生安裝包直接更新。
+
+RC1g8 介面與功能維持上一版。ccx_dynamic 2.22 尚未重建，完整 RC1g8 中的該求解器維持原狀；學生 Setup 沿用上一版，只附 stock 2.21 的 Solver/ccx.exe。本次修正不適用於 ccx_dynamic。

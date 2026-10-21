@@ -2,21 +2,21 @@ Unicode true
 !include "MUI2.nsh"
 !include "LogicLib.nsh"
 !include "WinMessages.nsh"
-Name "PrePoMax-RCM 0.1.0-rc1g8-win.1"
+Name "PrePoMax-RCM 0.1.0-rc1g8-win.2"
 !ifndef OUTDIR
 !define OUTDIR "../dist"
 !endif
-OutFile "${OUTDIR}/PrePoMax-RCM_Setup_0.1.0-rc1g8-win.1.exe"
+OutFile "${OUTDIR}/PrePoMax-RCM_Setup_0.1.0-rc1g8-win.2.exe"
 InstallDir "$LOCALAPPDATA\Programs\PrePoMax-RCM"
 RequestExecutionLevel user
 SetCompressor /SOLID lzma
 SetCompressorDictSize 32
 ManifestDPIAware true
-VIProductVersion "0.1.0.1"
+VIProductVersion "0.1.0.2"
 VIAddVersionKey /LANG=1028 "ProductName" "PrePoMax-RCM"
 VIAddVersionKey /LANG=1028 "CompanyName" "S.Y. Su"
 VIAddVersionKey /LANG=1028 "FileDescription" "Student per-user installer"
-VIAddVersionKey /LANG=1028 "FileVersion" "0.1.0-rc1g8-win.1"
+VIAddVersionKey /LANG=1028 "FileVersion" "0.1.0-rc1g8-win.2"
 VIAddVersionKey /LANG=1028 "LegalCopyright" "S.Y. Su; upstream notices retained"
 !define MUI_ABORTWARNING
 !insertmacro MUI_PAGE_WELCOME
@@ -46,8 +46,8 @@ Section "Install"
   CreateShortcut "$SMPROGRAMS\PrePoMax-RCM\PrePoMax-RCM.lnk" "$INSTDIR\PrePoMax.exe"
   CreateShortcut "$SMPROGRAMS\PrePoMax-RCM\功能與安裝說明.lnk" "$INSTDIR\INSTALL_一鍵安裝.md"
   CreateShortcut "$SMPROGRAMS\PrePoMax-RCM\解除安裝.lnk" "$INSTDIR\Uninstall.exe"
-  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\PrePoMax-RCM-Student" "DisplayName" "PrePoMax-RCM 0.1.0-rc1g8-win.1"
-  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\PrePoMax-RCM-Student" "DisplayVersion" "0.1.0-rc1g8-win.1"
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\PrePoMax-RCM-Student" "DisplayName" "PrePoMax-RCM 0.1.0-rc1g8-win.2"
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\PrePoMax-RCM-Student" "DisplayVersion" "0.1.0-rc1g8-win.2"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\PrePoMax-RCM-Student" "Publisher" "S.Y. Su"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\PrePoMax-RCM-Student" "InstallLocation" "$INSTDIR"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\PrePoMax-RCM-Student" "UninstallString" '$\"$INSTDIR\Uninstall.exe$\"'

@@ -1,18 +1,17 @@
-# PrePoMax-RCM v0.1.0-rc1g8-win.1
+# PrePoMax-RCM v0.1.0-rc1g8-win.2
 
-作者 / Author: S.Y. Su. Upstream credits and licences retained.
+作者：S.Y. Su <isisam@users.noreply.github.com>。保留原始上游作者與授權聲明。
 
-下載 `PrePoMax-RCM_Setup_0.1.0-rc1g8-win.1.exe` → 雙擊 → 完成。Download Setup.exe → double-click → Finish.
+修正大網格時求解器可能中途停止的問題，**建議所有人更新**。
 
-**Pre-release / RC 候選版：主人的 150% DPI 人工檢查尚未完成。** 本次沒有宣稱已通過該檢查。
+下載 `PrePoMax-RCM_Setup_0.1.0-rc1g8-win.2.exe`，先關閉正在使用的程式與求解器，再執行安裝。**舊版不用先解除安裝，直接選擇原安裝資料夾覆蓋安裝即可。** 已在 Windows 實測由上一版學生安裝包直接更新；使用者 PATH 沒有重複，另存的測試檔也有保留。不需管理員權限。自訂過安裝位置的同學，請選擇原來的位置。
 
-- 每位使用者安裝到 %LOCALAPPDATA%\Programs\PrePoMax-RCM，不需管理員權限。
-- 繁中預設、桌面與開始選單捷徑，stock CalculiX 2.21 路徑與 Spooles 預設已設定。
-- RC1g8 疊層 3D 纖維方向、各層顏色、單層顯示與爆炸圖；附八層疊層範例。
-- 學生專用 GUI、模型與 API 已移除私人求解器預設與客製材料功能。
+本次更新的是 stock CalculiX 2.21 的 SPOOLES 求解器，修正大網格索引運算超出範圍的問題。內附彈簧與樑範例。安裝包未簽章，下載後可先用 SHA256SUMS 核對檔案。
 
-- 支援 /S 靜默安裝與解除安裝。
-- 未簽章，SmartScreen 可能顯示未知發行者；先核對 SHA256SUMS，再按「其他資訊 → 仍要執行」。
-- 對應源碼與第三方授權隨 release 提供。教學範例不等於工程認證。
+驗證：全新靜默安裝、上一版直接覆蓋安裝、三個範例數值比對、解除安裝與隱私掃描均通過；安裝後的修正版也完成 311,448 節點、934,285 個方程式的大網格案例。詳細結果見 verification.json。
 
-驗證摘要及掃描結果見 verification.json。完整 Kappa 證據保留於本次 review。
+**這是 pre-release / RC 候選版。** RC1g8 介面、功能與應用程式執行檔維持上一版，僅更換 `Solver/ccx.exe` 及更新安裝說明。疊層範例的批次載入與求解已通過；主人的 150% DPI 人工檢查仍沿用前版的未完成狀態。
+
+**ccx_dynamic 2.22 尚未重建，維持原狀。** 本次修正不適用於它。完整 RC1g8 中的動態求解器沒有更換；本學生 Setup 沿用上一版範圍，只附 stock 2.21 的 `Solver/ccx.exe`，不附 ccx_dynamic，也沒有拿 2.22 診斷版替代。
+
+求解器對應來源與可重新連結的物件檔：`CalculiX-2.21-SPOOLES-win64.3-source.zip`。原始上游與第三方授權均保留。請把自己的模型與計算結果放在工作資料夾。

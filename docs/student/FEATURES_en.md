@@ -1,6 +1,6 @@
 # PrePoMax-RCM features
 
-Version: 0.1.0-rc1g8-win.1 (RC). Author: S.Y. Su. Original upstream credits and licences are retained.
+Version: 0.1.0-rc1g8-win.2 (RC). Author: S.Y. Su. Original upstream credits and licences are retained.
 
 ## What it does
 
@@ -21,11 +21,11 @@ Windows 10/11 x64. .NET Framework 4.8 and an OpenGL-capable graphics driver. Rec
 
 ## Install
 
-Download `PrePoMax-RCM_Setup_0.1.0-rc1g8-win.1.exe` from [GitHub Releases](https://github.com/isisam/PrePoMax_Linux/releases) → double-click → Next → Install → Finish. No administrator password is required. Default folder: `%LOCALAPPDATA%\Programs\PrePoMax-RCM`.
+Download `PrePoMax-RCM_Setup_0.1.0-rc1g8-win.2.exe` from [GitHub Releases](https://github.com/isisam/PrePoMax_Linux/releases) → double-click → Next → Install → Finish. No administrator password is required. Default folder: `%LOCALAPPDATA%\Programs\PrePoMax-RCM`.
 
 Launch from the Desktop or Start menu. The solver path is already set.
 
-Silent installation: `PrePoMax-RCM_Setup_0.1.0-rc1g8-win.1.exe /S`. Optional `/D=full path` must be the last argument and is unquoted, e.g. `/S /D=C:\Student Apps\PrePoMax-RCM`.
+Silent installation: `PrePoMax-RCM_Setup_0.1.0-rc1g8-win.2.exe /S`. Optional `/D=full path` must be the last argument and is unquoted, e.g. `/S /D=C:\Student Apps\PrePoMax-RCM`.
 
 ## Uninstall
 
@@ -34,3 +34,7 @@ Use Windows Settings → Apps → Installed apps, or run `Uninstall.exe` in the 
 ## SmartScreen: unknown publisher
 
 The installer is unsigned. Verify the GitHub release source and SHA256SUMS. If SmartScreen appears, choose More info → Run anyway. If school policy blocks execution, contact school IT. Do not disable antivirus or change security settings.
+
+Recommended for all users: fixes a possible solver stop on large meshes. Close the application and solver, then install over the same folder; no prior uninstall is needed. Tested from the previous student installer.
+
+RC1g8 application binaries are unchanged. ccx_dynamic 2.22 has not been rebuilt and remains unchanged in the full RC package. As before, this student Setup includes only stock 2.21 Solver/ccx.exe; this fix does not cover ccx_dynamic.
