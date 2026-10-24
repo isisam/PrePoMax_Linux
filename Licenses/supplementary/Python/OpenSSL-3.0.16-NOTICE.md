@@ -96,18 +96,18 @@ GitHub pull requests. For more details, see [Contributing](#contributing).
 Build and Install
 =================
 
-After obtaining the Source, have a look at the [INSTALL](INSTALL.md) file for
+After obtaining the Source, have a look at the [INSTALL](https://github.com/openssl/openssl/blob/openssl-3.0.16/INSTALL.md) file for
 detailed instructions about building and installing OpenSSL. For some
 platforms, the installation instructions are amended by a platform specific
 document.
 
- * [Notes for UNIX-like platforms](NOTES-UNIX.md)
- * [Notes for Android platforms](NOTES-ANDROID.md)
- * [Notes for Windows platforms](NOTES-WINDOWS.md)
- * [Notes for the DOS platform with DJGPP](NOTES-DJGPP.md)
- * [Notes for the OpenVMS platform](NOTES-VMS.md)
- * [Notes on Perl](NOTES-PERL.md)
- * [Notes on Valgrind](NOTES-VALGRIND.md)
+ * [Notes for UNIX-like platforms](https://github.com/openssl/openssl/blob/openssl-3.0.16/NOTES-UNIX.md)
+ * [Notes for Android platforms](https://github.com/openssl/openssl/blob/openssl-3.0.16/NOTES-ANDROID.md)
+ * [Notes for Windows platforms](https://github.com/openssl/openssl/blob/openssl-3.0.16/NOTES-WINDOWS.md)
+ * [Notes for the DOS platform with DJGPP](https://github.com/openssl/openssl/blob/openssl-3.0.16/NOTES-DJGPP.md)
+ * [Notes for the OpenVMS platform](https://github.com/openssl/openssl/blob/openssl-3.0.16/NOTES-VMS.md)
+ * [Notes on Perl](https://github.com/openssl/openssl/blob/openssl-3.0.16/NOTES-PERL.md)
+ * [Notes on Valgrind](https://github.com/openssl/openssl/blob/openssl-3.0.16/NOTES-VALGRIND.md)
 
 Specific notes on upgrading to OpenSSL 3.0 from previous versions can be found
 in the [migration_guide(7ossl)] manual page.
@@ -138,19 +138,19 @@ OpenSSL is licensed under the Apache License 2.0, which means that
 you are free to get and use it for commercial and non-commercial
 purposes as long as you fulfill its conditions.
 
-See the [LICENSE.txt](LICENSE.txt) file for more details.
+See the [LICENSE.txt](https://github.com/openssl/openssl/blob/openssl-3.0.16/LICENSE.txt) file for more details.
 
 Support
 =======
 
 There are various ways to get in touch. The correct channel depends on
-your requirement. see the [SUPPORT](SUPPORT.md) file for more details.
+your requirement. see the [SUPPORT](https://github.com/openssl/openssl/blob/openssl-3.0.16/SUPPORT.md) file for more details.
 
 Contributing
 ============
 
 If you are interested and willing to contribute to the OpenSSL project,
-please take a look at the [CONTRIBUTING](CONTRIBUTING.md) file.
+please take a look at the [CONTRIBUTING](https://github.com/openssl/openssl/blob/openssl-3.0.16/CONTRIBUTING.md) file.
 
 Legalities
 ==========
@@ -192,7 +192,7 @@ All rights reserved.
 <!-- Logos and Badges -->
 
 [openssl logo]:
-    doc/images/openssl.svg
+    <https://raw.githubusercontent.com/openssl/openssl/openssl-3.0.16/doc/images/openssl.svg>
     "OpenSSL Logo"
 
 [github actions ci badge]:
